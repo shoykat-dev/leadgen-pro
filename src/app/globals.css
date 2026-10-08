@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #0f172a;
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --popover: #ffffff;
+    --popover-foreground: #0f172a;
+    --primary: #2563eb;
+    --primary-foreground: #ffffff;
+    --secondary: #f8fafc;
+    --secondary-foreground: #1e293b;
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;
+    --accent: #f8fafc;
+    --accent-foreground: #0f172a;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: #e2e8f0;
+    --input: #e2e8f0;
+    --ring: #2563eb;
+    --radius: 0.75rem;
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  min-height: 100vh;
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Custom modern scrollbar for clean white theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Clean UI utility classes */
+.card-clean {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+}
+
+.card-clean-hover {
+  transition: all 0.2s ease-in-out;
+}
+
+.card-clean-hover:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.07);
+  border-color: #cbd5e1;
+}
+
+/* Custom styled horizontal scrollbar for mobile table responsiveness */
+.custom-table-scrollbar {
+  -webkit-overflow-scrolling: touch;
+}
+
+.custom-table-scrollbar::-webkit-scrollbar {
+  height: 8px;
+}
+
+.custom-table-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 9999px;
+}
+
+.custom-table-scrollbar::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 9999px;
+}
+
+.custom-table-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Completely remove and conceal Clerk Development Mode watermarks and badges */
+.cl-development-badge,
+.cl-internal-b3fm6y,
+[class*="development-badge"],
+[class*="cl-development"],
+[data-localization-key*="developmentMode"],
+.cl-footerAction__development {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
