@@ -307,21 +307,41 @@ export function DataTableView({
       {viewMode === "table" && (
         <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
           {/* Mobile swipe helper badge */}
-          <div className="md:hidden px-4 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs text-slate-500 font-medium">
-            <span>Swipe table horizontally to view all fields</span>
-            <span className="text-blue-600 font-bold flex items-center gap-1">← Drag to Scroll →</span>
+          <div className="md:hidden px-4 py-2.5 bg-gradient-to-r from-blue-50/80 via-slate-50 to-blue-50/80 border-b border-slate-200 flex items-center justify-between text-xs text-slate-600 font-medium">
+            <span className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
+              </span>
+              <span>Swipe table horizontally to view all fields</span>
+            </span>
+            <span className="text-blue-600 font-bold flex items-center gap-1 text-[11px] bg-white px-2.5 py-0.5 rounded-full border border-blue-200 shadow-2xs">
+              ← Drag to Scroll →
+            </span>
           </div>
 
           <div className="w-full overflow-x-auto custom-table-scrollbar">
-            <Table className="min-w-[940px] w-full">
+            <Table className="min-w-[1100px] w-full">
               <TableHeader>
-                <TableRow className="border-b border-slate-200 bg-slate-50 hover:bg-slate-50">
-                  <TableHead className="w-[240px] text-slate-700 font-semibold text-xs">Business Name</TableHead>
-                  <TableHead className="w-[160px] text-slate-700 font-semibold text-xs">Phone Number</TableHead>
-                  <TableHead className="w-[190px] text-slate-700 font-semibold text-xs">Email / Contact</TableHead>
-                  <TableHead className="min-w-[220px] text-slate-700 font-semibold text-xs">Address</TableHead>
-                  <TableHead className="w-[140px] text-slate-700 font-semibold text-xs text-center">Website Status</TableHead>
-                  <TableHead className="w-[170px] text-slate-700 font-semibold text-xs text-right">Google Maps</TableHead>
+                <TableRow className="border-b border-slate-200 bg-slate-50/90 hover:bg-slate-50/90">
+                  <TableHead className="min-w-[240px] text-slate-700 font-semibold text-xs uppercase tracking-wider whitespace-nowrap py-3.5 px-4">
+                    Business Name
+                  </TableHead>
+                  <TableHead className="min-w-[170px] text-slate-700 font-semibold text-xs uppercase tracking-wider whitespace-nowrap py-3.5 px-4">
+                    Phone Number
+                  </TableHead>
+                  <TableHead className="min-w-[200px] text-slate-700 font-semibold text-xs uppercase tracking-wider whitespace-nowrap py-3.5 px-4">
+                    Email / Contact
+                  </TableHead>
+                  <TableHead className="min-w-[240px] text-slate-700 font-semibold text-xs uppercase tracking-wider whitespace-nowrap py-3.5 px-4">
+                    Address
+                  </TableHead>
+                  <TableHead className="min-w-[140px] text-slate-700 font-semibold text-xs uppercase tracking-wider whitespace-nowrap text-center py-3.5 px-4">
+                    Website Status
+                  </TableHead>
+                  <TableHead className="min-w-[180px] text-slate-700 font-semibold text-xs uppercase tracking-wider whitespace-nowrap text-right py-3.5 px-4">
+                    Google Maps
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -355,81 +375,81 @@ export function DataTableView({
                         className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors"
                       >
                         {/* Business Name */}
-                        <TableCell className="font-semibold text-slate-900">
-                          <div className="space-y-0.5">
-                            <div className="text-sm font-semibold text-slate-900 hover:text-blue-600 transition-colors">
+                        <TableCell className="min-w-[240px] align-middle font-semibold text-slate-900 py-3.5 px-4">
+                          <div className="space-y-0.5 whitespace-nowrap">
+                            <div className="text-sm font-semibold text-slate-900 hover:text-blue-600 transition-colors whitespace-nowrap">
                               {lead.name}
                             </div>
-                            <div className="text-[11px] text-slate-500 font-normal">
+                            <div className="text-[11px] text-slate-500 font-normal whitespace-nowrap">
                               {lead.category}
                             </div>
                           </div>
                         </TableCell>
 
-                        {/* Phone Number */}
-                        <TableCell>
+                        {/* Phone Number - Strict single-line monospace with copy */}
+                        <TableCell className="whitespace-nowrap min-w-[170px] py-3.5 px-4 font-mono">
                           {phoneHasVal ? (
-                            <div className="flex items-center gap-1.5 group">
+                            <div className="inline-flex items-center gap-1.5 whitespace-nowrap group">
                               <a
                                 href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`}
-                                className="text-xs font-mono text-slate-800 hover:text-blue-600 transition-colors"
+                                className="text-xs font-mono font-medium text-slate-800 hover:text-blue-600 transition-colors whitespace-nowrap bg-slate-50 hover:bg-blue-50 px-2 py-1 rounded-md border border-slate-200 inline-block"
                               >
                                 {lead.phone}
                               </a>
                               <button
                                 onClick={() => handleCopy(lead.phone, `phone-${lead.id}`)}
-                                className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-slate-700 rounded transition-opacity"
+                                className="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 p-1 text-slate-400 hover:text-slate-700 rounded transition-opacity shrink-0"
                                 title="Copy Phone"
                               >
                                 {copiedId === `phone-${lead.id}` ? (
-                                  <Check className="w-3 h-3 text-emerald-600" />
+                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
                                 ) : (
-                                  <Copy className="w-3 h-3" />
+                                  <Copy className="w-3.5 h-3.5" />
                                 )}
                               </button>
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-400 font-mono">N/A</span>
+                            <span className="text-xs text-slate-400 font-mono whitespace-nowrap">N/A</span>
                           )}
                         </TableCell>
 
-                        {/* Email */}
-                        <TableCell>
+                        {/* Email - Strict single-line with copy */}
+                        <TableCell className="whitespace-nowrap min-w-[200px] py-3.5 px-4 font-mono">
                           {emailHasVal ? (
-                            <div className="flex items-center gap-1.5 group">
+                            <div className="inline-flex items-center gap-1.5 whitespace-nowrap group">
                               <a
                                 href={`mailto:${lead.email}`}
-                                className="text-xs font-mono text-blue-600 hover:text-blue-800 hover:underline transition-colors max-w-[150px] truncate"
+                                className="text-xs font-mono text-blue-600 hover:text-blue-800 hover:underline transition-colors whitespace-nowrap max-w-[190px] truncate inline-block"
                                 title={lead.email}
                               >
                                 {lead.email}
                               </a>
                               <button
                                 onClick={() => handleCopy(lead.email, `email-${lead.id}`)}
-                                className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-slate-700 rounded transition-opacity"
+                                className="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 p-1 text-slate-400 hover:text-slate-700 rounded transition-opacity shrink-0"
                                 title="Copy Email"
                               >
                                 {copiedId === `email-${lead.id}` ? (
-                                  <Check className="w-3 h-3 text-emerald-600" />
+                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
                                 ) : (
-                                  <Copy className="w-3 h-3" />
+                                  <Copy className="w-3.5 h-3.5" />
                                 )}
                               </button>
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-400 font-mono">N/A</span>
+                            <span className="text-xs text-slate-400 font-mono whitespace-nowrap">N/A</span>
                           )}
                         </TableCell>
 
-                        {/* Address */}
-                        <TableCell className="text-xs text-slate-600 max-w-[240px]">
-                          <span className="line-clamp-2" title={lead.address}>
+                        {/* Address - Clean single-line truncated */}
+                        <TableCell className="min-w-[240px] text-xs text-slate-600 py-3.5 px-4">
+                          <span className="whitespace-nowrap block truncate max-w-[280px]" title={lead.address}>
                             {lead.address}
                           </span>
                         </TableCell>
 
-                        {/* Website Status Badge */}
-                        <TableCell className="text-center">
+                        {/* Website Status Badge - Guaranteed single-line badge */}
+                        <TableCell className="text-center whitespace-nowrap min-w-[140px] py-3.5 px-4">
                           {lead.hasWebsite ? (
                             <a
                               href={
@@ -439,38 +459,38 @@ export function DataTableView({
                               }
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 group"
+                              className="inline-flex items-center justify-center whitespace-nowrap group"
                             >
                               <Badge
                                 variant="success"
-                                className="px-2.5 py-1 text-[11px] font-semibold cursor-pointer group-hover:bg-emerald-100"
+                                className="px-2.5 py-1 text-[11px] font-semibold cursor-pointer group-hover:bg-emerald-100 whitespace-nowrap shrink-0 inline-flex items-center gap-1"
                               >
-                                Has Website
-                                <ExternalLink className="w-2.5 h-2.5 ml-1 opacity-70 group-hover:opacity-100" />
+                                <span>Has Website</span>
+                                <ExternalLink className="w-3 h-3 ml-0.5 opacity-70 group-hover:opacity-100 shrink-0" />
                               </Badge>
                             </a>
                           ) : (
                             <Badge
                               variant="destructive"
-                              className="px-2.5 py-1 text-[11px] font-semibold"
+                              className="px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap shrink-0 inline-flex items-center justify-center"
                             >
                               No Website
                             </Badge>
                           )}
                         </TableCell>
 
-                        {/* Google Maps Actions */}
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1.5">
+                        {/* Google Maps Actions - Clean inline buttons */}
+                        <TableCell className="text-right whitespace-nowrap min-w-[180px] py-3.5 px-4">
+                          <div className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
                             <Button
                               type="button"
                               variant="outline"
                               size="sm"
                               onClick={() => setSelectedMapLead(lead)}
-                              className="h-8 px-2.5 rounded-lg border-slate-200 bg-white hover:bg-slate-50 text-xs text-slate-700 hover:text-slate-900 shadow-xs inline-flex items-center gap-1.5"
+                              className="h-8 px-2.5 rounded-lg border-slate-200 bg-white hover:bg-slate-50 text-xs text-slate-700 hover:text-slate-900 shadow-xs inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
                               title="Open Google Maps Exact Location Preview"
                             >
-                              <MapPin className="w-3.5 h-3.5 text-rose-500" />
+                              <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                               <span>Map Pin</span>
                             </Button>
 
@@ -484,7 +504,7 @@ export function DataTableView({
                               className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-all shrink-0 shadow-xs"
                               title="Open business directly in Google Maps"
                             >
-                              <ExternalLink className="w-3.5 h-3.5" />
+                              <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                             </a>
                           </div>
                         </TableCell>
