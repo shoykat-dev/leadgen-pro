@@ -4,11 +4,11 @@ import { GuestLoginButton } from "@/components/guest-login-button";
 
 export default function SignInPage() {
   return (
-    <div className="min-h-screen w-full bg-[#f8fafc] text-slate-900 flex flex-col justify-center items-center relative overflow-hidden px-4 py-12">
-      <div className="relative z-10 w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+    <div className="min-h-screen w-full bg-[#f8fafc] text-slate-900 flex flex-col justify-center items-center relative overflow-hidden px-4 py-8 sm:py-12">
+      <div className="relative z-10 w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
         {/* Left column: Branding & Value Proposition */}
-        <div className="lg:col-span-6 space-y-6 text-left">
-          <div className="space-y-3">
+        <div className="order-2 lg:order-1 lg:col-span-6 space-y-6 text-left">
+          <div className="space-y-3 hidden lg:block">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-sm">
                 <Zap className="h-6 w-6 text-white" />
@@ -67,9 +67,27 @@ export default function SignInPage() {
         </div>
 
         {/* Right column: Clerk SignIn component + Quick Demo */}
-        <div className="lg:col-span-6 flex flex-col justify-center items-center">
-          <div className="w-full max-w-md p-6 rounded-2xl bg-white border border-slate-200 shadow-xl flex flex-col justify-center items-center">
-            <SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" />
+        <div className="order-1 lg:order-2 lg:col-span-6 flex flex-col justify-center items-center">
+          {/* Mobile Header */}
+          <div className="lg:hidden flex flex-col items-center text-center mb-6">
+            <div className="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-sm mb-3">
+              <Zap className="h-6 w-6 text-white" />
+            </div>
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
+              LeadGen <span className="text-blue-600">Pro</span>
+            </h1>
+            <p className="text-xs text-slate-500 mt-1">
+              Sign in to access global business leads & verified contacts
+            </p>
+          </div>
+
+          <div className="w-full max-w-md p-4 sm:p-6 rounded-2xl bg-white border border-slate-200 shadow-xl flex flex-col justify-center items-center">
+            <SignIn
+              routing="path"
+              path="/sign-in"
+              signUpUrl="/sign-up"
+              fallbackRedirectUrl="/"
+            />
             <GuestLoginButton />
           </div>
         </div>

@@ -15,7 +15,12 @@ export default function SignUpPage() {
         </div>
 
         <div className="w-full p-6 rounded-2xl bg-white border border-slate-200 shadow-xl flex justify-center">
-          <SignUp routing="path" path="/sign-up" signInUrl="/sign-in" />
+          <SignUp
+            routing="path"
+            path="/sign-up"
+            signInUrl="/sign-in"
+            fallbackRedirectUrl="/"
+          />
         </div>
       </div>
     </div>
