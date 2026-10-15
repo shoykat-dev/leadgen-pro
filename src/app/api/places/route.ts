@@ -76,43 +76,6 @@ function getCategoryQueryClauses(category: string, radius: number, lat: number, 
   const around = `(around:${radius}, ${lat}, ${lon})`;
 
   switch (category) {
-    // Technology & Software
-    case "software_company":
-      return `
-        node["office"="it"]${around};
-        way["office"="it"]${around};
-        node["office"="software"]${around};
-        way["office"="software"]${around};
-        node["office"="company"]["it"]${around};
-      `;
-    case "web_development":
-      return `
-        node["office"="web_design"]${around};
-        way["office"="web_design"]${around};
-        node["office"="it"]${around};
-        way["office"="it"]${around};
-        node["office"="advertising_agency"]${around};
-      `;
-    case "it_services":
-      return `
-        node["office"="it"]${around};
-        way["office"="it"]${around};
-        node["shop"="computer"]${around};
-        way["shop"="computer"]${around};
-      `;
-    case "app_development":
-      return `
-        node["office"="software"]${around};
-        way["office"="software"]${around};
-        node["office"="it"]${around};
-      `;
-    case "cybersecurity":
-      return `
-        node["office"="security"]${around};
-        way["office"="security"]${around};
-        node["office"="it"]${around};
-      `;
-
     // Marketing & Creative
     case "digital_marketing":
       return `
