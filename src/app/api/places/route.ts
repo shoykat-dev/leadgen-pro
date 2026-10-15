@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { City } from "country-state-city";
+import { City, State, Country } from "country-state-city";
 import { ALL_BUSINESS_SERVICES, getCategoryProfile } from "@/lib/directory-data";
+import { getFallbackCoordinates } from "@/lib/location-hierarchy";
 
 interface PlaceTag {
   [key: string]: string | undefined;
@@ -657,8 +658,31 @@ function generateCountryPhone(countryCode: string, idx: number): string {
       return `+966 11 4${seed.slice(0, 2)} ${seed2}`;
     case "JP":
       return `+81 3 5555 ${seed}`;
-    default:
-      return `+1 (${(500 + idx * 31) % 900 + 100}) ${seed.slice(0, 3)}-${seed2}`;
+    case "IT":
+      return `+39 06 698${seed.slice(0, 4)}`;
+    case "ES":
+      return `+34 91 ${seed.slice(0, 3)} ${seed2}`;
+    case "NL":
+      return `+31 20 520 ${seed}`;
+    case "TR":
+      return `+90 212 ${seed.slice(0, 3)} ${seed2.slice(0, 4)}`;
+    case "BR":
+      return `+55 11 3${seed.slice(0, 3)}-${seed2}`;
+    case "QA":
+      return `+974 44${seed.slice(0, 2)} ${seed2.slice(0, 4)}`;
+    case "KW":
+      return `+965 22${seed.slice(0, 2)} ${seed2.slice(0, 4)}`;
+    case "CH":
+      return `+41 22 730 ${seed}`;
+    case "ZA":
+      return `+27 11 880 ${seed}`;
+    case "ID":
+      return `+62 21 5790 ${seed}`;
+    default: {
+      const countryObj = Country.getCountryByCode(code);
+      const callingCode = countryObj?.phonecode || "1";
+      return `+${callingCode} ${(50 + idx * 7) % 90 + 10} ${seed.slice(0, 3)} ${seed2}`;
+    }
   }
 }
 
@@ -824,7 +848,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Resolve latitude/longitude from country-state-city database if still null
+    // 2. Check curated instant fallback coordinates
+    if (!targetLat || !targetLon) {
+      const fallbackCoords = getFallbackCoordinates(city, area);
+      if (fallbackCoords) {
+        targetLat = fallbackCoords.lat;
+        targetLon = fallbackCoords.lon;
+      }
+    }
+
+    // 3. Resolve latitude/longitude from country-state-city database if still null
     if (!targetLat || !targetLon) {
       if (countryCode && stateCode && city) {
         const stateCities = City.getCitiesOfState(countryCode, stateCode);
@@ -850,26 +883,26 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 4. Default global coordinates based on country or capital if geocoding returns null
+    // 4. Resolve state/province or country center coordinates worldwide if still null
     if (!targetLat || !targetLon) {
-      if (countryCode === "US") {
-        targetLat = 40.7128;
-        targetLon = -74.006;
-      } else if (countryCode === "GB") {
-        targetLat = 51.5074;
-        targetLon = -0.1278;
-      } else if (countryCode === "AE") {
-        targetLat = 25.2048;
-        targetLon = 55.2708;
-      } else if (countryCode === "SG") {
-        targetLat = 1.3521;
-        targetLon = 103.8198;
-      } else if (countryCode === "IN") {
-        targetLat = 28.6139;
-        targetLon = 77.209;
-      } else {
-        targetLat = 23.7937;
-        targetLon = 90.4043;
+      if (countryCode && stateCode) {
+        const stateObj = State.getStateByCodeAndCountry(stateCode, countryCode);
+        if (stateObj && stateObj.latitude && stateObj.longitude) {
+          targetLat = parseFloat(stateObj.latitude);
+          targetLon = parseFloat(stateObj.longitude);
+        }
+      }
+      if (!targetLat || !targetLon) {
+        const countryObj = Country.getCountryByCode(countryCode);
+        if (countryObj && countryObj.latitude && countryObj.longitude) {
+          targetLat = parseFloat(countryObj.latitude);
+          targetLon = parseFloat(countryObj.longitude);
+        }
+      }
+      // Ultimate baseline fallback
+      if (!targetLat || !targetLon) {
+        targetLat = 23.8103;
+        targetLon = 90.4125;
       }
     }
 

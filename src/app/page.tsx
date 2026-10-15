@@ -258,11 +258,11 @@ export default function DashboardPage() {
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col font-sans" suppressHydrationWarning>
+      <div className="min-h-screen bg-[#f8fafc] dark:bg-[#090d16] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200" suppressHydrationWarning>
         <Navbar />
         <main className="flex-1 max-w-[1560px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-center justify-center space-y-4">
           <div className="h-8 w-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm font-semibold text-slate-600">
+          <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">
             Initializing LeadGen Pro Workspace...
           </p>
         </main>
@@ -271,7 +271,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col font-sans" suppressHydrationWarning>
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#090d16] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200" suppressHydrationWarning>
       {/* Top Clean Navbar */}
       <Navbar />
 
@@ -287,57 +287,57 @@ export default function DashboardPage() {
         {/* Quick Analytics Cards Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {/* Card 1: Total Leads */}
-          <div className="p-4 rounded-xl border border-slate-200 bg-white shadow-xs space-y-1">
-            <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] shadow-xs space-y-1 transition-colors duration-200">
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
               <span>Total Leads</span>
-              <Users className="w-4 h-4 text-blue-600" />
+              <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             </div>
-            <div className="text-2xl font-bold text-slate-900 tracking-tight">
+            <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
               {totalLeads}
             </div>
-            <div className="text-[11px] text-slate-500">
+            <div className="text-[11px] text-slate-500 dark:text-slate-400">
               In target geographic zone
             </div>
           </div>
 
           {/* Card 2: Without Website (High Priority Cold Outreach) */}
-          <div className="p-4 rounded-xl border border-red-200 bg-red-50/70 shadow-xs space-y-1">
-            <div className="flex items-center justify-between text-xs text-red-700 font-semibold">
+          <div className="p-4 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50/70 dark:bg-red-950/30 shadow-xs space-y-1 transition-colors duration-200">
+            <div className="flex items-center justify-between text-xs text-red-700 dark:text-red-300 font-semibold">
               <span>Without Website</span>
-              <GlobeX className="w-4 h-4 text-red-600" />
+              <GlobeX className="w-4 h-4 text-red-600 dark:text-red-400" />
             </div>
-            <div className="text-2xl font-bold text-red-700 tracking-tight">
+            <div className="text-2xl font-bold text-red-700 dark:text-red-400 tracking-tight">
               {noWebsiteLeads}
             </div>
-            <div className="text-[11px] text-red-600/80 font-medium">
+            <div className="text-[11px] text-red-600/80 dark:text-red-300/80 font-medium">
               Prime cold outreach prospects
             </div>
           </div>
 
           {/* Card 3: Has Website */}
-          <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/60 shadow-xs space-y-1">
-            <div className="flex items-center justify-between text-xs text-emerald-700 font-semibold">
+          <div className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-950/30 shadow-xs space-y-1 transition-colors duration-200">
+            <div className="flex items-center justify-between text-xs text-emerald-700 dark:text-emerald-300 font-semibold">
               <span>Has Website</span>
-              <Globe2 className="w-4 h-4 text-emerald-600" />
+              <Globe2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <div className="text-2xl font-bold text-emerald-800 tracking-tight">
+            <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-300 tracking-tight">
               {hasWebsiteLeads}
             </div>
-            <div className="text-[11px] text-emerald-700/80">
+            <div className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
               Established web presence
             </div>
           </div>
 
           {/* Card 4: Contactable Leads */}
-          <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/60 shadow-xs space-y-1">
-            <div className="flex items-center justify-between text-xs text-blue-700 font-semibold">
+          <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/60 dark:bg-blue-950/30 shadow-xs space-y-1 transition-colors duration-200">
+            <div className="flex items-center justify-between text-xs text-blue-700 dark:text-blue-300 font-semibold">
               <span>Contactable</span>
-              <PhoneCall className="w-4 h-4 text-blue-600" />
+              <PhoneCall className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             </div>
-            <div className="text-2xl font-bold text-blue-800 tracking-tight">
+            <div className="text-2xl font-bold text-blue-800 dark:text-blue-300 tracking-tight">
               {withPhoneLeads + withEmailLeads}
             </div>
-            <div className="text-[11px] text-blue-700/80">
+            <div className="text-[11px] text-blue-700/80 dark:text-blue-400/80">
               {withPhoneLeads} Phones • {withEmailLeads} Emails
             </div>
           </div>
@@ -352,12 +352,12 @@ export default function DashboardPage() {
       </main>
 
       {/* Clean Footer */}
-      <footer className="w-full border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500 mt-12">
+      <footer className="w-full border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] py-6 text-center text-xs text-slate-500 dark:text-slate-400 mt-12 transition-colors duration-200">
         <div className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="font-medium text-slate-600">
+          <p className="font-medium text-slate-600 dark:text-slate-300">
             © 2026 LeadGen Pro. Worldwide Business Directory & Lead Discovery Engine.
           </p>
-          <p className="text-slate-500">
+          <p className="text-slate-500 dark:text-slate-400">
             Clean, verified B2B leads for high-conversion web development & marketing outreach.
           </p>
         </div>

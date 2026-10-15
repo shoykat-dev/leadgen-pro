@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   :root {
-    --background: #ffffff;
+    color-scheme: light dark;
+    --background: #f8fafc;
     --foreground: #0f172a;
     --card: #ffffff;
     --card-foreground: #0f172a;
@@ -10,7 +13,7 @@
     --popover-foreground: #0f172a;
     --primary: #2563eb;
     --primary-foreground: #ffffff;
-    --secondary: #f8fafc;
+    --secondary: #f1f5f9;
     --secondary-foreground: #1e293b;
     --muted: #f1f5f9;
     --muted-foreground: #64748b;
@@ -23,6 +26,29 @@
     --ring: #2563eb;
     --radius: 0.75rem;
   }
+
+  .dark {
+    color-scheme: dark;
+    --background: #090d16;
+    --foreground: #f8fafc;
+    --card: #0f172a;
+    --card-foreground: #f8fafc;
+    --popover: #0f172a;
+    --popover-foreground: #f8fafc;
+    --primary: #3b82f6;
+    --primary-foreground: #ffffff;
+    --secondary: #1e293b;
+    --secondary-foreground: #f8fafc;
+    --muted: #1e293b;
+    --muted-foreground: #94a3b8;
+    --accent: #1e293b;
+    --accent-foreground: #f8fafc;
+    --destructive: #f87171;
+    --destructive-foreground: #ffffff;
+    --border: #1e293b;
+    --input: #1e293b;
+    --ring: #3b82f6;
+  }
 }
 
 body {
@@ -30,9 +56,10 @@ body {
   color: var(--foreground);
   min-height: 100vh;
   font-feature-settings: "rlig" 1, "calt" 1;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Custom modern scrollbar for clean white theme */
+/* Custom modern scrollbar for clean theme */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -42,13 +69,25 @@ body {
   background: #f8fafc;
 }
 
+.dark ::-webkit-scrollbar-track {
+  background: #0b0f19;
+}
+
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 9999px;
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 
 /* Clean UI utility classes */
@@ -58,6 +97,12 @@ body {
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
 }
 
+.dark .card-clean {
+  background: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+}
+
 .card-clean-hover {
   transition: all 0.2s ease-in-out;
 }
@@ -65,6 +110,11 @@ body {
 .card-clean-hover:hover {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.07);
   border-color: #cbd5e1;
+}
+
+.dark .card-clean-hover:hover {
+  border-color: #334155;
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.5);
 }
 
 /* Custom styled horizontal scrollbar for mobile table responsiveness */
@@ -81,13 +131,76 @@ body {
   border-radius: 9999px;
 }
 
+.dark .custom-table-scrollbar::-webkit-scrollbar-track {
+  background: #0b0f19;
+}
+
 .custom-table-scrollbar::-webkit-scrollbar-thumb {
   background: #94a3b8;
   border-radius: 9999px;
 }
 
+.dark .custom-table-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
 .custom-table-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #64748b;
+}
+
+.dark .custom-table-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Clerk elements dark mode styling */
+.dark .cl-card {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+.dark .cl-headerTitle {
+  color: #f8fafc !important;
+}
+
+.dark .cl-headerSubtitle,
+.dark .cl-dividerText,
+.dark .cl-formFieldLabel {
+  color: #94a3b8 !important;
+}
+
+.dark .cl-formFieldInput {
+  background-color: #090d16 !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+.dark .cl-socialButtonsBlockButton {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+.dark .cl-socialButtonsBlockButton:hover {
+  background-color: #334155 !important;
+}
+
+.dark .cl-userButtonPopoverCard {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+.dark .cl-userButtonPopoverActionButton {
+  color: #e2e8f0 !important;
+}
+
+.dark .cl-userButtonPopoverActionButton:hover {
+  background-color: #1e293b !important;
+}
+
+.dark .cl-userPreviewSecondaryIdentifier {
+  color: #94a3b8 !important;
 }
 
 /* Completely remove and conceal Clerk Development Mode watermarks and badges */

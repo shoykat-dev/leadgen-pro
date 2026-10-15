@@ -1,13 +1,18 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { Country, State, City } from "country-state-city";
+import { Country } from "country-state-city";
 import { Search, Loader2, Globe, Layers, MapPin, Building2, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BusinessLead } from "@/app/api/places/route";
 import { SearchableSelect, SelectOption } from "@/components/searchable-select";
-import { ALL_BUSINESS_SERVICES, getAreasForCity, getCountryFlag } from "@/lib/directory-data";
+import { ALL_BUSINESS_SERVICES } from "@/lib/directory-data";
 import { CountryFlag } from "@/components/country-flag";
+import {
+  getStatesForCountry,
+  getCitiesForState,
+  getAreasForHierarchyCity,
+} from "@/lib/location-hierarchy";
 
 interface SearchPanelProps {
   onSearch: (params: {
@@ -31,7 +36,7 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
 
   // Selected values
   const [selectedCountryCode, setSelectedCountryCode] = useState<string>("BD");
-  const [selectedStateCode, setSelectedStateCode] = useState<string>("13"); // Dhaka
+  const [selectedStateCode, setSelectedStateCode] = useState<string>("DHAKA");
   const [selectedCityName, setSelectedCityName] = useState<string>("Dhaka");
   const [selectedArea, setSelectedArea] = useState<string>("Banani");
   const [selectedCategory, setSelectedCategory] = useState<string>("restaurant");
@@ -46,51 +51,25 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
     }));
   }, [countries]);
 
-  // States list based on country (with automatic fallback for countries without ISO subdivisions)
+  // States/Divisions list based on country using our authoritative verified hierarchy
   const states = useMemo(() => {
     if (!selectedCountryCode) return [];
-    const countryStates = State.getStatesOfCountry(selectedCountryCode);
-    if (countryStates.length > 0) return countryStates;
-
-    const countryObj = countries.find((c) => c.isoCode === selectedCountryCode);
-    const countryName = countryObj?.name || selectedCountryCode;
-    return [
-      {
-        isoCode: selectedCountryCode,
-        name: `${countryName} (National Region)`,
-        countryCode: selectedCountryCode,
-      },
-    ];
-  }, [selectedCountryCode, countries]);
+    return getStatesForCountry(selectedCountryCode);
+  }, [selectedCountryCode]);
 
   const stateOptions: SelectOption[] = useMemo(() => {
     return states.map((s) => ({
-      value: s.isoCode,
+      value: s.code,
       label: s.name,
-      subLabel: s.isoCode,
+      subLabel: s.code,
     }));
   }, [states]);
 
-  // Cities list based on country and state
+  // Cities/Districts list based on country and state
   const cities = useMemo(() => {
     if (!selectedCountryCode || !selectedStateCode) return [];
-    const stateCities = City.getCitiesOfState(selectedCountryCode, selectedStateCode);
-    if (stateCities.length > 0) {
-      return stateCities;
-    }
-    // Fallback if country-state-city doesn't have cities for a specific state or micro-nation
-    const stateObj = states.find((s) => s.isoCode === selectedStateCode);
-    const name = stateObj?.name?.replace(" (National Region)", "") || "Central";
-    return [
-      {
-        name,
-        countryCode: selectedCountryCode,
-        stateCode: selectedStateCode,
-        latitude: undefined,
-        longitude: undefined,
-      },
-    ];
-  }, [selectedCountryCode, selectedStateCode, states]);
+    return getCitiesForState(selectedCountryCode, selectedStateCode);
+  }, [selectedCountryCode, selectedStateCode]);
 
   const cityOptions: SelectOption[] = useMemo(() => {
     return cities.map((c) => ({
@@ -99,10 +78,10 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
     }));
   }, [cities]);
 
-  // Areas list based on selected city
+  // Areas/Thanas/Upazilas list based on selected city
   const areaList = useMemo(() => {
-    return getAreasForCity(selectedCityName);
-  }, [selectedCityName]);
+    return getAreasForHierarchyCity(selectedCountryCode, selectedStateCode, selectedCityName);
+  }, [selectedCountryCode, selectedStateCode, selectedCityName]);
 
   const areaOptions: SelectOption[] = useMemo(() => {
     return areaList.map((a) => ({
@@ -125,58 +104,45 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
   // Handle Country change
   const handleCountryChange = (countryCode: string) => {
     setSelectedCountryCode(countryCode);
-    const countryObj = countries.find((c) => c.isoCode === countryCode);
-    const countryName = countryObj?.name || countryCode;
-    const countryStates = State.getStatesOfCountry(countryCode);
+    const newStates = getStatesForCountry(countryCode);
 
-    if (countryStates.length > 0) {
-      const firstState = countryStates[0].isoCode;
+    if (newStates.length > 0) {
+      const firstState = newStates[0].code;
       setSelectedStateCode(firstState);
 
-      const stateCities = City.getCitiesOfState(countryCode, firstState);
-      if (stateCities.length > 0) {
-        const firstCity = stateCities[0].name;
+      const newCities = getCitiesForState(countryCode, firstState);
+      if (newCities.length > 0) {
+        const firstCity = newCities[0].name;
         setSelectedCityName(firstCity);
-        const cityAreas = getAreasForCity(firstCity);
-        setSelectedArea(cityAreas[0] || "Central");
+        const newAreas = getAreasForHierarchyCity(countryCode, firstState, firstCity);
+        setSelectedArea(newAreas[0] || "Downtown");
       } else {
-        const stateName = countryStates[0].name;
-        setSelectedCityName(stateName);
-        const cityAreas = getAreasForCity(stateName);
-        setSelectedArea(cityAreas[0] || "Central");
+        setSelectedCityName(newStates[0].name);
+        setSelectedArea("Downtown");
       }
-    } else {
-      // Micro-nation / city-state fallback
-      setSelectedStateCode(countryCode);
-      setSelectedCityName(countryName);
-      const cityAreas = getAreasForCity(countryName);
-      setSelectedArea(cityAreas[0] || "Downtown");
     }
   };
 
-  // Handle State change
+  // Handle State / Division change
   const handleStateChange = (stateCode: string) => {
     setSelectedStateCode(stateCode);
-    const stateCities = City.getCitiesOfState(selectedCountryCode, stateCode);
-    if (stateCities.length > 0) {
-      const firstCity = stateCities[0].name;
+    const newCities = getCitiesForState(selectedCountryCode, stateCode);
+    if (newCities.length > 0) {
+      const firstCity = newCities[0].name;
       setSelectedCityName(firstCity);
-      const cityAreas = getAreasForCity(firstCity);
-      setSelectedArea(cityAreas[0] || "Central");
+      const newAreas = getAreasForHierarchyCity(selectedCountryCode, stateCode, firstCity);
+      setSelectedArea(newAreas[0] || "Downtown");
     } else {
-      const stateObj = states.find((s) => s.isoCode === stateCode);
-      const name = stateObj?.name?.replace(" (National Region)", "") || "Central";
-      setSelectedCityName(name);
-      const cityAreas = getAreasForCity(name);
-      setSelectedArea(cityAreas[0] || "Downtown");
+      setSelectedCityName("Central");
+      setSelectedArea("Downtown");
     }
   };
 
-  // Handle City change
+  // Handle City / District change
   const handleCityChange = (cityName: string) => {
     setSelectedCityName(cityName);
-    const cityAreas = getAreasForCity(cityName);
-    setSelectedArea(cityAreas[0] || "Central");
+    const newAreas = getAreasForHierarchyCity(selectedCountryCode, selectedStateCode, cityName);
+    setSelectedArea(newAreas[0] || "Downtown");
   };
 
   // Run Search
@@ -191,10 +157,7 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
         (c) => c.isoCode === selectedCountryCode
       );
       const selectedStateObj = states.find(
-        (s) => s.isoCode === selectedStateCode
-      );
-      const selectedCityObj = cities.find(
-        (c) => c.name === selectedCityName
+        (s) => s.code === selectedStateCode
       );
       const categoryObj = ALL_BUSINESS_SERVICES.find(
         (cat) => cat.id === selectedCategory
@@ -208,8 +171,8 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
         city: selectedCityName || selectedStateObj?.name || "Dhaka",
         area: selectedArea.trim() || selectedCityName,
         category: selectedCategory,
-        lat: selectedCityObj?.latitude ? parseFloat(selectedCityObj.latitude) : null,
-        lon: selectedCityObj?.longitude ? parseFloat(selectedCityObj.longitude) : null,
+        lat: null,
+        lon: null,
       };
 
       const res = await fetch("/api/places", {
@@ -252,19 +215,19 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
     [countries, selectedCountryCode]
   );
   const selectedStateObj = useMemo(
-    () => states.find((s) => s.isoCode === selectedStateCode),
+    () => states.find((s) => s.code === selectedStateCode),
     [states, selectedStateCode]
   );
 
   return (
-    <div className="w-full rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-sm">
+    <div className="w-full rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#0f172a] p-5 sm:p-6 shadow-sm transition-colors duration-200">
       <form onSubmit={handleSearch}>
         {/* 5 Cascading Searchable Selects */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-3.5 xl:gap-4">
           {/* 1. Country Dropdown */}
           <SearchableSelect
             label="Country"
-            icon={<Globe className="w-3.5 h-3.5 text-blue-600" />}
+            icon={<Globe className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
             placeholder="Select Country..."
             searchPlaceholder="Search country name or code..."
             value={selectedCountryCode}
@@ -273,34 +236,34 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
             showSubLabelInTrigger={true}
           />
 
-          {/* 2. State/Region Dropdown */}
+          {/* 2. State / Region Dropdown */}
           <SearchableSelect
             label="State / Region"
-            icon={<Layers className="w-3.5 h-3.5 text-indigo-600" />}
+            icon={<Layers className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />}
             countBadge={
-              <span className="text-[10px] font-semibold bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded-full border border-indigo-200/50 whitespace-nowrap shrink-0">
+              <span className="text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded-full border border-indigo-200/50 dark:border-indigo-900/50 whitespace-nowrap shrink-0">
                 {states.length} Regions
               </span>
             }
-            placeholder="Select State/Region..."
-            searchPlaceholder="Search state or province..."
+            placeholder="Select State or Region..."
+            searchPlaceholder="Search state, province, or region..."
             value={selectedStateCode}
             onChange={handleStateChange}
             options={stateOptions}
             disabled={stateOptions.length === 0}
           />
 
-          {/* 3. City Dropdown */}
+          {/* 3. City / District Dropdown */}
           <SearchableSelect
-            label="City"
-            icon={<Building2 className="w-3.5 h-3.5 text-emerald-600" />}
+            label="City / District"
+            icon={<Building2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
             countBadge={
-              <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded-full border border-emerald-200/50 whitespace-nowrap shrink-0">
+              <span className="text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded-full border border-emerald-200/50 dark:border-emerald-900/50 whitespace-nowrap shrink-0">
                 {cities.length} Cities
               </span>
             }
-            placeholder="Select City..."
-            searchPlaceholder="Search city name..."
+            placeholder="Select City or District..."
+            searchPlaceholder="Search city or district name..."
             value={selectedCityName}
             onChange={handleCityChange}
             options={cityOptions}
@@ -310,9 +273,9 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
           {/* 4. Area / Neighborhood Dropdown (with custom typing option) */}
           <SearchableSelect
             label="Area / Neighborhood"
-            icon={<MapPin className="w-3.5 h-3.5 text-rose-500" />}
+            icon={<MapPin className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />}
             countBadge={
-              <span className="text-[10px] font-semibold bg-rose-50 text-rose-700 px-1.5 py-0.5 rounded-full border border-rose-200/50 whitespace-nowrap shrink-0">
+              <span className="text-[10px] font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 px-1.5 py-0.5 rounded-full border border-rose-200/50 dark:border-rose-900/50 whitespace-nowrap shrink-0">
                 {areaList.length} Areas
               </span>
             }
@@ -325,12 +288,12 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
             customInputPlaceholder="Type custom area and press Enter"
           />
 
-          {/* 5. Business Category / Service Dropdown (Comprehensive Real-World Services) */}
+          {/* 5. Business Category / Service Dropdown */}
           <SearchableSelect
             label="Service / Category"
-            icon={<Compass className="w-3.5 h-3.5 text-purple-600" />}
+            icon={<Compass className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />}
             countBadge={
-              <span className="text-[10px] font-semibold bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full border border-purple-200/50 whitespace-nowrap shrink-0">
+              <span className="text-[10px] font-semibold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded-full border border-purple-200/50 dark:border-purple-900/50 whitespace-nowrap shrink-0">
                 {categoryOptions.length} Services
               </span>
             }
@@ -343,35 +306,35 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
         </div>
 
         {/* Location Breakdown Strip (Country Flag, States count, Cities count, Areas count) */}
-        <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-slate-50/90 border border-slate-200/70 text-xs">
-          <div className="flex items-center gap-2 font-semibold text-slate-800">
+        <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-slate-50/90 dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-800 text-xs">
+          <div className="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-200">
             <CountryFlag code={selectedCountryCode} name={selectedCountryObj?.name} size="md" className="shadow-xs" />
-            <span className="font-bold text-slate-900">
+            <span className="font-bold text-slate-900 dark:text-white">
               {selectedCountryObj?.name || selectedCountryCode} Directory Hierarchy
             </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-indigo-700 font-semibold text-xs shadow-2xs">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-indigo-700 dark:text-indigo-400 font-semibold text-xs shadow-2xs">
               <Layers className="w-3.5 h-3.5 text-indigo-500" />
               <span><strong>{states.length}</strong> States / Regions</span>
             </span>
 
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-emerald-700 font-semibold text-xs shadow-2xs">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-400 font-semibold text-xs shadow-2xs">
               <Building2 className="w-3.5 h-3.5 text-emerald-500" />
-              <span><strong>{cities.length}</strong> Cities in {selectedStateObj?.name || selectedStateCode}</span>
+              <span><strong>{cities.length}</strong> Cities / Districts in {selectedStateObj?.name || selectedStateCode}</span>
             </span>
 
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-rose-700 font-semibold text-xs shadow-2xs">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-rose-700 dark:text-rose-400 font-semibold text-xs shadow-2xs">
               <MapPin className="w-3.5 h-3.5 text-rose-500" />
-              <span><strong>{areaList.length}</strong> Business Areas in {selectedCityName}</span>
+              <span><strong>{areaList.length}</strong> Areas / Neighborhoods in {selectedCityName}</span>
             </span>
           </div>
         </div>
 
         {/* Submit Button Row */}
-        <div className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100">
-          <p className="text-xs text-slate-500 flex items-center gap-1.5">
+        <div className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
             <span>Searchable directory across 190+ countries with verified phone, email, and websites</span>
           </p>

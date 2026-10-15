@@ -5,6 +5,7 @@ import { useUser, useClerk, UserButton } from "@clerk/nextjs";
 import { Zap, ChevronDown, LogOut, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AccountModal } from "@/components/account-modal";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Navbar() {
   const { user } = useUser();
@@ -28,7 +29,7 @@ export function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md shadow-xs">
+      <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#0f172a]/90 backdrop-blur-md shadow-xs transition-colors duration-200">
         <div className="max-w-[1560px] w-full mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3">
@@ -36,23 +37,26 @@ export function Navbar() {
               <Zap className="h-5 w-5 text-white" />
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="text-xl font-bold tracking-tight text-slate-900">
+              <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
                 LeadGen
               </span>
-              <span className="text-xl font-bold tracking-tight text-blue-600">
+              <span className="text-xl font-bold tracking-tight text-blue-600 dark:text-blue-400">
                 Pro
               </span>
             </div>
           </div>
 
-          {/* User profile & Sign Out controls */}
-          <div className="flex items-center gap-3 sm:gap-4">
+          {/* User profile & controls */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Theme / Night Mode Toggle */}
+            <ThemeToggle />
+
             {/* User chip / quick profile trigger */}
             <button
               type="button"
               suppressHydrationWarning
               onClick={() => setIsAccountOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 transition-all text-sm group"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-all text-sm group"
               title="Click to view Account Info"
             >
               {user?.imageUrl ? (
@@ -62,17 +66,17 @@ export function Navbar() {
                   className="w-6 h-6 rounded-full object-cover ring-1 ring-blue-500/40"
                 />
               ) : (
-                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-700">
+                <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-950 flex items-center justify-center text-xs font-semibold text-blue-700 dark:text-blue-300">
                   <UserIcon className="w-3.5 h-3.5" />
                 </div>
               )}
               <span
                 suppressHydrationWarning
-                className="font-medium text-slate-800 group-hover:text-slate-900 max-w-[120px] sm:max-w-[180px] truncate"
+                className="font-medium text-slate-800 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white max-w-[100px] sm:max-w-[180px] truncate"
               >
                 {displayName}
               </span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-700 transition-transform group-hover:translate-y-0.5" />
+              <ChevronDown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-transform group-hover:translate-y-0.5" />
             </button>
 
             {/* Direct Sign Out Button */}
@@ -80,14 +84,15 @@ export function Navbar() {
               variant="outline"
               size="sm"
               onClick={handleSignOut}
-              className="hidden sm:inline-flex items-center gap-1.5 border-slate-200 bg-white hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-slate-700 transition-colors shadow-xs"
+              className="inline-flex items-center gap-1.5 border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/90 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900 text-slate-700 dark:text-slate-300 transition-colors shadow-xs px-2.5 sm:px-3 h-8 sm:h-9"
+              title="Sign Out"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Sign Out</span>
+              <span className="hidden sm:inline">Sign Out</span>
             </Button>
 
             {/* Clerk UserButton */}
-            <div className="flex items-center pl-1 border-l border-slate-200">
+            <div className="flex items-center pl-1 border-l border-slate-200 dark:border-slate-800">
               <UserButton
                 appearance={{
                   elements: {

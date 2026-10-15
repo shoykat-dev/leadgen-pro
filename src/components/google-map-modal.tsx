@@ -54,18 +54,18 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-2xl text-slate-900 flex flex-col max-h-[94vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="relative w-full max-w-4xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] overflow-hidden shadow-2xl text-slate-900 dark:text-slate-100 flex flex-col max-h-[94vh]">
         {/* Modal Top Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-200 bg-slate-50">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90">
           <div className="flex items-center gap-3">
             {/* Map Pin Icon */}
-            <div className="h-10 w-10 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center text-rose-600 shadow-xs">
+            <div className="h-10 w-10 rounded-xl bg-rose-100 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 flex items-center justify-center text-rose-600 dark:text-rose-400 shadow-xs">
               <MapPin className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 max-w-[280px] sm:max-w-[460px] truncate">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white max-w-[280px] sm:max-w-[460px] truncate">
                   {lead.name}
                 </h3>
                 {lead.hasWebsite ? (
@@ -78,17 +78,17 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5 truncate max-w-[420px] sm:max-w-[600px]">
-                <span className="text-blue-600 font-semibold">{lead.category}</span>
+              <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5 truncate max-w-[420px] sm:max-w-[600px]">
+                <span className="text-blue-600 dark:text-blue-400 font-semibold">{lead.category}</span>
                 <span>•</span>
-                <span className="text-slate-600">{lead.address}</span>
+                <span className="text-slate-600 dark:text-slate-300">{lead.address}</span>
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors"
+            className="p-2 rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -96,10 +96,10 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
         </div>
 
         {/* Map Toolbar (Layers Switcher & Quick Launchers) */}
-        <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-slate-200 text-xs">
+        <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-xs">
           {/* Map Layer Switcher */}
           <div className="flex items-center gap-1">
-            <span className="text-slate-500 text-[11px] mr-1 hidden sm:inline flex items-center gap-1">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] mr-1 hidden sm:inline flex items-center gap-1">
               <Layers className="w-3 h-3 text-slate-400" />
               Layer:
             </span>
@@ -108,7 +108,7 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
               className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                 mapMode === "m"
                   ? "bg-blue-600 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
               Default Map
@@ -118,7 +118,7 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
               className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                 mapMode === "k"
                   ? "bg-blue-600 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
               Satellite
@@ -128,7 +128,7 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
               className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                 mapMode === "p"
                   ? "bg-blue-600 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
               }`}
             >
               Terrain
@@ -139,13 +139,13 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
           <div className="flex items-center gap-2">
             <button
               onClick={handleCopyLink}
-              className="text-slate-600 hover:text-slate-900 text-[11px] flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 transition-colors"
+              className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-[11px] flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               title="Copy Google Maps link to clipboard"
             >
               {isCopied ? (
                 <>
-                  <Check className="w-3 h-3 text-emerald-600" />
-                  <span className="text-emerald-700 font-medium">Copied!</span>
+                  <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                  <span className="text-emerald-700 dark:text-emerald-400 font-medium">Copied!</span>
                 </>
               ) : (
                 <>
@@ -159,7 +159,7 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
               href={directMapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 text-[11px] font-semibold flex items-center gap-1 hover:underline"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-[11px] font-semibold flex items-center gap-1 hover:underline"
             >
               <span>Full Google Maps</span>
               <ExternalLink className="w-3 h-3" />
@@ -182,13 +182,13 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
           />
 
           {/* Floating Verified Business Information Card on top of Map */}
-          <div className="absolute top-3 left-3 z-10 max-w-[280px] sm:max-w-xs rounded-xl bg-white/95 backdrop-blur-md p-3 shadow-xl border border-slate-200/90 pointer-events-auto">
+          <div className="absolute top-3 left-3 z-10 max-w-[280px] sm:max-w-xs rounded-xl bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-md p-3 shadow-xl border border-slate-200/90 dark:border-slate-700 pointer-events-auto">
             <div className="flex items-start justify-between gap-1.5 mb-1.5">
               <div>
-                <span className="text-[10px] font-semibold tracking-wider uppercase text-blue-600 block">
+                <span className="text-[10px] font-semibold tracking-wider uppercase text-blue-600 dark:text-blue-400 block">
                   {lead.category}
                 </span>
-                <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug line-clamp-2">
+                <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug line-clamp-2">
                   {lead.name}
                 </h4>
               </div>
@@ -203,33 +203,33 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
               )}
             </div>
 
-            <p className="text-[11px] text-slate-600 flex items-start gap-1 leading-tight mb-2">
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 flex items-start gap-1 leading-tight mb-2">
               <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
               <span className="line-clamp-2">{lead.address}</span>
             </p>
 
-            <div className="border-t border-slate-100 pt-1.5 space-y-1 text-[11px]">
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-1.5 space-y-1 text-[11px]">
               {lead.phone && lead.phone !== "N/A" && (
-                <div className="flex items-center justify-between text-slate-700">
-                  <span className="flex items-center gap-1 text-slate-500 text-[10px]">
+                <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
+                  <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-[10px]">
                     <Phone className="w-3 h-3 text-blue-500" /> Phone:
                   </span>
                   <a
                     href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`}
-                    className="font-mono font-medium hover:text-blue-600 text-[10px]"
+                    className="font-mono font-medium hover:text-blue-600 dark:hover:text-blue-400 text-[10px]"
                   >
                     {lead.phone}
                   </a>
                 </div>
               )}
               {lead.email && lead.email !== "N/A" && (
-                <div className="flex items-center justify-between text-slate-700">
-                  <span className="flex items-center gap-1 text-slate-500 text-[10px]">
+                <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
+                  <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-[10px]">
                     <Mail className="w-3 h-3 text-indigo-500" /> Email:
                   </span>
                   <a
                     href={`mailto:${lead.email}`}
-                    className="font-mono text-blue-600 hover:underline text-[10px] truncate max-w-[150px]"
+                    className="font-mono text-blue-600 dark:text-blue-400 hover:underline text-[10px] truncate max-w-[150px]"
                   >
                     {lead.email}
                   </a>
@@ -240,49 +240,49 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
         </div>
 
         {/* Business Quick Details & External Actions */}
-        <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 space-y-3">
+        <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/90 border-t border-slate-200 dark:border-slate-800 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
             {/* Phone */}
-            <div className="p-2.5 rounded-xl border border-slate-200 bg-white flex items-center gap-2 shadow-xs">
-              <Phone className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+            <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center gap-2 shadow-xs">
+              <Phone className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
               <div className="truncate">
-                <span className="text-slate-400 block text-[10px]">Phone Number</span>
+                <span className="text-slate-400 dark:text-slate-500 block text-[10px]">Phone Number</span>
                 {lead.phone && lead.phone !== "N/A" ? (
                   <a
                     href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`}
-                    className="text-slate-800 hover:text-blue-600 font-mono font-medium"
+                    className="text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 font-mono font-medium"
                   >
                     {lead.phone}
                   </a>
                 ) : (
-                  <span className="text-slate-400 font-mono">N/A</span>
+                  <span className="text-slate-400 dark:text-slate-500 font-mono">N/A</span>
                 )}
               </div>
             </div>
 
             {/* Email */}
-            <div className="p-2.5 rounded-xl border border-slate-200 bg-white flex items-center gap-2 shadow-xs">
-              <Mail className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+            <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center gap-2 shadow-xs">
+              <Mail className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
               <div className="truncate">
-                <span className="text-slate-400 block text-[10px]">Email Address</span>
+                <span className="text-slate-400 dark:text-slate-500 block text-[10px]">Email Address</span>
                 {lead.email && lead.email !== "N/A" ? (
                   <a
                     href={`mailto:${lead.email}`}
-                    className="text-blue-600 hover:underline font-mono"
+                    className="text-blue-600 dark:text-blue-400 hover:underline font-mono"
                   >
                     {lead.email}
                   </a>
                 ) : (
-                  <span className="text-slate-400 font-mono">N/A</span>
+                  <span className="text-slate-400 dark:text-slate-500 font-mono">N/A</span>
                 )}
               </div>
             </div>
 
             {/* Website */}
-            <div className="p-2.5 rounded-xl border border-slate-200 bg-white flex items-center gap-2 shadow-xs">
-              <Globe className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center gap-2 shadow-xs">
+              <Globe className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <div className="truncate">
-                <span className="text-slate-400 block text-[10px]">Website Status</span>
+                <span className="text-slate-400 dark:text-slate-500 block text-[10px]">Website Status</span>
                 {lead.website ? (
                   <a
                     href={
@@ -292,12 +292,12 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
                     }
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-emerald-700 hover:underline truncate block font-medium"
+                    className="text-emerald-700 dark:text-emerald-400 hover:underline truncate block font-medium"
                   >
                     Visit Website
                   </a>
                 ) : (
-                  <span className="text-red-600 font-medium">None (Cold Lead)</span>
+                  <span className="text-red-600 dark:text-red-400 font-medium">None (Cold Lead)</span>
                 )}
               </div>
             </div>
@@ -305,7 +305,7 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
 
           {/* Action Buttons Row */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 pt-1">
-            <span className="text-xs text-slate-500 hidden sm:inline font-mono">
+            <span className="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline font-mono">
               GPS: {lead.lat.toFixed(5)}, {lead.lon.toFixed(5)}
             </span>
 
@@ -314,7 +314,7 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
                 variant="outline"
                 size="sm"
                 onClick={onClose}
-                className="border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
+                className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
               >
                 Close
               </Button>
@@ -323,7 +323,7 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
                 asChild
                 variant="outline"
                 size="sm"
-                className="border-slate-200 bg-white text-slate-700 hover:bg-slate-100 inline-flex items-center gap-1.5"
+                className="border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 inline-flex items-center gap-1.5"
               >
                 <a
                   href={directionsUrl}
@@ -331,7 +331,7 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
                   rel="noopener noreferrer"
                   title="Get driving directions in Google Maps"
                 >
-                  <Compass className="w-3.5 h-3.5 text-blue-600" />
+                  <Compass className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                   <span>Directions</span>
                 </a>
               </Button>

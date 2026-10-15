@@ -178,13 +178,13 @@ export function DataTableView({
       {/* Top Header & Action Row */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-1">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
             Found {totalCount} businesses in {displayLocation}
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5 flex items-center gap-1.5">
-            <span className="text-blue-600 font-medium">Targeting {categoryLabel}</span>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
+            <span className="text-blue-600 dark:text-blue-400 font-medium">Targeting {categoryLabel}</span>
             <span>•</span>
-            <span className="text-slate-500 flex items-center gap-1">
+            <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
               <MapPin className="w-3.5 h-3.5 text-rose-500 inline" />
               Direct Google Maps Geolocation
             </span>
@@ -194,13 +194,13 @@ export function DataTableView({
         {/* Action Controls: View Switcher & CSV Export */}
         <div className="flex items-center gap-2.5 flex-wrap self-start md:self-auto">
           {/* View Mode Toggle */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
             <button
               onClick={() => setViewMode("table")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 viewMode === "table"
-                  ? "bg-white text-slate-900 shadow-xs border border-slate-200"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs border border-slate-200 dark:border-slate-600"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
               }`}
               title="Table View (List with details)"
             >
@@ -213,7 +213,7 @@ export function DataTableView({
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 viewMode === "split"
                   ? "bg-blue-600 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
               }`}
               title="Split View (List + Interactive Google Map)"
             >
@@ -226,7 +226,7 @@ export function DataTableView({
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 viewMode === "map"
                   ? "bg-rose-600 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
+                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
               }`}
               title="Google Map View (Full screen map with lead cards)"
             >
@@ -241,16 +241,16 @@ export function DataTableView({
             disabled={filteredLeads.length === 0}
             variant="outline"
             size="sm"
-            className="h-10 px-4 rounded-xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 flex items-center gap-2 shadow-xs"
+            className="h-10 px-4 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 shadow-xs"
           >
-            <Download className="w-4 h-4 text-blue-600" />
+            <Download className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <span>Export to CSV ({filteredLeads.length})</span>
           </Button>
         </div>
       </div>
 
       {/* Filter Tabs & Search Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2 rounded-xl bg-white border border-slate-200 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2 rounded-xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xs">
         {/* Filter Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
           {/* All */}
@@ -258,8 +258,8 @@ export function DataTableView({
             onClick={() => setFilter("all")}
             className={`px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
               filter === "all"
-                ? "bg-slate-900 text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                ? "bg-slate-900 dark:bg-blue-600 text-white shadow-xs"
+                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
             All ({totalCount})
@@ -270,8 +270,8 @@ export function DataTableView({
             onClick={() => setFilter("with_website")}
             className={`px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
               filter === "with_website"
-                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-xs"
-                : "text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/50"
+                ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-xs"
+                : "text-slate-600 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
             }`}
           >
             With Website ({withWebsiteCount})
@@ -282,8 +282,8 @@ export function DataTableView({
             onClick={() => setFilter("without_website")}
             className={`px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
               filter === "without_website"
-                ? "bg-red-50 text-red-700 border border-red-200 shadow-xs ring-1 ring-red-400"
-                : "text-slate-600 hover:text-red-700 hover:bg-red-50/50"
+                ? "bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 shadow-xs ring-1 ring-red-400"
+                : "text-slate-600 dark:text-slate-300 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50/50 dark:hover:bg-red-950/30"
             }`}
           >
             Without Website ({withoutWebsiteCount})
@@ -292,22 +292,22 @@ export function DataTableView({
 
         {/* In-table Quick Search Input */}
         <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
           <input
             type="text"
             value={tableSearch}
             onChange={(e) => setTableSearch(e.target.value)}
             placeholder="Search within results..."
-            className="w-full h-9 rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+            className="w-full h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-8 pr-3 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
           />
         </div>
       </div>
 
       {/* 1. TABLE VIEW */}
       {viewMode === "table" && (
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] shadow-xs overflow-hidden">
           {/* Mobile swipe helper badge */}
-          <div className="md:hidden px-4 py-2.5 bg-gradient-to-r from-blue-50/80 via-slate-50 to-blue-50/80 border-b border-slate-200 flex items-center justify-between text-xs text-slate-600 font-medium">
+          <div className="md:hidden px-4 py-2.5 bg-gradient-to-r from-blue-50/80 dark:from-blue-950/40 via-slate-50 dark:via-slate-900 to-blue-50/80 dark:to-blue-950/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-medium">
             <span className="flex items-center gap-2">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
@@ -315,7 +315,7 @@ export function DataTableView({
               </span>
               <span>Swipe table horizontally to view all fields</span>
             </span>
-            <span className="text-blue-600 font-bold flex items-center gap-1 text-[11px] bg-white px-2.5 py-0.5 rounded-full border border-blue-200 shadow-2xs">
+            <span className="text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1 text-[11px] bg-white dark:bg-slate-800 px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-slate-700 shadow-2xs">
               ← Drag to Scroll →
             </span>
           </div>
@@ -323,23 +323,23 @@ export function DataTableView({
           <div className="w-full overflow-x-auto custom-table-scrollbar">
             <Table className="min-w-[1100px] w-full">
               <TableHeader>
-                <TableRow className="border-b border-slate-200 bg-slate-50/90 hover:bg-slate-50/90">
-                  <TableHead className="min-w-[240px] text-slate-700 font-semibold text-xs uppercase tracking-wider whitespace-nowrap py-3.5 px-4">
+                <TableRow className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 hover:bg-slate-50/90 dark:hover:bg-slate-900/90">
+                  <TableHead className="min-w-[240px] text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider whitespace-nowrap py-3.5 px-4">
                     Business Name
                   </TableHead>
-                  <TableHead className="min-w-[170px] text-slate-700 font-semibold text-xs uppercase tracking-wider whitespace-nowrap py-3.5 px-4">
+                  <TableHead className="min-w-[170px] text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider whitespace-nowrap py-3.5 px-4">
                     Phone Number
                   </TableHead>
-                  <TableHead className="min-w-[200px] text-slate-700 font-semibold text-xs uppercase tracking-wider whitespace-nowrap py-3.5 px-4">
+                  <TableHead className="min-w-[200px] text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider whitespace-nowrap py-3.5 px-4">
                     Email / Contact
                   </TableHead>
-                  <TableHead className="min-w-[240px] text-slate-700 font-semibold text-xs uppercase tracking-wider whitespace-nowrap py-3.5 px-4">
+                  <TableHead className="min-w-[240px] text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider whitespace-nowrap py-3.5 px-4">
                     Address
                   </TableHead>
-                  <TableHead className="min-w-[140px] text-slate-700 font-semibold text-xs uppercase tracking-wider whitespace-nowrap text-center py-3.5 px-4">
+                  <TableHead className="min-w-[140px] text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider whitespace-nowrap text-center py-3.5 px-4">
                     Website Status
                   </TableHead>
-                  <TableHead className="min-w-[180px] text-slate-700 font-semibold text-xs uppercase tracking-wider whitespace-nowrap text-right py-3.5 px-4">
+                  <TableHead className="min-w-[180px] text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider whitespace-nowrap text-right py-3.5 px-4">
                     Google Maps
                   </TableHead>
                 </TableRow>
@@ -349,14 +349,14 @@ export function DataTableView({
                   <TableRow>
                     <TableCell
                       colSpan={6}
-                      className="h-48 text-center text-slate-500"
+                      className="h-48 text-center text-slate-500 dark:text-slate-400"
                     >
                       <div className="flex flex-col items-center justify-center space-y-2">
-                        <AlertCircle className="w-8 h-8 text-slate-400" />
-                        <p className="text-base font-semibold text-slate-800">
+                        <AlertCircle className="w-8 h-8 text-slate-400 dark:text-slate-500" />
+                        <p className="text-base font-semibold text-slate-800 dark:text-slate-200">
                           No matching businesses found
                         </p>
-                        <p className="text-xs text-slate-500 max-w-sm">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm">
                           {tableSearch
                             ? `No results matched "${tableSearch}". Clear your search query to see all results.`
                             : "Try selecting a broader city, nearby region, or different business category."}
@@ -372,15 +372,15 @@ export function DataTableView({
                     return (
                       <TableRow
                         key={lead.id}
-                        className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors"
+                        className="border-b border-slate-100 dark:border-slate-800/80 hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
                       >
                         {/* Business Name */}
-                        <TableCell className="min-w-[240px] align-middle font-semibold text-slate-900 py-3.5 px-4">
+                        <TableCell className="min-w-[240px] align-middle font-semibold text-slate-900 dark:text-white py-3.5 px-4">
                           <div className="space-y-0.5 whitespace-nowrap">
-                            <div className="text-sm font-semibold text-slate-900 hover:text-blue-600 transition-colors whitespace-nowrap">
+                            <div className="text-sm font-semibold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors whitespace-nowrap">
                               {lead.name}
                             </div>
-                            <div className="text-[11px] text-slate-500 font-normal whitespace-nowrap">
+                            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-normal whitespace-nowrap">
                               {lead.category}
                             </div>
                           </div>
@@ -392,24 +392,24 @@ export function DataTableView({
                             <div className="inline-flex items-center gap-1.5 whitespace-nowrap group">
                               <a
                                 href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`}
-                                className="text-xs font-mono font-medium text-slate-800 hover:text-blue-600 transition-colors whitespace-nowrap bg-slate-50 hover:bg-blue-50 px-2 py-1 rounded-md border border-slate-200 inline-block"
+                                className="text-xs font-mono font-medium text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors whitespace-nowrap bg-slate-50 dark:bg-slate-800/80 hover:bg-blue-50 dark:hover:bg-blue-950/40 px-2 py-1 rounded-md border border-slate-200 dark:border-slate-700 inline-block"
                               >
                                 {lead.phone}
                               </a>
                               <button
                                 onClick={() => handleCopy(lead.phone, `phone-${lead.id}`)}
-                                className="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 p-1 text-slate-400 hover:text-slate-700 rounded transition-opacity shrink-0"
+                                className="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded transition-opacity shrink-0"
                                 title="Copy Phone"
                               >
                                 {copiedId === `phone-${lead.id}` ? (
-                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                                 ) : (
                                   <Copy className="w-3.5 h-3.5" />
                                 )}
                               </button>
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-400 font-mono whitespace-nowrap">N/A</span>
+                            <span className="text-xs text-slate-400 dark:text-slate-500 font-mono whitespace-nowrap">N/A</span>
                           )}
                         </TableCell>
 
@@ -419,30 +419,30 @@ export function DataTableView({
                             <div className="inline-flex items-center gap-1.5 whitespace-nowrap group">
                               <a
                                 href={`mailto:${lead.email}`}
-                                className="text-xs font-mono text-blue-600 hover:text-blue-800 hover:underline transition-colors whitespace-nowrap max-w-[190px] truncate inline-block"
+                                className="text-xs font-mono text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline transition-colors whitespace-nowrap max-w-[190px] truncate inline-block"
                                 title={lead.email}
                               >
                                 {lead.email}
                               </a>
                               <button
                                 onClick={() => handleCopy(lead.email, `email-${lead.id}`)}
-                                className="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 p-1 text-slate-400 hover:text-slate-700 rounded transition-opacity shrink-0"
+                                className="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded transition-opacity shrink-0"
                                 title="Copy Email"
                               >
                                 {copiedId === `email-${lead.id}` ? (
-                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                                 ) : (
                                   <Copy className="w-3.5 h-3.5" />
                                 )}
                               </button>
                             </div>
                           ) : (
-                            <span className="text-xs text-slate-400 font-mono whitespace-nowrap">N/A</span>
+                            <span className="text-xs text-slate-400 dark:text-slate-500 font-mono whitespace-nowrap">N/A</span>
                           )}
                         </TableCell>
 
                         {/* Address - Clean single-line truncated */}
-                        <TableCell className="min-w-[240px] text-xs text-slate-600 py-3.5 px-4">
+                        <TableCell className="min-w-[240px] text-xs text-slate-600 dark:text-slate-400 py-3.5 px-4">
                           <span className="whitespace-nowrap block truncate max-w-[280px]" title={lead.address}>
                             {lead.address}
                           </span>
@@ -463,7 +463,7 @@ export function DataTableView({
                             >
                               <Badge
                                 variant="success"
-                                className="px-2.5 py-1 text-[11px] font-semibold cursor-pointer group-hover:bg-emerald-100 whitespace-nowrap shrink-0 inline-flex items-center gap-1"
+                                className="px-2.5 py-1 text-[11px] font-semibold cursor-pointer group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/60 whitespace-nowrap shrink-0 inline-flex items-center gap-1"
                               >
                                 <span>Has Website</span>
                                 <ExternalLink className="w-3 h-3 ml-0.5 opacity-70 group-hover:opacity-100 shrink-0" />
@@ -487,7 +487,7 @@ export function DataTableView({
                               variant="outline"
                               size="sm"
                               onClick={() => setSelectedMapLead(lead)}
-                              className="h-8 px-2.5 rounded-lg border-slate-200 bg-white hover:bg-slate-50 text-xs text-slate-700 hover:text-slate-900 shadow-xs inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
+                              className="h-8 px-2.5 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white shadow-xs inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
                               title="Open Google Maps Exact Location Preview"
                             >
                               <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
@@ -501,7 +501,7 @@ export function DataTableView({
                               }
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="h-8 w-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-all shrink-0 shadow-xs"
+                              className="h-8 w-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-all shrink-0 shadow-xs"
                               title="Open business directly in Google Maps"
                             >
                               <ExternalLink className="w-3.5 h-3.5 shrink-0" />
@@ -524,8 +524,8 @@ export function DataTableView({
           {/* Left Column: Scrollable List of Businesses */}
           <div className="lg:col-span-5 space-y-2.5 max-h-[640px] overflow-y-auto pr-1">
             {filteredLeads.length === 0 ? (
-              <div className="p-8 text-center rounded-2xl border border-slate-200 bg-white text-slate-500">
-                <AlertCircle className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+              <div className="p-8 text-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] text-slate-500 dark:text-slate-400">
+                <AlertCircle className="w-8 h-8 text-slate-400 dark:text-slate-500 mx-auto mb-2" />
                 <p>No businesses found for this filter</p>
               </div>
             ) : (
@@ -537,16 +537,16 @@ export function DataTableView({
                     onClick={() => setActiveSplitLeadId(lead.id)}
                     className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
                       isSelected
-                        ? "bg-blue-50/70 border-blue-400 shadow-sm ring-1 ring-blue-300"
-                        : "bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                        ? "bg-blue-50/70 dark:bg-blue-950/50 border-blue-400 dark:border-blue-500 shadow-sm ring-1 ring-blue-300 dark:ring-blue-700"
+                        : "bg-white dark:bg-[#0f172a] border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h4 className="text-sm font-bold text-slate-900 leading-tight">
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
                           {lead.name}
                         </h4>
-                        <p className="text-[11px] text-blue-600 mt-0.5 font-medium">
+                        <p className="text-[11px] text-blue-600 dark:text-blue-400 mt-0.5 font-medium">
                           {lead.category}
                         </p>
                       </div>
@@ -561,11 +561,11 @@ export function DataTableView({
                       )}
                     </div>
 
-                    <p className="text-xs text-slate-600 mt-2 line-clamp-1">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 line-clamp-1">
                       {lead.address}
                     </p>
 
-                    <div className="mt-2.5 flex items-center justify-between text-xs text-slate-500 border-t border-slate-100 pt-2">
+                    <div className="mt-2.5 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-2">
                       <span className="font-mono text-[11px]">
                         {lead.phone !== "N/A" ? lead.phone : "No phone"}
                       </span>
@@ -576,7 +576,7 @@ export function DataTableView({
                             e.stopPropagation();
                             setSelectedMapLead(lead);
                           }}
-                          className="text-blue-600 hover:text-blue-800 text-[11px] flex items-center gap-1 font-medium"
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-[11px] flex items-center gap-1 font-medium"
                         >
                           <MapPin className="w-3 h-3 text-rose-500" />
                           <span>Exact Pin</span>
@@ -590,18 +590,18 @@ export function DataTableView({
           </div>
 
           {/* Right Column: Embedded Google Map for Exact Selected Place */}
-          <div className="lg:col-span-7 flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs">
+          <div className="lg:col-span-7 flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] overflow-hidden shadow-xs">
             {/* Top Toolbar */}
-            <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-wrap gap-2">
+            <div className="p-4 bg-slate-50 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2.5">
-                <div className="h-8 w-8 rounded-lg bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600">
+                <div className="h-8 w-8 rounded-lg bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 flex items-center justify-center text-rose-600 dark:text-rose-400">
                   <MapPin className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-bold text-slate-900 truncate max-w-[280px]">
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[280px]">
                     {activeLead ? activeLead.name : `Google Map - ${displayLocation}`}
                   </h3>
-                  <p className="text-[10px] text-slate-500 truncate max-w-[320px]">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[320px]">
                     {activeLead ? activeLead.address : "Specific place interactive pin"}
                   </p>
                 </div>
@@ -613,7 +613,7 @@ export function DataTableView({
                     asChild
                     variant="outline"
                     size="sm"
-                    className="h-8 text-xs border-slate-200 bg-white text-slate-700 hover:text-slate-900"
+                    className="h-8 text-xs border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white"
                   >
                     <a
                       href={
@@ -623,7 +623,7 @@ export function DataTableView({
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <Compass className="w-3 h-3 text-blue-600 mr-1" />
+                      <Compass className="w-3 h-3 text-blue-600 dark:text-blue-400 mr-1" />
                       <span>Directions</span>
                     </a>
                   </Button>
@@ -651,7 +651,7 @@ export function DataTableView({
             </div>
 
             {/* Embedded Google Map focusing on exact single-pin location */}
-            <div className="relative w-full h-[520px] bg-slate-100 overflow-hidden">
+            <div className="relative w-full h-[520px] bg-slate-100 dark:bg-slate-900 overflow-hidden">
               <iframe
                 key={activeLead?.id || "default"}
                 title={`Google Map - ${activeLead?.name || displayLocation}`}
@@ -671,13 +671,13 @@ export function DataTableView({
 
               {/* Floating Verified Business Information Card on Split Map */}
               {activeLead && (
-                <div className="absolute top-3 left-3 z-10 max-w-[280px] sm:max-w-xs rounded-xl bg-white/95 backdrop-blur-md p-3 shadow-xl border border-slate-200/90 pointer-events-auto">
+                <div className="absolute top-3 left-3 z-10 max-w-[280px] sm:max-w-xs rounded-xl bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-md p-3 shadow-xl border border-slate-200/90 dark:border-slate-700 pointer-events-auto">
                   <div className="flex items-start justify-between gap-1.5 mb-1">
                     <div>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 block">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 block">
                         {activeLead.category}
                       </span>
-                      <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug line-clamp-2">
+                      <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug line-clamp-2">
                         {activeLead.name}
                       </h4>
                     </div>
@@ -692,33 +692,33 @@ export function DataTableView({
                     )}
                   </div>
 
-                  <p className="text-[11px] text-slate-600 flex items-start gap-1 leading-tight mb-2">
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 flex items-start gap-1 leading-tight mb-2">
                     <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
                     <span className="line-clamp-2">{activeLead.address}</span>
                   </p>
 
-                  <div className="border-t border-slate-100 pt-1.5 space-y-1 text-[11px]">
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-1.5 space-y-1 text-[11px]">
                     {activeLead.phone && activeLead.phone !== "N/A" && (
-                      <div className="flex items-center justify-between text-slate-700">
-                        <span className="flex items-center gap-1 text-slate-500 text-[10px]">
+                      <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
+                        <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-[10px]">
                           <Phone className="w-3 h-3 text-blue-500" /> Phone:
                         </span>
                         <a
                           href={`tel:${activeLead.phone.replace(/[^0-9+]/g, "")}`}
-                          className="font-mono font-medium hover:text-blue-600 text-[10px]"
+                          className="font-mono font-medium hover:text-blue-600 dark:hover:text-blue-400 text-[10px]"
                         >
                           {activeLead.phone}
                         </a>
                       </div>
                     )}
                     {activeLead.email && activeLead.email !== "N/A" && (
-                      <div className="flex items-center justify-between text-slate-700">
-                        <span className="flex items-center gap-1 text-slate-500 text-[10px]">
+                      <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
+                        <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-[10px]">
                           <Mail className="w-3 h-3 text-indigo-500" /> Email:
                         </span>
                         <a
                           href={`mailto:${activeLead.email}`}
-                          className="font-mono text-blue-600 hover:underline text-[10px] truncate max-w-[150px]"
+                          className="font-mono text-blue-600 dark:text-blue-400 hover:underline text-[10px] truncate max-w-[150px]"
                         >
                           {activeLead.email}
                         </a>
@@ -734,23 +734,23 @@ export function DataTableView({
 
       {/* 3. FULL MAP VIEW */}
       {viewMode === "map" && (
-        <div className="flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs">
+        <div className="flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] overflow-hidden shadow-xs">
           {/* Map Header */}
-          <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-wrap gap-2">
+          <div className="p-4 bg-slate-50 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center text-rose-600">
+              <div className="h-9 w-9 rounded-xl bg-rose-100 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 flex items-center justify-center text-rose-600 dark:text-rose-400">
                 <MapPin className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <span>Google Maps Lead Navigator</span>
-                  <Badge variant="outline" className="border-slate-300 text-slate-700 text-[10px]">
+                  <Badge variant="outline" className="border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-[10px]">
                     {filteredLeads.length} Leads
                   </Badge>
                 </h3>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Targeted business:{" "}
-                  <span className="text-blue-600 font-semibold">
+                  <span className="text-blue-600 dark:text-blue-400 font-semibold">
                     {activeLead?.name || displayLocation}
                   </span>
                 </p>
@@ -763,7 +763,7 @@ export function DataTableView({
                   onClick={() => setSelectedMapLead(activeLead)}
                   variant="outline"
                   size="sm"
-                  className="h-8 text-xs border-slate-200 bg-white text-slate-700 hover:text-slate-900"
+                  className="h-8 text-xs border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white"
                 >
                   <MapPin className="w-3.5 h-3.5 text-rose-500 mr-1" />
                   <span>Exact Pin Details</span>
@@ -792,7 +792,7 @@ export function DataTableView({
           </div>
 
           {/* Full Height Map */}
-          <div className="relative w-full h-[540px] bg-slate-100 overflow-hidden">
+          <div className="relative w-full h-[540px] bg-slate-100 dark:bg-slate-900 overflow-hidden">
             <iframe
               key={`full-${activeLead?.id || "default"}`}
               title={`Google Map - ${activeLead?.name || displayLocation}`}
@@ -812,13 +812,13 @@ export function DataTableView({
 
             {/* Floating Business Information Overlay Card on Full Map */}
             {activeLead && (
-              <div className="absolute top-3 left-3 z-10 max-w-[280px] sm:max-w-xs rounded-xl bg-white/95 backdrop-blur-md p-3 shadow-xl border border-slate-200/90 pointer-events-auto">
+              <div className="absolute top-3 left-3 z-10 max-w-[280px] sm:max-w-xs rounded-xl bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-md p-3 shadow-xl border border-slate-200/90 dark:border-slate-700 pointer-events-auto">
                 <div className="flex items-start justify-between gap-1.5 mb-1">
                   <div>
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 block">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 block">
                       {activeLead.category}
                     </span>
-                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug line-clamp-2">
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug line-clamp-2">
                       {activeLead.name}
                     </h4>
                   </div>
@@ -833,33 +833,33 @@ export function DataTableView({
                   )}
                 </div>
 
-                <p className="text-[11px] text-slate-600 flex items-start gap-1 leading-tight mb-2">
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 flex items-start gap-1 leading-tight mb-2">
                   <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
                   <span className="line-clamp-2">{activeLead.address}</span>
                 </p>
 
-                <div className="border-t border-slate-100 pt-1.5 space-y-1 text-[11px]">
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-1.5 space-y-1 text-[11px]">
                   {activeLead.phone && activeLead.phone !== "N/A" && (
-                    <div className="flex items-center justify-between text-slate-700">
-                      <span className="flex items-center gap-1 text-slate-500 text-[10px]">
+                    <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
+                      <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-[10px]">
                         <Phone className="w-3 h-3 text-blue-500" /> Phone:
                       </span>
                       <a
                         href={`tel:${activeLead.phone.replace(/[^0-9+]/g, "")}`}
-                        className="font-mono font-medium hover:text-blue-600 text-[10px]"
+                        className="font-mono font-medium hover:text-blue-600 dark:hover:text-blue-400 text-[10px]"
                       >
                         {activeLead.phone}
                       </a>
                     </div>
                   )}
                   {activeLead.email && activeLead.email !== "N/A" && (
-                    <div className="flex items-center justify-between text-slate-700">
-                      <span className="flex items-center gap-1 text-slate-500 text-[10px]">
+                    <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
+                      <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-[10px]">
                         <Mail className="w-3 h-3 text-indigo-500" /> Email:
                       </span>
                       <a
                         href={`mailto:${activeLead.email}`}
-                        className="font-mono text-blue-600 hover:underline text-[10px] truncate max-w-[150px]"
+                        className="font-mono text-blue-600 dark:text-blue-400 hover:underline text-[10px] truncate max-w-[150px]"
                       >
                         {activeLead.email}
                       </a>
@@ -871,7 +871,7 @@ export function DataTableView({
           </div>
 
           {/* Horizontal Quick Lead Selector Bar */}
-          <div className="p-3 bg-slate-50 border-t border-slate-200 overflow-x-auto flex items-center gap-2.5">
+          <div className="p-3 bg-slate-50 dark:bg-slate-900/90 border-t border-slate-200 dark:border-slate-800 overflow-x-auto flex items-center gap-2.5">
             {filteredLeads.map((lead) => {
               const isSelected = activeLead?.id === lead.id;
               return (
@@ -880,24 +880,24 @@ export function DataTableView({
                   onClick={() => setActiveSplitLeadId(lead.id)}
                   className={`px-3 py-2 rounded-xl text-left border transition-all shrink-0 flex items-center gap-2.5 ${
                     isSelected
-                      ? "bg-white border-blue-500 shadow-sm ring-1 ring-blue-400"
-                      : "bg-white border-slate-200 hover:border-slate-300"
+                      ? "bg-white dark:bg-slate-800 border-blue-500 ring-1 ring-blue-400"
+                      : "bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
                   }`}
                 >
                   <MapPin
                     className={`w-3.5 h-3.5 shrink-0 ${
-                      isSelected ? "text-rose-500" : "text-slate-400"
+                      isSelected ? "text-rose-500" : "text-slate-400 dark:text-slate-500"
                     }`}
                   />
                   <div>
-                    <div className="text-xs font-semibold text-slate-900 max-w-[160px] truncate">
+                    <div className="text-xs font-semibold text-slate-900 dark:text-white max-w-[160px] truncate">
                       {lead.name}
                     </div>
-                    <div className="text-[10px] text-slate-500">
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
                       {lead.hasWebsite ? (
-                        <span className="text-emerald-600 font-medium">Has Website</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">Has Website</span>
                       ) : (
-                        <span className="text-red-600 font-medium">No Website</span>
+                        <span className="text-red-600 dark:text-red-400 font-medium">No Website</span>
                       )}
                     </div>
                   </div>

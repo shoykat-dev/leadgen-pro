@@ -15,15 +15,15 @@ export function GuestLoginButton() {
   };
 
   return (
-    <div className="w-full pt-3 text-center border-t border-slate-200 mt-4">
+    <div className="w-full pt-3 text-center border-t border-slate-200 dark:border-slate-800 mt-4">
       <Button
         type="button"
         variant="ghost"
         size="sm"
         onClick={handleGuestEnter}
-        className="text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center justify-center gap-1.5 w-full py-2 rounded-xl transition-all"
+        className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 flex items-center justify-center gap-1.5 w-full py-2 rounded-xl transition-all"
       >
-        <Eye className="w-3.5 h-3.5 text-blue-600" />
+        <Eye className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
         <span>Direct Directory Access (Guest Mode)</span>
         <ArrowRight className="w-3 h-3 text-slate-400" />
       </Button>
