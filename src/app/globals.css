@@ -219,3 +219,46 @@ body {
   margin: 0 !important;
   padding: 0 !important;
 }
+
+/* =========================================================
+   ADVANCED CONTENT PROTECTION & ANTI-COPY / ANTI-PRINT
+   ========================================================= */
+
+/* Prevent text selection across the entire website */
+*,
+*::before,
+*::after {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+/* Allow text selection ONLY in search inputs and form textareas */
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}
+
+/* Disable drag operations on all elements */
+* {
+  -webkit-user-drag: none !important;
+  user-drag: none !important;
+}
+
+/* Print Prevention: Blank out page and prevent PDF printing */
+@media print {
+  html,
+  body {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+}
+

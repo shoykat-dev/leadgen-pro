@@ -11,8 +11,6 @@ import {
   Navigation,
   Compass,
   Layers,
-  Copy,
-  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +26,6 @@ type MapMode = "m" | "k" | "p"; // m: standard map, k: satellite, p: terrain
 
 export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
   const [mapMode, setMapMode] = useState<MapMode>("m");
-  const [isCopied, setIsCopied] = useState<boolean>(false);
 
   if (!isOpen || !lead) return null;
 
@@ -46,12 +43,6 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
   const directionsUrl =
     lead.googleMapsDirectionsUrl ||
     `https://www.google.com/maps/dir/?api=1&destination=${placeQuery}`;
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(directMapsUrl);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
@@ -135,31 +126,13 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
             </button>
           </div>
 
-          {/* Quick Direct Link & Copy */}
+          {/* Quick Direct Link */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleCopyLink}
-              className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-[11px] flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              title="Copy Google Maps link to clipboard"
-            >
-              {isCopied ? (
-                <>
-                  <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                  <span className="text-emerald-700 dark:text-emerald-400 font-medium">Copied!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3 h-3" />
-                  <span className="hidden sm:inline">Copy Link</span>
-                </>
-              )}
-            </button>
-
             <a
               href={directMapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-[11px] font-semibold flex items-center gap-1 hover:underline"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-[11px] font-semibold flex items-center gap-1 hover:underline px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800"
             >
               <span>Full Google Maps</span>
               <ExternalLink className="w-3 h-3" />

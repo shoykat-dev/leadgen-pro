@@ -17,6 +17,8 @@ import {
   Globe,
   Compass,
   Navigation,
+  Lock,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -235,17 +237,14 @@ export function DataTableView({
             </button>
           </div>
 
-          {/* Export to CSV Button */}
-          <Button
-            onClick={handleExportCSV}
-            disabled={filteredLeads.length === 0}
-            variant="outline"
-            size="sm"
-            className="h-10 px-4 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 shadow-xs"
-          >
-            <Download className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span>Export to CSV ({filteredLeads.length})</span>
-          </Button>
+          {/* Data Protection & Anti-Copy Indicator */}
+          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-xs select-none">
+            <Lock className="w-3.5 h-3.5 text-rose-500" />
+            <span>DRM Protected</span>
+            <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">
+              ({filteredLeads.length} Verified Leads)
+            </span>
+          </div>
         </div>
       </div>
 
@@ -386,55 +385,34 @@ export function DataTableView({
                           </div>
                         </TableCell>
 
-                        {/* Phone Number - Strict single-line monospace with copy */}
-                        <TableCell className="whitespace-nowrap min-w-[170px] py-3.5 px-4 font-mono">
+                        {/* Phone Number - Protected against copy */}
+                        <TableCell className="whitespace-nowrap min-w-[170px] py-3.5 px-4 font-mono select-none">
                           {phoneHasVal ? (
-                            <div className="inline-flex items-center gap-1.5 whitespace-nowrap group">
+                            <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
                               <a
                                 href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`}
-                                className="text-xs font-mono font-medium text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors whitespace-nowrap bg-slate-50 dark:bg-slate-800/80 hover:bg-blue-50 dark:hover:bg-blue-950/40 px-2 py-1 rounded-md border border-slate-200 dark:border-slate-700 inline-block"
+                                className="text-xs font-mono font-medium text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors whitespace-nowrap bg-slate-50 dark:bg-slate-800/80 hover:bg-blue-50 dark:hover:bg-blue-950/40 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700 inline-block select-none pointer-events-auto"
+                                title="Click to call directly"
                               >
                                 {lead.phone}
                               </a>
-                              <button
-                                onClick={() => handleCopy(lead.phone, `phone-${lead.id}`)}
-                                className="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded transition-opacity shrink-0"
-                                title="Copy Phone"
-                              >
-                                {copiedId === `phone-${lead.id}` ? (
-                                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                                ) : (
-                                  <Copy className="w-3.5 h-3.5" />
-                                )}
-                              </button>
                             </div>
                           ) : (
                             <span className="text-xs text-slate-400 dark:text-slate-500 font-mono whitespace-nowrap">N/A</span>
                           )}
                         </TableCell>
 
-                        {/* Email - Strict single-line with copy */}
-                        <TableCell className="whitespace-nowrap min-w-[200px] py-3.5 px-4 font-mono">
+                        {/* Email - Protected against copy */}
+                        <TableCell className="whitespace-nowrap min-w-[200px] py-3.5 px-4 font-mono select-none">
                           {emailHasVal ? (
-                            <div className="inline-flex items-center gap-1.5 whitespace-nowrap group">
+                            <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
                               <a
                                 href={`mailto:${lead.email}`}
-                                className="text-xs font-mono text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline transition-colors whitespace-nowrap max-w-[190px] truncate inline-block"
-                                title={lead.email}
+                                className="text-xs font-mono text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline transition-colors whitespace-nowrap max-w-[210px] truncate inline-block select-none pointer-events-auto"
+                                title="Click to email directly"
                               >
                                 {lead.email}
                               </a>
-                              <button
-                                onClick={() => handleCopy(lead.email, `email-${lead.id}`)}
-                                className="opacity-80 sm:opacity-0 sm:group-hover:opacity-100 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded transition-opacity shrink-0"
-                                title="Copy Email"
-                              >
-                                {copiedId === `email-${lead.id}` ? (
-                                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                                ) : (
-                                  <Copy className="w-3.5 h-3.5" />
-                                )}
-                              </button>
                             </div>
                           ) : (
                             <span className="text-xs text-slate-400 dark:text-slate-500 font-mono whitespace-nowrap">N/A</span>
