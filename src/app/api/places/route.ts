@@ -76,7 +76,44 @@ function getCategoryQueryClauses(category: string, radius: number, lat: number, 
   const around = `(around:${radius}, ${lat}, ${lon})`;
 
   switch (category) {
-    // Food & Dining
+    // Technology & Software
+    case "software_company":
+      return `
+        node["office"="it"]${around};
+        way["office"="it"]${around};
+        node["office"="software"]${around};
+        way["office"="software"]${around};
+        node["office"="company"]["it"]${around};
+      `;
+    case "web_development":
+      return `
+        node["office"="web_design"]${around};
+        way["office"="web_design"]${around};
+        node["office"="it"]${around};
+        way["office"="it"]${around};
+        node["office"="advertising_agency"]${around};
+      `;
+    case "it_services":
+      return `
+        node["office"="it"]${around};
+        way["office"="it"]${around};
+        node["shop"="computer"]${around};
+        way["shop"="computer"]${around};
+      `;
+    case "app_development":
+      return `
+        node["office"="software"]${around};
+        way["office"="software"]${around};
+        node["office"="it"]${around};
+      `;
+    case "cybersecurity":
+      return `
+        node["office"="security"]${around};
+        way["office"="security"]${around};
+        node["office"="it"]${around};
+      `;
+
+    // Marketing & Creative
     case "digital_marketing":
       return `
         node["office"="advertising_agency"]${around};
@@ -114,6 +151,7 @@ function getCategoryQueryClauses(category: string, radius: number, lat: number, 
         node["office"="marketing"]${around};
       `;
     case "video_photo":
+    case "video_production":
       return `
         node["office"="video_production"]${around};
         node["craft"="photographer"]${around};
@@ -194,6 +232,12 @@ function getCategoryQueryClauses(category: string, radius: number, lat: number, 
         node["healthcare"="pharmacy"]${around};
         node["shop"="chemist"]${around};
       `;
+    case "dermatology":
+      return `
+        node["healthcare"="dermatologist"]${around};
+        node["healthcare:speciality"="dermatology"]${around};
+        node["amenity"="clinic"]["healthcare"="doctor"]${around};
+      `;
     case "physiotherapy":
       return `
         node["healthcare"="physiotherapist"]${around};
@@ -206,6 +250,12 @@ function getCategoryQueryClauses(category: string, radius: number, lat: number, 
         way["shop"="optician"]${around};
         node["healthcare"="optometrist"]${around};
         node["healthcare:speciality"="optometry"]${around};
+      `;
+    case "chiropractor":
+      return `
+        node["healthcare"="chiropractic"]${around};
+        node["healthcare"="physiotherapy"]${around};
+        node["amenity"="clinic"]${around};
       `;
     case "veterinary":
       return `
@@ -253,6 +303,12 @@ function getCategoryQueryClauses(category: string, radius: number, lat: number, 
         node["shop"="massage"]${around};
         way["shop"="massage"]${around};
       `;
+    case "cosmetic_clinic":
+      return `
+        node["shop"="beauty"]${around};
+        node["healthcare"="aesthetic"]${around};
+        node["amenity"="clinic"]${around};
+      `;
 
     // Fitness & Sports
     case "gym":
@@ -280,6 +336,12 @@ function getCategoryQueryClauses(category: string, radius: number, lat: number, 
         node["leisure"="swimming_pool"]${around};
         way["leisure"="swimming_pool"]${around};
         node["amenity"="swimming_pool"]${around};
+      `;
+    case "personal_trainer":
+      return `
+        node["leisure"="fitness_centre"]${around};
+        node["sport"="fitness"]${around};
+        node["office"="coach"]${around};
       `;
 
     // Real Estate & Architecture
@@ -373,6 +435,49 @@ function getCategoryQueryClauses(category: string, radius: number, lat: number, 
         node["craft"="landscaper"]${around};
         node["office"="landscaping"]${around};
       `;
+    case "handyman":
+      return `
+        node["craft"="handyman"]${around};
+        way["craft"="handyman"]${around};
+        node["craft"="carpenter"]${around};
+        way["craft"="carpenter"]${around};
+      `;
+    case "flooring_carpet":
+      return `
+        node["craft"="floorer"]${around};
+        node["shop"="flooring"]${around};
+        way["shop"="flooring"]${around};
+        node["shop"="carpet"]${around};
+        way["shop"="carpet"]${around};
+      `;
+    case "appliance_repair":
+      return `
+        node["craft"="electronics_repair"]${around};
+        node["craft"="appliance_repair"]${around};
+        node["shop"="electronics_repair"]${around};
+        way["shop"="electronics_repair"]${around};
+      `;
+    case "glass_glazier":
+      return `
+        node["craft"="glazier"]${around};
+        way["craft"="glazier"]${around};
+        node["craft"="window_construction"]${around};
+      `;
+
+    // Energy & Environment
+    case "solar_energy":
+      return `
+        node["office"="energy_supplier"]${around};
+        node["craft"="electrician"]["solar"="yes"]${around};
+        node["office"="solar_energy"]${around};
+        way["office"="solar_energy"]${around};
+      `;
+    case "waste_management":
+      return `
+        node["amenity"="recycling"]${around};
+        node["amenity"="waste_disposal"]${around};
+        node["office"="waste_management"]${around};
+      `;
 
     // Legal & Financial
     case "law_firm":
@@ -405,6 +510,11 @@ function getCategoryQueryClauses(category: string, radius: number, lat: number, 
       return `
         node["office"="insurance"]${around};
         way["office"="insurance"]${around};
+      `;
+    case "notary":
+      return `
+        node["office"="notary"]${around};
+        way["office"="notary"]${around};
       `;
 
     // Automotive
@@ -503,6 +613,19 @@ function getCategoryQueryClauses(category: string, radius: number, lat: number, 
         node["shop"="pet"]${around};
         way["shop"="pet"]${around};
       `;
+    case "pet_grooming":
+      return `
+        node["shop"="pet_grooming"]${around};
+        way["shop"="pet_grooming"]${around};
+        node["shop"="pet"]["grooming"="yes"]${around};
+        node["amenity"="animal_boarding"]${around};
+      `;
+    case "pet_boarding":
+      return `
+        node["amenity"="animal_boarding"]${around};
+        way["amenity"="animal_boarding"]${around};
+        node["amenity"="animal_shelter"]${around};
+      `;
     case "bookstore":
       return `
         node["shop"="books"]${around};
@@ -576,12 +699,69 @@ function getCategoryQueryClauses(category: string, radius: number, lat: number, 
         way["office"="event_planner"]${around};
         node["office"="events"]${around};
       `;
+    case "event_venue":
+      return `
+        node["amenity"="events_venue"]${around};
+        way["amenity"="events_venue"]${around};
+        node["amenity"="conference_centre"]${around};
+        way["amenity"="conference_centre"]${around};
+      `;
+    case "dj_entertainment":
+      return `
+        node["office"="events"]${around};
+        node["craft"="dj"]${around};
+        node["amenity"="studio"]${around};
+      `;
     case "photography_studio":
       return `
         node["shop"="photo"]${around};
         node["craft"="photographer"]${around};
         way["craft"="photographer"]${around};
         node["amenity"="studio"]${around};
+      `;
+    case "freight_forwarding":
+      return `
+        node["office"="logistics"]${around};
+        way["office"="logistics"]${around};
+        node["office"="freight"]${around};
+        way["office"="freight"]${around};
+      `;
+    case "self_storage":
+      return `
+        node["shop"="storage_rental"]${around};
+        way["shop"="storage_rental"]${around};
+        node["amenity"="storage_rental"]${around};
+      `;
+    case "courier_delivery":
+      return `
+        node["amenity"="post_office"]${around};
+        node["office"="courier"]${around};
+        way["office"="courier"]${around};
+        node["shop"="post"]${around};
+      `;
+    case "recruitment_agency":
+      return `
+        node["office"="employment_agency"]${around};
+        way["office"="employment_agency"]${around};
+        node["office"="recruiter"]${around};
+      `;
+    case "security_services":
+      return `
+        node["office"="security"]${around};
+        way["office"="security"]${around};
+        node["craft"="security"]${around};
+      `;
+    case "business_consulting":
+      return `
+        node["office"="consulting"]${around};
+        way["office"="consulting"]${around};
+        node["office"="management_consultant"]${around};
+      `;
+    case "translation":
+      return `
+        node["office"="translator"]${around};
+        way["office"="translator"]${around};
+        node["office"="translation"]${around};
       `;
 
     default:
