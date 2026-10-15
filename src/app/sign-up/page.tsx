@@ -1,6 +1,7 @@
-import { SignUp } from "@clerk/nextjs";
+import { Suspense } from "react";
 import { Zap } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { CustomAuthCard } from "@/components/custom-auth-card";
 
 export default function SignUpPage() {
   return (
@@ -20,14 +21,15 @@ export default function SignUpPage() {
           </h1>
         </div>
 
-        <div className="w-full p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl flex justify-center">
-          <SignUp
-            routing="path"
-            path="/sign-up"
-            signInUrl="/sign-in"
-            fallbackRedirectUrl="/"
-          />
-        </div>
+        <Suspense
+          fallback={
+            <div className="w-full max-w-md h-96 rounded-3xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 p-8 flex items-center justify-center">
+              <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+          }
+        >
+          <CustomAuthCard mode="sign-up" />
+        </Suspense>
       </div>
     </div>
   );

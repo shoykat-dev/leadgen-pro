@@ -204,21 +204,6 @@ export function ContentProtection({ children }: ContentProtectionProps) {
         {children}
       </div>
 
-      {/* Dynamic Security Watermark Overlay (Ruins external camera/video captures) */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-0 z-40 overflow-hidden select-none opacity-[0.03] dark:opacity-[0.04] flex flex-wrap gap-12 p-8 items-center justify-center rotate-[-12deg]"
-      >
-        {Array.from({ length: 48 }).map((_, i) => (
-          <span
-            key={i}
-            className="text-xs font-mono font-bold tracking-widest text-slate-900 dark:text-white uppercase whitespace-nowrap"
-          >
-            PROTECTED DIRECTORY • CONFIDENTIAL • LEADGEN PRO • DO NOT RECORD
-          </span>
-        ))}
-      </div>
-
       {/* Screen Capture & Recording Privacy Shield */}
       {isShieldActive && (
         <div

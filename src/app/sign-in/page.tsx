@@ -1,7 +1,7 @@
-import { SignIn } from "@clerk/nextjs";
+import { Suspense } from "react";
 import { Globe, Mail, ShieldCheck, Zap } from "lucide-react";
-import { GuestLoginButton } from "@/components/guest-login-button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { CustomAuthCard } from "@/components/custom-auth-card";
 
 export default function SignInPage() {
   return (
@@ -63,16 +63,16 @@ export default function SignInPage() {
             <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] shadow-xs">
               <div className="flex items-center gap-2.5 text-emerald-600 dark:text-emerald-400 text-sm font-semibold">
                 <ShieldCheck className="w-4 h-4" />
-                <span>1-Click CSV Export</span>
+                <span>DRM Data Protected</span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Instant download formatted for Apollo, Instantly, Lemlist, or your favorite CRM.
+                Proprietary lead database secured with advanced anti-scraping and privacy shields.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Right column: Clerk SignIn component + Quick Demo */}
+        {/* Right column: Custom SignIn component with friendly errors */}
         <div className="order-1 lg:order-2 lg:col-span-6 flex flex-col justify-center items-center">
           {/* Mobile Header */}
           <div className="lg:hidden flex flex-col items-center text-center mb-6">
@@ -87,15 +87,15 @@ export default function SignInPage() {
             </p>
           </div>
 
-          <div className="w-full max-w-md p-4 sm:p-6 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col justify-center items-center">
-            <SignIn
-              routing="path"
-              path="/sign-in"
-              signUpUrl="/sign-up"
-              fallbackRedirectUrl="/"
-            />
-            <GuestLoginButton />
-          </div>
+          <Suspense
+            fallback={
+              <div className="w-full max-w-md h-96 rounded-3xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 p-8 flex items-center justify-center">
+                <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              </div>
+            }
+          >
+            <CustomAuthCard mode="sign-in" />
+          </Suspense>
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Navbar } from "@/components/navbar";
 import { SearchPanel } from "@/components/search-panel";
 import { DataTableView } from "@/components/data-table-view";
+import { AppErrorBoundary } from "@/components/app-error-boundary";
 import { BusinessLead } from "@/app/api/places/route";
 import {
   Users,
@@ -277,78 +278,83 @@ export default function DashboardPage() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-[1560px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* 5 Cascading Searchable Dropdowns Search Engine */}
-        <SearchPanel
-          onSearch={handleSearchResults}
-          isLoading={isLoading}
-          setIsLoading={setIsLoading}
-        />
+        <AppErrorBoundary
+          fallbackTitle="Directory view encountered an issue"
+          fallbackMessage="An unexpected error occurred while displaying directory data. Try refreshing below."
+        >
+          {/* 5 Cascading Searchable Dropdowns Search Engine */}
+          <SearchPanel
+            onSearch={handleSearchResults}
+            isLoading={isLoading}
+            setIsLoading={setIsLoading}
+          />
 
-        {/* Quick Analytics Cards Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          {/* Card 1: Total Leads */}
-          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] shadow-xs space-y-1 transition-colors duration-200">
-            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
-              <span>Total Leads</span>
-              <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          {/* Quick Analytics Cards Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {/* Card 1: Total Leads */}
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] shadow-xs space-y-1 transition-colors duration-200">
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
+                <span>Total Leads</span>
+                <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                {totalLeads}
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                In target geographic zone
+              </div>
             </div>
-            <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-              {totalLeads}
+
+            {/* Card 2: Without Website (High Priority Cold Outreach) */}
+            <div className="p-4 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50/70 dark:bg-red-950/30 shadow-xs space-y-1 transition-colors duration-200">
+              <div className="flex items-center justify-between text-xs text-red-700 dark:text-red-300 font-semibold">
+                <span>Without Website</span>
+                <GlobeX className="w-4 h-4 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="text-2xl font-bold text-red-700 dark:text-red-400 tracking-tight">
+                {noWebsiteLeads}
+              </div>
+              <div className="text-[11px] text-red-600/80 dark:text-red-300/80 font-medium">
+                Prime cold outreach prospects
+              </div>
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
-              In target geographic zone
+
+            {/* Card 3: Has Website */}
+            <div className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-950/30 shadow-xs space-y-1 transition-colors duration-200">
+              <div className="flex items-center justify-between text-xs text-emerald-700 dark:text-emerald-300 font-semibold">
+                <span>Has Website</span>
+                <Globe2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-300 tracking-tight">
+                {hasWebsiteLeads}
+              </div>
+              <div className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
+                Established web presence
+              </div>
+            </div>
+
+            {/* Card 4: Contactable Leads */}
+            <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/60 dark:bg-blue-950/30 shadow-xs space-y-1 transition-colors duration-200">
+              <div className="flex items-center justify-between text-xs text-blue-700 dark:text-blue-300 font-semibold">
+                <span>Contactable</span>
+                <PhoneCall className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="text-2xl font-bold text-blue-800 dark:text-blue-300 tracking-tight">
+                {withPhoneLeads + withEmailLeads}
+              </div>
+              <div className="text-[11px] text-blue-700/80 dark:text-blue-400/80">
+                {withPhoneLeads} Phones • {withEmailLeads} Emails
+              </div>
             </div>
           </div>
 
-          {/* Card 2: Without Website (High Priority Cold Outreach) */}
-          <div className="p-4 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50/70 dark:bg-red-950/30 shadow-xs space-y-1 transition-colors duration-200">
-            <div className="flex items-center justify-between text-xs text-red-700 dark:text-red-300 font-semibold">
-              <span>Without Website</span>
-              <GlobeX className="w-4 h-4 text-red-600 dark:text-red-400" />
-            </div>
-            <div className="text-2xl font-bold text-red-700 dark:text-red-400 tracking-tight">
-              {noWebsiteLeads}
-            </div>
-            <div className="text-[11px] text-red-600/80 dark:text-red-300/80 font-medium">
-              Prime cold outreach prospects
-            </div>
-          </div>
-
-          {/* Card 3: Has Website */}
-          <div className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-950/30 shadow-xs space-y-1 transition-colors duration-200">
-            <div className="flex items-center justify-between text-xs text-emerald-700 dark:text-emerald-300 font-semibold">
-              <span>Has Website</span>
-              <Globe2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-300 tracking-tight">
-              {hasWebsiteLeads}
-            </div>
-            <div className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
-              Established web presence
-            </div>
-          </div>
-
-          {/* Card 4: Contactable Leads */}
-          <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/60 dark:bg-blue-950/30 shadow-xs space-y-1 transition-colors duration-200">
-            <div className="flex items-center justify-between text-xs text-blue-700 dark:text-blue-300 font-semibold">
-              <span>Contactable</span>
-              <PhoneCall className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div className="text-2xl font-bold text-blue-800 dark:text-blue-300 tracking-tight">
-              {withPhoneLeads + withEmailLeads}
-            </div>
-            <div className="text-[11px] text-blue-700/80 dark:text-blue-400/80">
-              {withPhoneLeads} Phones • {withEmailLeads} Emails
-            </div>
-          </div>
-        </div>
-
-        {/* Data Table Section */}
-        <DataTableView
-          leads={leads}
-          searchLocation={searchLocation}
-          categoryLabel={categoryLabel}
-        />
+          {/* Data Table Section */}
+          <DataTableView
+            leads={leads}
+            searchLocation={searchLocation}
+            categoryLabel={categoryLabel}
+          />
+        </AppErrorBoundary>
       </main>
 
       {/* Clean Footer */}

@@ -966,7 +966,21 @@ function isConflictingArea(tags: PlaceTag, targetArea: string): boolean {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        {
+          error: {
+            code: "INVALID_REQUEST",
+            message: "Malformed request payload.",
+          },
+        },
+        { status: 400 }
+      );
+    }
+
     const {
       country = "Bangladesh",
       countryCode = "BD",
@@ -1309,31 +1323,26 @@ out center 150;`;
     });
   } catch (error: unknown) {
     console.error("API error in /api/places:", error);
-    const fallbackCategory = "restaurant";
-    const fallbackLeads = generateWorldwideLeads(
-      fallbackCategory,
-      "US",
-      "New York",
-      "Manhattan",
-      "New York",
-      "United States",
-      40.7128,
-      -74.006,
-      14
-    );
-    return NextResponse.json({
-      success: true,
-      total: fallbackLeads.length,
-      category: getCategoryLabel(fallbackCategory),
-      location: {
-        city: "New York",
-        area: "Manhattan",
-        state: "New York",
-        country: "United States",
-        lat: 40.7128,
-        lon: -74.006,
+    return NextResponse.json(
+      {
+        error: {
+          code: "PLACES_API_ERROR",
+          message: "Could not load results. Please try again.",
+        },
       },
-      businesses: fallbackLeads,
-    });
+      { status: 500 }
+    );
   }
+}
+
+export async function GET() {
+  return NextResponse.json(
+    {
+      error: {
+        code: "METHOD_NOT_ALLOWED",
+        message: "GET method is not supported on this endpoint. Use POST with search parameters.",
+      },
+    },
+    { status: 405 }
+  );
 }

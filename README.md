@@ -70,3 +70,35 @@ LeadGen Pro is an ultra-modern, high-performance B2B lead generation web applica
    ```
    http://localhost:3000
    ```
+
+---
+
+## 🛡️ Error Handling & Friendly Auth Architecture
+
+LeadGen Pro incorporates an enterprise-grade, human-friendly error handling system designed to prevent ugly stack traces, provider codes, or blank screens:
+
+### 1. Centralized Auth Error Mapper (`src/lib/auth-errors.ts`)
+All authentication errors (Google OAuth popups, SSO callbacks, email/password validation, rate limits) are mapped consistently to human-friendly messages via `getAuthErrorMessage(error, context)`. Raw provider errors and stack traces are logged exclusively to server/developer consoles.
+
+| Scenario / Code | User-Facing Message | Inline Action |
+| :--- | :--- | :--- |
+| **Account Not Found** | *"No account found with this Google email. Please create an account first, then sign in."* | "Create account" + "Try another account" |
+| **Popup Cancelled / Closed** | *"Sign-in was cancelled. Please try again."* | Retry |
+| **Popup Blocked** | *"Your browser blocked the sign-in window. Please allow popups for this site and try again."* | Retry |
+| **Access Denied / Refused** | *"Google sign-in permission was denied. Please try again and allow access."* | Retry |
+| **Account Disabled / Locked** | *"This account has been disabled. Please contact support."* | "Contact support" |
+| **Different Sign-In Method** | *"This email is already registered using a different method. Please sign in with your email and password."* | "Sign in with password" |
+| **Network Error / Offline** | *"Network problem. Please check your internet connection and try again."* | Retry |
+| **Incorrect Password / Email** | *"Incorrect email or password."* (preserves privacy) | Retry |
+| **Rate Limited** | *"Too many attempts. Please wait a few minutes and try again."* | Retry |
+| **Account Already Exists (Sign-up)** | *"This Google account already has an account. Please sign in instead."* | "Sign in" |
+| **Generic / Unknown Error** | *"Something went wrong while signing in. Please try again."* | Retry |
+
+### 2. Custom Error Pages & Boundaries
+- **`app/not-found.tsx`**: Custom 404 page styled with dark theme branding, `noindex` meta, "Go to Home", and contextual back navigation ("Go to Directory" if signed in, "Go to Sign in" if signed out).
+- **`app/error.tsx`**: Runtime error page providing a `reset()` button and "Go to Home" without exposing production stack traces.
+- **`app/global-error.tsx`**: Root layout emergency boundary with standalone HTML/body structure.
+- **`app/forbidden.tsx`**: Custom 403 Forbidden screen.
+- **`AppErrorBoundary` (`src/components/app-error-boundary.tsx`)**: Component-level React error boundary preventing single widget errors from crashing the main directory layout.
+- **`OfflineBanner` (`src/components/offline-banner.tsx`)**: Real-time network listener showing a floating status warning whenever connectivity drops.
+- **Standardized API Errors**: `/api/places` returns consistent JSON `{ error: { code, message } }` with proper HTTP status codes, and `SearchPanel` renders inline dark-themed alerts with zero disruptive popups.

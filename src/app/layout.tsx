@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ContentProtection } from "@/components/content-protection";
+import { OfflineBanner } from "@/components/offline-banner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -90,6 +91,7 @@ export default function RootLayout({
           className="min-h-full bg-[#f8fafc] dark:bg-[#090d16] text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-blue-600/20 selection:text-blue-800 transition-colors duration-200"
         >
           <ThemeProvider>
+            <OfflineBanner />
             <ContentProtection>{children}</ContentProtection>
           </ThemeProvider>
         </body>

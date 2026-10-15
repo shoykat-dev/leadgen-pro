@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { Country } from "country-state-city";
-import { Search, Loader2, Globe, Layers, MapPin, Building2, Compass } from "lucide-react";
+import { Search, Loader2, Globe, Layers, MapPin, Building2, Compass, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BusinessLead } from "@/app/api/places/route";
 import { SearchableSelect, SelectOption } from "@/components/searchable-select";
@@ -40,6 +40,7 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
   const [selectedCityName, setSelectedCityName] = useState<string>("Dhaka");
   const [selectedArea, setSelectedArea] = useState<string>("Banani");
   const [selectedCategory, setSelectedCategory] = useState<string>("restaurant");
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   // Country options with visual country flag image on left
   const countryOptions: SelectOption[] = useMemo(() => {
@@ -103,6 +104,7 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
 
   // Handle Country change
   const handleCountryChange = (countryCode: string) => {
+    if (searchError) setSearchError(null);
     setSelectedCountryCode(countryCode);
     const newStates = getStatesForCountry(countryCode);
 
@@ -125,6 +127,7 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
 
   // Handle State / Division change
   const handleStateChange = (stateCode: string) => {
+    if (searchError) setSearchError(null);
     setSelectedStateCode(stateCode);
     const newCities = getCitiesForState(selectedCountryCode, stateCode);
     if (newCities.length > 0) {
@@ -140,6 +143,7 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
 
   // Handle City / District change
   const handleCityChange = (cityName: string) => {
+    if (searchError) setSearchError(null);
     setSelectedCityName(cityName);
     const newAreas = getAreasForHierarchyCity(selectedCountryCode, selectedStateCode, cityName);
     setSelectedArea(newAreas[0] || "Downtown");
@@ -150,6 +154,7 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
     if (e) e.preventDefault();
     if (isLoading) return;
 
+    if (searchError) setSearchError(null);
     setIsLoading(true);
 
     try {
@@ -181,10 +186,14 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        throw new Error(data.error || "Failed to fetch leads from directory.");
+        const errorMsg =
+          data?.error?.message ||
+          (typeof data?.error === "string" ? data.error : null) ||
+          "Could not load results. Please try again.";
+        throw new Error(errorMsg);
       }
 
       onSearch({
@@ -196,15 +205,15 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
         area: selectedArea.trim(),
         category: selectedCategory,
         categoryLabel: categoryObj?.label || "Businesses",
-        leads: data.businesses || [],
+        leads: data?.businesses || [],
       });
     } catch (err: unknown) {
       console.error("Search failed:", err);
-      alert(
-        err instanceof Error
+      const friendlyMessage =
+        err instanceof Error && err.message
           ? err.message
-          : "An error occurred while fetching business data."
-      );
+          : "Could not load results. Please try again.";
+      setSearchError(friendlyMessage);
     } finally {
       setIsLoading(false);
     }
@@ -300,7 +309,10 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
             placeholder="Select Service..."
             searchPlaceholder="Search business services..."
             value={selectedCategory}
-            onChange={setSelectedCategory}
+            onChange={(cat) => {
+              if (searchError) setSearchError(null);
+              setSelectedCategory(cat);
+            }}
             options={categoryOptions}
           />
         </div>
@@ -331,6 +343,23 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
             </span>
           </div>
         </div>
+
+        {/* Inline Error Alert if search failed */}
+        {searchError && (
+          <div className="mt-3.5 p-3.5 rounded-xl border border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300 flex items-center justify-between gap-3 text-xs sm:text-sm animate-in fade-in-50 duration-200">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+              <span className="font-medium">{searchError}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSearchError(null)}
+              className="px-2.5 py-1 rounded-md text-xs font-semibold hover:bg-red-500/20 text-red-600 dark:text-red-300 transition-colors"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Submit Button Row */}
         <div className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
