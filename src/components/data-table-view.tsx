@@ -85,6 +85,7 @@ export function DataTableView({
 
   // Email finder on-demand state per row
   const [findingEmailId, setFindingEmailId] = useState<string | null>(null);
+  const [isFindingAllEmails, setIsFindingAllEmails] = useState<boolean>(false);
   const [localEmails, setLocalEmails] = useState<Record<string, { email: string | null; status: string }>>({});
 
   // Filtered and Sorted Leads
@@ -237,6 +238,48 @@ export function DataTableView({
     } finally {
       setFindingEmailId(null);
     }
+  };
+
+  // Find all emails for leads with websites in parallel batches
+  const handleFindAllEmails = async () => {
+    const targets = processedLeads.filter(
+      (l) => l.website && !localEmails[l.id]?.email && l.websiteStatus === "Has Website"
+    );
+    if (targets.length === 0 || isFindingAllEmails) return;
+
+    setIsFindingAllEmails(true);
+    const batchSize = 3;
+
+    for (let i = 0; i < targets.length; i += batchSize) {
+      const batch = targets.slice(i, i + batchSize);
+      await Promise.all(
+        batch.map(async (lead) => {
+          setFindingEmailId(lead.id);
+          try {
+            const res = await fetch("/api/find-email", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ website: lead.website }),
+            });
+            const data = await res.json();
+            if (data?.success) {
+              setLocalEmails((prev) => ({
+                ...prev,
+                [lead.id]: {
+                  email: data.email,
+                  status: data.emailStatus || "Missing",
+                },
+              }));
+            }
+          } catch (err) {
+            console.warn("Batch email search failed for", lead.name, err);
+          }
+        })
+      );
+    }
+
+    setFindingEmailId(null);
+    setIsFindingAllEmails(false);
   };
 
   // Export CSV
@@ -400,6 +443,25 @@ export function DataTableView({
               className="w-full h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-8 pr-3 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
+
+          {hasWebsiteCount > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleFindAllEmails}
+              disabled={isFindingAllEmails}
+              className="h-8 text-xs gap-1.5 shrink-0 border-indigo-200 dark:border-indigo-900/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
+              title="Automatically search emails on all websites in results"
+            >
+              {isFindingAllEmails ? (
+                <span className="animate-spin text-xs">⏳</span>
+              ) : (
+                <Mail className="w-3.5 h-3.5 text-indigo-600" />
+              )}
+              <span>{isFindingAllEmails ? "Finding Emails..." : "Find All Emails"}</span>
+            </Button>
+          )}
 
           <Button
             type="button"
