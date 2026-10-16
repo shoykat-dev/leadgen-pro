@@ -122,6 +122,15 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Hide scrollbar for clean horizontal pill scrolling on mobile */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 .custom-table-scrollbar::-webkit-scrollbar {
   height: 8px;
 }

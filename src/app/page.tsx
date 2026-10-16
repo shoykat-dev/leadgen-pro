@@ -146,51 +146,51 @@ export default function DashboardPage() {
     >
       <Navbar />
 
-      <main className="flex-1 max-w-[1560px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-5">
+      <main className="flex-1 max-w-[1560px] w-full mx-auto px-3 sm:px-6 lg:px-8 py-3.5 sm:py-5 space-y-3.5 sm:space-y-5">
         {/* Top Header Strip: Mode Switcher, Google Usage Meter & Settings Trigger */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xs">
           {/* Main Navigation Tabs */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl">
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setActiveTab("search")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                 activeTab === "search"
                   ? "bg-white dark:bg-blue-600 text-blue-600 dark:text-white shadow-xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              <Layers className="w-4 h-4" />
+              <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               <span>Discovery Engine</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab("crm")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                 activeTab === "crm"
                   ? "bg-white dark:bg-blue-600 text-blue-600 dark:text-white shadow-xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              <BookmarkCheck className="w-4 h-4" />
+              <BookmarkCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               <span>My Leads (CRM)</span>
             </button>
           </div>
 
           {/* Right: Usage Meter & Settings */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto">
             {/* Google Usage Meter or Free Search Badge */}
             {hasApiKey ? (
               <div
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-xs text-slate-600 dark:text-slate-300 shadow-2xs"
+                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-xs text-slate-600 dark:text-slate-300 shadow-2xs"
                 title="Official Google Places API (New) Free-Tier Safe Call Usage"
               >
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                <span className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] sm:text-xs">
                   Google Calls:
                 </span>
-                <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">
+                <span className="font-mono text-blue-600 dark:text-blue-400 font-bold text-[11px] sm:text-xs">
                   {budget.monthlyUsed} / {budget.monthlyLimit}
                 </span>
                 <span className="text-[11px] text-slate-400 hidden md:inline">
@@ -199,12 +199,12 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-700 dark:text-emerald-300 shadow-2xs"
+                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-700 dark:text-emerald-300 shadow-2xs"
                 title="100% Free Live Discovery Engine (No Credit Card or Google Billing Required)"
               >
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                <span className="font-bold">Live Free Search</span>
-                <span className="text-[11px] opacity-80 hidden md:inline font-medium">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                <span className="font-bold text-[11px] sm:text-xs">Live Free Search</span>
+                <span className="text-[10px] sm:text-[11px] opacity-80 hidden xs:inline font-medium">
                   (No Card Needed)
                 </span>
               </div>
@@ -215,7 +215,7 @@ export default function DashboardPage() {
               variant="outline"
               size="sm"
               onClick={() => setIsSettingsOpen(true)}
-              className="h-8 text-xs gap-1.5 border-slate-200 dark:border-slate-800"
+              className="h-8 text-xs gap-1.5 border-slate-200 dark:border-slate-800 shrink-0 px-2.5 sm:px-3"
               title="Configure freelance outreach settings & scripts"
             >
               <Settings className="w-3.5 h-3.5 text-slate-500" />
@@ -249,85 +249,85 @@ export default function DashboardPage() {
             />
 
             {/* Quick Analytics Metrics Cards Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
               {/* Card 1: Total Leads */}
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] shadow-xs space-y-1 transition-colors duration-200">
-                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
+              <div className="p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] shadow-xs space-y-0.5 sm:space-y-1 transition-colors duration-200">
+                <div className="flex items-center justify-between text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium">
                   <span>Total Leads</span>
-                  <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400" />
                 </div>
-                <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
                   {totalLeads}
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 truncate">
                   {searchLocation.area}, {searchLocation.city}
                 </div>
               </div>
 
               {/* Card 2: Without Website (High Priority Cold Outreach) */}
-              <div className="p-4 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50/70 dark:bg-red-950/30 shadow-xs space-y-1 transition-colors duration-200">
-                <div className="flex items-center justify-between text-xs text-red-700 dark:text-red-300 font-semibold">
-                  <span>Without Website</span>
-                  <GlobeX className="w-4 h-4 text-red-600 dark:text-red-400" />
+              <div className="p-3 sm:p-4 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50/70 dark:bg-red-950/30 shadow-xs space-y-0.5 sm:space-y-1 transition-colors duration-200">
+                <div className="flex items-center justify-between text-[11px] sm:text-xs text-red-700 dark:text-red-300 font-semibold">
+                  <span className="truncate">No Website</span>
+                  <GlobeX className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600 dark:text-red-400 shrink-0" />
                 </div>
-                <div className="text-2xl font-bold text-red-700 dark:text-red-400 tracking-tight">
+                <div className="text-xl sm:text-2xl font-bold text-red-700 dark:text-red-400 tracking-tight">
                   {noWebsiteLeads}
                 </div>
-                <div className="text-[11px] text-red-600/80 dark:text-red-300/80 font-medium">
-                  {socialOnlyLeads > 0 ? `+${socialOnlyLeads} social only` : "Prime web prospects"}
+                <div className="text-[10px] sm:text-[11px] text-red-600/80 dark:text-red-300/80 font-medium truncate">
+                  {socialOnlyLeads > 0 ? `+${socialOnlyLeads} social only` : "Prime prospects"}
                 </div>
               </div>
 
               {/* Card 3: Has Website */}
-              <div className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-950/30 shadow-xs space-y-1 transition-colors duration-200">
-                <div className="flex items-center justify-between text-xs text-emerald-700 dark:text-emerald-300 font-semibold">
-                  <span>Has Website</span>
-                  <Globe2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <div className="p-3 sm:p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-950/30 shadow-xs space-y-0.5 sm:space-y-1 transition-colors duration-200">
+                <div className="flex items-center justify-between text-[11px] sm:text-xs text-emerald-700 dark:text-emerald-300 font-semibold">
+                  <span className="truncate">Has Website</span>
+                  <Globe2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 </div>
-                <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-300 tracking-tight">
+                <div className="text-xl sm:text-2xl font-bold text-emerald-800 dark:text-emerald-300 tracking-tight">
                   {hasWebsiteLeads}
                 </div>
-                <div className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
-                  Audit for redesign & speed
+                <div className="text-[10px] sm:text-[11px] text-emerald-700/80 dark:text-emerald-400/80 truncate">
+                  Redesign & SEO audit
                 </div>
               </div>
 
               {/* Card 4: Contactable Leads (Unique Count - Section 7) */}
-              <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/60 dark:bg-blue-950/30 shadow-xs space-y-1 transition-colors duration-200">
-                <div className="flex items-center justify-between text-xs text-blue-700 dark:text-blue-300 font-semibold">
-                  <span>Contactable</span>
-                  <PhoneCall className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <div className="p-3 sm:p-4 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/60 dark:bg-blue-950/30 shadow-xs space-y-0.5 sm:space-y-1 transition-colors duration-200">
+                <div className="flex items-center justify-between text-[11px] sm:text-xs text-blue-700 dark:text-blue-300 font-semibold">
+                  <span className="truncate">Contactable</span>
+                  <PhoneCall className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400 shrink-0" />
                 </div>
-                <div className="text-2xl font-bold text-blue-800 dark:text-blue-300 tracking-tight">
+                <div className="text-xl sm:text-2xl font-bold text-blue-800 dark:text-blue-300 tracking-tight">
                   {contactableLeads}
                 </div>
-                <div className="text-[11px] text-blue-700/80 dark:text-blue-400/80">
-                  {withPhoneLeads} with phone, {withEmailLeads} with email
+                <div className="text-[10px] sm:text-[11px] text-blue-700/80 dark:text-blue-400/80 truncate">
+                  {withPhoneLeads} phone, {withEmailLeads} email
                 </div>
               </div>
             </div>
 
             {/* Honest Empty State vs Data Table */}
             {leads.length === 0 ? (
-              <div className="p-8 sm:p-14 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] text-center space-y-4">
-                <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-xs">
-                  <Radar className="w-7 h-7" />
+              <div className="p-6 sm:p-14 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] text-center space-y-4">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-xs">
+                  <Radar className="w-6 h-6 sm:w-7 sm:h-7" />
                 </div>
 
                 <div className="space-y-1">
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white px-2">
                     Ready to discover verified businesses in {searchLocation.area}, {searchLocation.city}
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto px-2">
                     Choose an action below to start building your outreach pipeline. All data is verified with zero mock records.
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+                <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center gap-2 sm:gap-2.5 pt-2 max-w-lg mx-auto">
                   <Button
                     type="button"
                     onClick={() => setIsAreaScanOpen(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1.5 font-semibold h-9 rounded-xl shadow-xs"
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1.5 font-semibold h-10 sm:h-9 rounded-xl shadow-xs justify-center"
                   >
                     <Radar className="w-3.5 h-3.5 animate-pulse" />
                     <span>Launch Area Coverage Scan</span>
@@ -337,7 +337,7 @@ export default function DashboardPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsCsvImportOpen(true)}
-                    className="text-xs gap-1.5 font-semibold h-9 rounded-xl border-slate-200 dark:border-slate-700"
+                    className="text-xs gap-1.5 font-semibold h-10 sm:h-9 rounded-xl border-slate-200 dark:border-slate-700 justify-center"
                   >
                     <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Import from CSV</span>
@@ -347,7 +347,7 @@ export default function DashboardPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsAddLeadOpen(true)}
-                    className="text-xs gap-1.5 font-semibold h-9 rounded-xl border-slate-200 dark:border-slate-700"
+                    className="text-xs gap-1.5 font-semibold h-10 sm:h-9 rounded-xl border-slate-200 dark:border-slate-700 justify-center"
                   >
                     <PlusCircle className="w-3.5 h-3.5 text-indigo-600" />
                     <span>Add Lead Manually</span>

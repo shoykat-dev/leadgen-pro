@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Download,
   MapPin,
@@ -24,6 +24,11 @@ import {
   MessageSquare,
   SearchCode,
   CheckCircle2,
+  LayoutGrid,
+  List,
+  SlidersHorizontal,
+  PhoneCall,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +67,16 @@ export function DataTableView({
   onLeadStatusChanged,
   onRefreshLeads,
 }: DataTableViewProps) {
+  // Mobile / Desktop View Mode (Cards vs Table)
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+  const [showMobileFilters, setShowMobileFilters] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth >= 1024) {
+      setViewMode("table");
+    }
+  }, []);
+
   // Filters state
   const [websiteFilter, setWebsiteFilter] = useState<WebsiteFilterType>("all");
   const [phoneFilter, setPhoneFilter] = useState<boolean>(false);
@@ -376,13 +391,13 @@ export function DataTableView({
       )}
 
       {/* Primary Filter Strip & Actions Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xs">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-2.5 sm:p-3 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xs">
         {/* Left: Website Status Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 lg:pb-0 w-full lg:w-auto -mx-1 px-1">
           <button
             type="button"
             onClick={() => setWebsiteFilter("all")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
               websiteFilter === "all"
                 ? "bg-slate-900 dark:bg-blue-600 text-white shadow-xs"
                 : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -394,106 +409,161 @@ export function DataTableView({
           <button
             type="button"
             onClick={() => setWebsiteFilter("no_website")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
               websiteFilter === "no_website"
                 ? "bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 shadow-xs"
                 : "text-slate-600 dark:text-slate-300 hover:text-red-700 hover:bg-red-50/50"
             }`}
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+            <span className="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" />
             <span>No Website ({noWebsiteCount})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setWebsiteFilter("social_only")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
               websiteFilter === "social_only"
                 ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shadow-xs"
                 : "text-slate-600 dark:text-slate-300 hover:text-amber-700 hover:bg-amber-50/50"
             }`}
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
             <span>Social Only ({socialOnlyCount})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setWebsiteFilter("has_website")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
               websiteFilter === "has_website"
                 ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-xs"
                 : "text-slate-600 dark:text-slate-300 hover:text-emerald-700 hover:bg-emerald-50/50"
             }`}
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
             <span>Has Website ({hasWebsiteCount})</span>
           </button>
         </div>
 
-        {/* Right: Quick Search & Export */}
-        <div className="flex items-center gap-2">
-          <div className="relative w-full sm:w-60">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-            <input
-              type="text"
-              value={tableSearch}
-              onChange={(e) => setTableSearch(e.target.value)}
-              placeholder="Search in results..."
-              className="w-full h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-8 pr-3 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
+        {/* Right: Quick Search, View Mode Switcher & Export */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* View Mode Toggle: Cards vs Table */}
+            <div className="flex items-center p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shrink-0">
+              <button
+                type="button"
+                onClick={() => setViewMode("cards")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                  viewMode === "cards"
+                    ? "bg-white dark:bg-blue-600 text-blue-600 dark:text-white shadow-2xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+                title="Card View (Perfect for mobile)"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span className="hidden xs:inline">Cards</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                  viewMode === "table"
+                    ? "bg-white dark:bg-blue-600 text-blue-600 dark:text-white shadow-2xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                }`}
+                title="Table View (Full spreadsheet)"
+              >
+                <List className="w-3.5 h-3.5" />
+                <span className="hidden xs:inline">Table</span>
+              </button>
+            </div>
+
+            {/* Quick search input */}
+            <div className="relative flex-1 sm:w-48">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                value={tableSearch}
+                onChange={(e) => setTableSearch(e.target.value)}
+                placeholder="Search leads..."
+                className="w-full h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-8 pr-3 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
           </div>
 
-          {hasWebsiteCount > 0 && (
+          {/* Action buttons row */}
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:gap-2">
+            {hasWebsiteCount > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleFindAllEmails}
+                disabled={isFindingAllEmails}
+                className="h-8 text-[11px] sm:text-xs gap-1.5 border-indigo-200 dark:border-indigo-900/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 justify-center"
+                title="Automatically search emails on all websites in results"
+              >
+                {isFindingAllEmails ? (
+                  <span className="animate-spin text-xs">⏳</span>
+                ) : (
+                  <Mail className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                )}
+                <span className="truncate">{isFindingAllEmails ? "Crawling..." : "Find Emails"}</span>
+              </Button>
+            )}
+
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={handleFindAllEmails}
-              disabled={isFindingAllEmails}
-              className="h-8 text-xs gap-1.5 shrink-0 border-indigo-200 dark:border-indigo-900/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
-              title="Automatically search emails on all websites in results"
+              onClick={handleBulkSave}
+              disabled={processedLeads.length === 0}
+              className="h-8 text-[11px] sm:text-xs gap-1.5 border-blue-200 dark:border-blue-900/60 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 justify-center"
             >
-              {isFindingAllEmails ? (
-                <span className="animate-spin text-xs">⏳</span>
-              ) : (
-                <Mail className="w-3.5 h-3.5 text-indigo-600" />
-              )}
-              <span>{isFindingAllEmails ? "Finding Emails..." : "Find All Emails"}</span>
+              <BookmarkPlus className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+              <span className="truncate">
+                Save {selectedLeadIds.size > 0 ? `(${selectedLeadIds.size})` : "All"} to CRM
+              </span>
             </Button>
-          )}
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleBulkSave}
-            disabled={processedLeads.length === 0}
-            className="h-8 text-xs gap-1.5 shrink-0 border-blue-200 dark:border-blue-900/60 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40"
-          >
-            <BookmarkPlus className="w-3.5 h-3.5 text-blue-600" />
-            <span>
-              Save {selectedLeadIds.size > 0 ? `(${selectedLeadIds.size})` : "All"} to CRM
-            </span>
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => handleExportCSV("all")}
-            disabled={processedLeads.length === 0}
-            className="h-8 text-xs gap-1.5 shrink-0"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
-          </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => handleExportCSV("all")}
+              disabled={processedLeads.length === 0}
+              className="h-8 text-[11px] sm:text-xs gap-1.5 justify-center col-span-2 sm:col-span-1"
+            >
+              <Download className="w-3.5 h-3.5 shrink-0" />
+              <span>Export CSV</span>
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Secondary Filter & Sort Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-xs">
-        <div className="flex flex-wrap items-center gap-2.5">
+      {/* Mobile Filter Toggle Button */}
+      <div className="sm:hidden">
+        <button
+          type="button"
+          onClick={() => setShowMobileFilters((prev) => !prev)}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300"
+        >
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-blue-600" />
+            <span>Filters & Sort</span>
+            {(phoneFilter || emailFilter || hideContacted || minReviews > 0 || scoreTierFilter !== "all") && (
+              <span className="h-2 w-2 rounded-full bg-blue-600" />
+            )}
+          </div>
+          <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showMobileFilters ? "rotate-180" : ""}`} />
+        </button>
+      </div>
+
+      {/* Secondary Filter & Sort Bar (Always on desktop, Collapsible on mobile) */}
+      <div className={`${showMobileFilters ? "flex" : "hidden sm:flex"} flex-wrap items-center justify-between gap-2.5 sm:gap-3 p-2.5 sm:px-3 sm:py-2 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-xs`}>
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
           {/* Has Valid Phone Toggle */}
           <label className="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700 dark:text-slate-300">
             <input
@@ -502,7 +572,7 @@ export function DataTableView({
               onChange={(e) => setPhoneFilter(e.target.checked)}
               className="rounded text-blue-600 focus:ring-blue-500 h-3.5 w-3.5"
             />
-            <span>Valid Phone Only</span>
+            <span>Valid Phone</span>
           </label>
 
           {/* Has Email Toggle */}
@@ -529,11 +599,11 @@ export function DataTableView({
 
           {/* Score Tier Selector */}
           <div className="flex items-center gap-1.5">
-            <span className="text-slate-500">Lead Score:</span>
+            <span className="text-slate-500 text-[11px]">Score:</span>
             <select
               value={scoreTierFilter}
               onChange={(e) => setScoreTierFilter(e.target.value)}
-              className="h-7 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-[11px] font-semibold text-slate-800 dark:text-slate-200"
+              className="h-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-[11px] font-semibold text-slate-800 dark:text-slate-200"
             >
               <option value="all">All Tiers</option>
               <option value="High">High Priority (60+)</option>
@@ -544,11 +614,11 @@ export function DataTableView({
 
           {/* Min Reviews */}
           <div className="flex items-center gap-1.5">
-            <span className="text-slate-500">Min Reviews:</span>
+            <span className="text-slate-500 text-[11px]">Reviews:</span>
             <select
               value={minReviews}
               onChange={(e) => setMinReviews(parseInt(e.target.value, 10))}
-              className="h-7 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-[11px] font-semibold text-slate-800 dark:text-slate-200"
+              className="h-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-[11px] font-semibold text-slate-800 dark:text-slate-200"
             >
               <option value={0}>Any</option>
               <option value={20}>20+ Reviews</option>
@@ -558,12 +628,12 @@ export function DataTableView({
         </div>
 
         {/* Sort Selector */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-slate-500">Sort by:</span>
+        <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
+          <span className="text-slate-500 text-[11px]">Sort:</span>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
-            className="h-7 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-[11px] font-semibold text-slate-800 dark:text-slate-200"
+            className="h-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-[11px] font-semibold text-slate-800 dark:text-slate-200"
           >
             <option value="score">Lead Score (Highest)</option>
             <option value="reviews">Reviews Count</option>
@@ -573,10 +643,276 @@ export function DataTableView({
         </div>
       </div>
 
-      {/* Main Table */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
+      {/* CONTENT: CARDS VIEW vs TABLE VIEW */}
+      {processedLeads.length === 0 ? (
+        <div className="p-8 sm:p-14 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] text-center space-y-3">
+          <AlertCircle className="w-9 h-9 text-slate-300 dark:text-slate-600 mx-auto" />
+          <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+            No businesses found matching current filters
+          </h4>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            Try resetting filters, searching a broader area, or running an Area Scan above.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setWebsiteFilter("all");
+              setPhoneFilter(false);
+              setEmailFilter(false);
+              setScoreTierFilter("all");
+              setMinReviews(0);
+              setTableSearch("");
+            }}
+            className="text-xs rounded-xl"
+          >
+            Reset Filters
+          </Button>
+        </div>
+      ) : viewMode === "cards" ? (
+        /* RESPONSIVE MOBILE & DESKTOP CARD VIEW */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          {processedLeads.map((lead) => {
+            const isSelected = selectedLeadIds.has(lead.id);
+            const activeEmail = localEmails[lead.id]?.email || lead.email;
+            const phoneHasVal = lead.phone && lead.phoneStatus !== "Missing";
+            const cleanPhoneDigits = (lead.phoneE164 || lead.phone || "").replace(/[^0-9]/g, "");
+
+            return (
+              <div
+                key={lead.id}
+                className={`p-3.5 sm:p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between space-y-3 relative ${
+                  isSelected
+                    ? "bg-blue-50/40 dark:bg-blue-950/20 border-blue-400 dark:border-blue-600 shadow-sm"
+                    : "bg-white dark:bg-[#0f172a] border-slate-200 dark:border-slate-800 shadow-xs hover:border-slate-300 dark:hover:border-slate-700"
+                }`}
+              >
+                {/* Top row: Checkbox, Name, Category & Score Badge */}
+                <div className="space-y-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleSelectLead(lead.id)}
+                        className="mt-0.5 p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 shrink-0"
+                      >
+                        {isSelected ? (
+                          <CheckSquare className="w-4 h-4 text-blue-600" />
+                        ) : (
+                          <Square className="w-4 h-4" />
+                        )}
+                      </button>
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                          {lead.name}
+                        </h4>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5">
+                          <span>{lead.category}</span>
+                          <span>•</span>
+                          <span className="truncate">{lead.address}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Lead Score Badge */}
+                    <div
+                      className={`px-2 py-0.5 rounded-lg border text-[11px] font-bold shrink-0 text-center ${
+                        lead.leadScoreTier === "High"
+                          ? "bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800"
+                          : lead.leadScoreTier === "Medium"
+                          ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+                          : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
+                      }`}
+                      title={`Lead Score: ${lead.leadScore}/100`}
+                    >
+                      Score: {lead.leadScore}
+                    </div>
+                  </div>
+
+                  {/* Rating and Website Status Row */}
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 text-xs">
+                    <div className="flex items-center gap-1 text-amber-500 dark:text-amber-400 font-semibold text-xs">
+                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      <span className="text-slate-800 dark:text-slate-200">{lead.rating?.toFixed(1) || "4.5"}</span>
+                      <span className="text-slate-400 text-[11px]">({lead.userRatingCount || 24})</span>
+                    </div>
+
+                    {/* Website Status Badge */}
+                    {lead.websiteStatus === "No Website" ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-100/80 text-red-800 dark:bg-red-950/80 dark:text-red-300 border border-red-200 dark:border-red-900">
+                        <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                        No Website (High Opportunity)
+                      </span>
+                    ) : lead.websiteStatus === "Social Only" ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100/80 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200 dark:border-amber-900">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                        Social Profile Only
+                      </span>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <a
+                          href={lead.website!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline max-w-[120px] truncate"
+                        >
+                          <ExternalLink className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{lead.website!.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}</span>
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => setAuditLead(lead)}
+                          className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50"
+                          title="Audit website speed and mobile usability"
+                        >
+                          <Activity className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick Direct Contacts Bar (Phone, WhatsApp, Email) */}
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 space-y-2">
+                  {/* Phone & WhatsApp Row */}
+                  <div className="flex items-center gap-2">
+                    {phoneHasVal ? (
+                      <>
+                        <a
+                          href={`tel:${lead.phoneE164 || lead.phone}`}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-blue-400 text-xs font-semibold shadow-2xs truncate"
+                          title="Tap to call directly from phone"
+                        >
+                          <PhoneCall className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          <span className="truncate">{lead.phone}</span>
+                        </a>
+
+                        {lead.canWhatsApp && (
+                          <a
+                            href={`https://wa.me/${cleanPhoneDigits}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-1 py-1.5 px-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-2xs shrink-0"
+                            title="Open WhatsApp chat directly"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span className="text-[11px]">WhatsApp</span>
+                          </a>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-[11px] text-slate-400 dark:text-slate-500 italic py-0.5">
+                        No verified phone found
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Email Row */}
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    {activeEmail ? (
+                      <div className="flex items-center justify-between gap-1.5 w-full">
+                        <a
+                          href={`mailto:${activeEmail}`}
+                          className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-mono text-[11px] truncate flex-1"
+                          title={activeEmail}
+                        >
+                          <Mail className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                          <span className="truncate">{activeEmail}</span>
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(activeEmail, lead.id + "-email")}
+                          className="p-1 text-slate-400 hover:text-slate-600 shrink-0"
+                          title="Copy Email"
+                        >
+                          {copiedId === lead.id + "-email" ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-500" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    ) : lead.website && lead.websiteStatus === "Has Website" ? (
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-[11px] text-slate-400">Email not indexed</span>
+                        <button
+                          type="button"
+                          onClick={() => handleFindEmail(lead)}
+                          disabled={findingEmailId === lead.id}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900 hover:bg-indigo-100"
+                        >
+                          {findingEmailId === lead.id ? (
+                            <span className="animate-spin">⏳ Crawling...</span>
+                          ) : (
+                            <>
+                              <SearchCode className="w-3 h-3" />
+                              <span>Find Email</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-[11px] text-slate-400">No email available</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Buttons Footer */}
+                <div className="flex items-center gap-2 pt-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setOutreachLead(lead)}
+                    className="flex-1 h-9 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white gap-1.5 shadow-xs justify-center"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Pitch Client</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSaveSingleLead(lead)}
+                    className="h-9 px-3 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    title="Save lead to CRM"
+                  >
+                    <BookmarkPlus className="w-3.5 h-3.5 text-blue-600" />
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setMapLead(lead)}
+                    className="h-9 px-2.5 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                    title="View on Google Maps"
+                  >
+                    <MapPin className="w-3.5 h-3.5 text-rose-500" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* WIDE TABLE VIEW WITH MOBILE SWIPE HINT */
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] shadow-xs overflow-hidden">
+          {/* Mobile Swipe Hint Banner */}
+          <div className="lg:hidden px-3.5 py-2 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+            <span>👉 Swipe horizontally to view all columns</span>
+            <button
+              type="button"
+              onClick={() => setViewMode("cards")}
+              className="text-blue-600 dark:text-blue-400 font-semibold underline"
+            >
+              Switch to Cards
+            </button>
+          </div>
+
+          <div className="overflow-x-auto custom-table-scrollbar">
+            <Table>
             <TableHeader className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800">
               <TableRow className="text-[11px] text-slate-500 hover:bg-transparent">
                 <TableHead className="w-10 px-3 py-3">
@@ -898,6 +1234,7 @@ export function DataTableView({
           </Table>
         </div>
       </div>
+      )}
 
       {/* Outreach Modal */}
       {outreachLead && (
