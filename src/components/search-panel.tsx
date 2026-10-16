@@ -2,7 +2,19 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { Country } from "country-state-city";
-import { Search, Loader2, Globe, Layers, MapPin, Building2, Compass, AlertCircle } from "lucide-react";
+import {
+  Search,
+  Loader2,
+  Globe,
+  Layers,
+  MapPin,
+  Building2,
+  Compass,
+  AlertCircle,
+  Radar,
+  FileSpreadsheet,
+  PlusCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BusinessLead } from "@/app/api/places/route";
 import { SearchableSelect, SelectOption } from "@/components/searchable-select";
@@ -28,9 +40,19 @@ interface SearchPanelProps {
   }) => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
+  onOpenAreaScan?: (location: { area: string; city: string; countryCode: string }) => void;
+  onOpenCsvImport?: () => void;
+  onOpenAddLead?: () => void;
 }
 
-export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelProps) {
+export function SearchPanel({
+  onSearch,
+  isLoading,
+  setIsLoading,
+  onOpenAreaScan,
+  onOpenCsvImport,
+  onOpenAddLead,
+}: SearchPanelProps) {
   // All countries
   const countries = useMemo(() => Country.getAllCountries(), []);
 
@@ -176,6 +198,7 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
         city: selectedCityName || selectedStateObj?.name || "Dhaka",
         area: selectedArea.trim() || selectedCityName,
         category: selectedCategory,
+        categoryLabel: categoryObj?.label || selectedCategory,
         lat: null,
         lon: null,
       };
@@ -361,12 +384,54 @@ export function SearchPanel({ onSearch, isLoading, setIsLoading }: SearchPanelPr
           </div>
         )}
 
-        {/* Submit Button Row */}
+        {/* Submit and Action Buttons Row */}
         <div className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
-            <span>Searchable directory across 190+ countries with verified phone, email, and websites</span>
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            {onOpenAreaScan && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  onOpenAreaScan({
+                    area: selectedArea,
+                    city: selectedCityName,
+                    countryCode: selectedCountryCode,
+                  })
+                }
+                className="h-10 px-3.5 rounded-xl border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 text-xs font-semibold gap-1.5"
+              >
+                <Radar className="w-4 h-4 text-blue-600 animate-pulse" />
+                <span>Area Coverage Scan</span>
+              </Button>
+            )}
+
+            {onOpenCsvImport && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onOpenCsvImport}
+                className="h-10 px-3 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold gap-1.5"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                <span>Import CSV</span>
+              </Button>
+            )}
+
+            {onOpenAddLead && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onOpenAddLead}
+                className="h-10 px-3 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold gap-1.5"
+              >
+                <PlusCircle className="w-4 h-4 text-indigo-600" />
+                <span>Add Lead</span>
+              </Button>
+            )}
+          </div>
 
           <Button
             type="submit"

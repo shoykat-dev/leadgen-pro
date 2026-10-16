@@ -1,233 +1,89 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { Navbar } from "@/components/navbar";
 import { SearchPanel } from "@/components/search-panel";
 import { DataTableView } from "@/components/data-table-view";
+import { MyLeadsView } from "@/components/my-leads-view";
+import { AreaScanModal } from "@/components/area-scan-modal";
+import { CsvImportModal } from "@/components/csv-import-modal";
+import { AddLeadModal } from "@/components/add-lead-modal";
+import { SettingsModal } from "@/components/settings-modal";
+import { OutreachModal } from "@/components/outreach-modal";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
-import { BusinessLead } from "@/app/api/places/route";
+import { BusinessLead } from "@/lib/data-integrity";
 import {
   Users,
   Globe2,
   GlobeX,
   PhoneCall,
+  Radar,
+  FileSpreadsheet,
+  PlusCircle,
+  Settings,
+  Layers,
+  BookmarkCheck,
+  ShieldAlert,
+  Info,
+  CheckCircle2,
 } from "lucide-react";
-
-// Pre-seeded initial data (Local businesses in Banani, Dhaka - restaurants, cafes, clinics, salons, gyms)
-const INITIAL_LEADS: BusinessLead[] = [
-  {
-    id: "init-1",
-    name: "The White Canary Cafe",
-    phone: "+880 1712-345678",
-    email: "info@whitecanarycafe.com",
-    address: "House 24, Road 11, Block F, Banani, Dhaka, Bangladesh",
-    website: "https://whitecanarycafe.com",
-    hasWebsite: true,
-    category: "Restaurant & Fine Dining",
-    lat: 23.7937,
-    lon: 90.4043,
-    googleMapsUrl: "https://www.google.com/maps/search/?api=1&query=The%20White%20Canary%20Cafe%2C%20House%2024%2C%20Road%2011%2C%20Block%20F%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-    googleMapsEmbedUrl: "https://maps.google.com/maps?q=The%20White%20Canary%20Cafe%2C%20House%2024%2C%20Road%2011%2C%20Block%20F%2C%20Banani%2C%20Dhaka%2C%20Bangladesh&hl=en&z=16&output=embed",
-    googleMapsDirectionsUrl: "https://www.google.com/maps/dir/?api=1&destination=The%20White%20Canary%20Cafe%2C%20House%2024%2C%20Road%2011%2C%20Block%20F%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-  },
-  {
-    id: "init-2",
-    name: "Star Kabab & Restaurant",
-    phone: "+880 1912-345678",
-    email: "starkabab.banani@gmail.com",
-    address: "House 18, Block E, Banani, Dhaka, Bangladesh",
-    website: null,
-    hasWebsite: false,
-    category: "Restaurant & Fine Dining",
-    lat: 23.7942,
-    lon: 90.4055,
-    googleMapsUrl: "https://www.google.com/maps/search/?api=1&query=Star%20Kabab%20%26%20Restaurant%2C%20House%2018%2C%20Block%20E%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-    googleMapsEmbedUrl: "https://maps.google.com/maps?q=Star%20Kabab%20%26%20Restaurant%2C%20House%2018%2C%20Block%20E%2C%20Banani%2C%20Dhaka%2C%20Bangladesh&hl=en&z=16&output=embed",
-    googleMapsDirectionsUrl: "https://www.google.com/maps/dir/?api=1&destination=Star%20Kabab%20%26%20Restaurant%2C%20House%2018%2C%20Block%20E%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-  },
-  {
-    id: "init-3",
-    name: "Floor 6 Bistro & Grill",
-    phone: "+880 1822-998877",
-    email: "contact@floor6bistro.com",
-    address: "Level 6, Navana Tower, Road 4, Banani, Dhaka, Bangladesh",
-    website: "https://floor6bistro.com",
-    hasWebsite: true,
-    category: "Restaurant & Fine Dining",
-    lat: 23.7915,
-    lon: 90.4021,
-    googleMapsUrl: "https://www.google.com/maps/search/?api=1&query=Floor%206%20Bistro%20%26%20Grill%2C%20Level%206%2C%20Navana%20Tower%2C%20Road%204%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-    googleMapsEmbedUrl: "https://maps.google.com/maps?q=Floor%206%20Bistro%20%26%20Grill%2C%20Level%206%2C%20Navana%20Tower%2C%20Road%204%2C%20Banani%2C%20Dhaka%2C%20Bangladesh&hl=en&z=16&output=embed",
-    googleMapsDirectionsUrl: "https://www.google.com/maps/dir/?api=1&destination=Floor%206%20Bistro%20%26%20Grill%2C%20Level%206%2C%20Navana%20Tower%2C%20Road%204%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-  },
-  {
-    id: "init-4",
-    name: "Bella Italia Ristorante",
-    phone: "+880 1511-223344",
-    email: "bellaitaliabanani@gmail.com",
-    address: "Plot 8, Aviation Tower, Banani, Dhaka, Bangladesh",
-    website: null,
-    hasWebsite: false,
-    category: "Restaurant & Fine Dining",
-    lat: 23.7928,
-    lon: 90.4068,
-    googleMapsUrl: "https://www.google.com/maps/search/?api=1&query=Bella%20Italia%20Ristorante%2C%20Plot%208%2C%20Aviation%20Tower%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-    googleMapsEmbedUrl: "https://maps.google.com/maps?q=Bella%20Italia%20Ristorante%2C%20Plot%208%2C%20Aviation%20Tower%2C%20Banani%2C%20Dhaka%2C%20Bangladesh&hl=en&z=16&output=embed",
-    googleMapsDirectionsUrl: "https://www.google.com/maps/dir/?api=1&destination=Bella%20Italia%20Ristorante%2C%20Plot%208%2C%20Aviation%20Tower%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-  },
-  {
-    id: "init-5",
-    name: "Gloria Jean's Coffees Banani",
-    phone: "+880 1714-556677",
-    email: "banani.branch@gloriajeansbd.com",
-    address: "Road 11, Block D, Banani, Dhaka, Bangladesh",
-    website: "https://gloriajeanscoffees.com",
-    hasWebsite: true,
-    category: "Cafe & Coffee Shop",
-    lat: 23.795,
-    lon: 90.4038,
-    googleMapsUrl: "https://www.google.com/maps/search/?api=1&query=Gloria%20Jean's%20Coffees%20Banani%2C%20Road%2011%2C%20Block%20D%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-    googleMapsEmbedUrl: "https://maps.google.com/maps?q=Gloria%20Jean's%20Coffees%20Banani%2C%20Road%2011%2C%20Block%20D%2C%20Banani%2C%20Dhaka%2C%20Bangladesh&hl=en&z=16&output=embed",
-    googleMapsDirectionsUrl: "https://www.google.com/maps/dir/?api=1&destination=Gloria%20Jean's%20Coffees%20Banani%2C%20Road%2011%2C%20Block%20D%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-  },
-  {
-    id: "init-6",
-    name: "Banani Dental Care & Implant Center",
-    phone: "+880 1713-000000",
-    email: "appointments.bananidental@gmail.com",
-    address: "8th Floor, Plot 2, Road 11, Banani, Dhaka, Bangladesh",
-    website: null,
-    hasWebsite: false,
-    category: "Dental Clinic & Dentists",
-    lat: 23.7935,
-    lon: 90.405,
-    googleMapsUrl: "https://www.google.com/maps/search/?api=1&query=Banani%20Dental%20Care%20%26%20Implant%20Center%2C%208th%20Floor%2C%20Plot%202%2C%20Road%2011%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-    googleMapsEmbedUrl: "https://maps.google.com/maps?q=Banani%20Dental%20Care%20%26%20Implant%20Center%2C%208th%20Floor%2C%20Plot%202%2C%20Road%2011%2C%20Banani%2C%20Dhaka%2C%20Bangladesh&hl=en&z=16&output=embed",
-    googleMapsDirectionsUrl: "https://www.google.com/maps/dir/?api=1&destination=Banani%20Dental%20Care%20%26%20Implant%20Center%2C%208th%20Floor%2C%20Plot%202%2C%20Road%2011%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-  },
-  {
-    id: "init-7",
-    name: "Herbs & Roots Ayurvedic Spa",
-    phone: "+880 1819-112233",
-    email: "info@herbsandrootsspa.com",
-    address: "House 10, Road 13A, Banani, Dhaka, Bangladesh",
-    website: "https://herbsandrootsspa.com",
-    hasWebsite: true,
-    category: "Spa, Sauna & Wellness Center",
-    lat: 23.7961,
-    lon: 90.4072,
-    googleMapsUrl: "https://www.google.com/maps/search/?api=1&query=Herbs%20%26%20Roots%20Ayurvedic%20Spa%2C%20House%2010%2C%20Road%2013A%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-    googleMapsEmbedUrl: "https://maps.google.com/maps?q=Herbs%20%26%20Roots%20Ayurvedic%20Spa%2C%20House%2010%2C%20Road%2013A%2C%20Banani%2C%20Dhaka%2C%20Bangladesh&hl=en&z=16&output=embed",
-    googleMapsDirectionsUrl: "https://www.google.com/maps/dir/?api=1&destination=Herbs%20%26%20Roots%20Ayurvedic%20Spa%2C%20House%2010%2C%20Road%2013A%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-  },
-  {
-    id: "init-8",
-    name: "FitZone Premium Gym Banani",
-    phone: "+880 1789-123456",
-    email: "fitzonebanani@gmail.com",
-    address: "Road 19/A, Banani, Dhaka, Bangladesh",
-    website: null,
-    hasWebsite: false,
-    category: "Gym & Fitness Club",
-    lat: 23.7948,
-    lon: 90.4019,
-    googleMapsUrl: "https://www.google.com/maps/search/?api=1&query=FitZone%20Premium%20Gym%20Banani%2C%20Road%2019%2FA%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-    googleMapsEmbedUrl: "https://maps.google.com/maps?q=FitZone%20Premium%20Gym%20Banani%2C%20Road%2019%2FA%2C%20Banani%2C%20Dhaka%2C%20Bangladesh&hl=en&z=16&output=embed",
-    googleMapsDirectionsUrl: "https://www.google.com/maps/dir/?api=1&destination=FitZone%20Premium%20Gym%20Banani%2C%20Road%2019%2FA%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-  },
-  {
-    id: "init-9",
-    name: "Artisan Bakery & Pastry Shop",
-    phone: "+880 1677-889900",
-    email: "orders.artisanbanani@gmail.com",
-    address: "Block B, Kemal Ataturk Ave, Banani, Dhaka, Bangladesh",
-    website: null,
-    hasWebsite: false,
-    category: "Bakery & Pastry Shop",
-    lat: 23.792,
-    lon: 90.408,
-    googleMapsUrl: "https://www.google.com/maps/search/?api=1&query=Artisan%20Bakery%20%26%20Pastry%20Shop%2C%20Block%20B%2C%20Kemal%20Ataturk%20Ave%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-    googleMapsEmbedUrl: "https://maps.google.com/maps?q=Artisan%20Bakery%20%26%20Pastry%20Shop%2C%20Block%20B%2C%20Kemal%20Ataturk%20Ave%2C%20Banani%2C%20Dhaka%2C%20Bangladesh&hl=en&z=16&output=embed",
-    googleMapsDirectionsUrl: "https://www.google.com/maps/dir/?api=1&destination=Artisan%20Bakery%20%26%20Pastry%20Shop%2C%20Block%20B%2C%20Kemal%20Ataturk%20Ave%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-  },
-  {
-    id: "init-10",
-    name: "Prime Care Diagnostic & Medical Clinic",
-    phone: "+880 1988-776655",
-    email: "contact@primecareclinic.com",
-    address: "House 45, Road 27, Banani, Dhaka, Bangladesh",
-    website: "https://primecareclinic.com",
-    hasWebsite: true,
-    category: "Doctors & Medical Clinic",
-    lat: 23.7975,
-    lon: 90.4061,
-    googleMapsUrl: "https://www.google.com/maps/search/?api=1&query=Prime%20Care%20Diagnostic%20%26%20Medical%20Clinic%2C%20House%2045%2C%20Road%2027%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-    googleMapsEmbedUrl: "https://maps.google.com/maps?q=Prime%20Care%20Diagnostic%20%26%20Medical%20Clinic%2C%20House%2045%2C%20Road%2027%2C%20Banani%2C%20Dhaka%2C%20Bangladesh&hl=en&z=16&output=embed",
-    googleMapsDirectionsUrl: "https://www.google.com/maps/dir/?api=1&destination=Prime%20Care%20Diagnostic%20%26%20Medical%20Clinic%2C%20House%2045%2C%20Road%2027%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-  },
-  {
-    id: "init-11",
-    name: "Al-Madina Auto Repair & Garage",
-    phone: "+880 1711-223344",
-    email: "almadina.garage@gmail.com",
-    address: "House 25, Road 11, Block H, Banani, Dhaka, Bangladesh",
-    website: null,
-    hasWebsite: false,
-    category: "Auto Repair & Mechanics",
-    lat: 23.7938,
-    lon: 90.4035,
-    googleMapsUrl: "https://www.google.com/maps/search/?api=1&query=Al-Madina%20Auto%20Repair%20%26%20Garage%2C%20House%2025%2C%20Road%2011%2C%20Block%20H%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-    googleMapsEmbedUrl: "https://maps.google.com/maps?q=Al-Madina%20Auto%20Repair%20%26%20Garage%2C%20House%2025%2C%20Road%2011%2C%20Block%20H%2C%20Banani%2C%20Dhaka%2C%20Bangladesh&hl=en&z=16&output=embed",
-    googleMapsDirectionsUrl: "https://www.google.com/maps/dir/?api=1&destination=Al-Madina%20Auto%20Repair%20%26%20Garage%2C%20House%2025%2C%20Road%2011%2C%20Block%20H%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-  },
-  {
-    id: "init-12",
-    name: "Urban Green Landscaping & Nursery",
-    phone: "+880 1733-445566",
-    email: "urbangreen.bd@gmail.com",
-    address: "Road 8, Block D, Banani, Dhaka, Bangladesh",
-    website: null,
-    hasWebsite: false,
-    category: "Landscaping & Lawn Care",
-    lat: 23.791,
-    lon: 90.4045,
-    googleMapsUrl: "https://www.google.com/maps/search/?api=1&query=Urban%20Green%20Landscaping%20%26%20Nursery%2C%20Road%208%2C%20Block%20D%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-    googleMapsEmbedUrl: "https://maps.google.com/maps?q=Urban%20Green%20Landscaping%20%26%20Nursery%2C%20Road%208%2C%20Block%20D%2C%20Banani%2C%20Dhaka%2C%20Bangladesh&hl=en&z=16&output=embed",
-    googleMapsDirectionsUrl: "https://www.google.com/maps/dir/?api=1&destination=Urban%20Green%20Landscaping%20%26%20Nursery%2C%20Road%208%2C%20Block%20D%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-  },
-  {
-    id: "init-13",
-    name: "Lexington Legal Partners",
-    phone: "+880 1855-667788",
-    email: "counsel@lexingtonlegal.com",
-    address: "Plot 14, Road 17, Banani, Dhaka, Bangladesh",
-    website: "https://lexingtonlegal.com",
-    hasWebsite: true,
-    category: "Law Firm & Attorneys",
-    lat: 23.7944,
-    lon: 90.409,
-    googleMapsUrl: "https://www.google.com/maps/search/?api=1&query=Lexington%20Legal%20Partners%2C%20Plot%2014%2C%20Road%2017%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-    googleMapsEmbedUrl: "https://maps.google.com/maps?q=Lexington%20Legal%20Partners%2C%20Plot%2014%2C%20Road%2017%2C%20Banani%2C%20Dhaka%2C%20Bangladesh&hl=en&z=16&output=embed",
-    googleMapsDirectionsUrl: "https://www.google.com/maps/dir/?api=1&destination=Lexington%20Legal%20Partners%2C%20Plot%2014%2C%20Road%2017%2C%20Banani%2C%20Dhaka%2C%20Bangladesh",
-  },
-];
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export default function DashboardPage() {
-  const [leads, setLeads] = useState<BusinessLead[]>(INITIAL_LEADS);
+  const [activeTab, setActiveTab] = useState<"search" | "crm">("search");
+  const [leads, setLeads] = useState<BusinessLead[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // Budget status from /api/search
+  const [budget, setBudget] = useState<{
+    dailyUsed: number;
+    dailyLimit: number;
+    monthlyUsed: number;
+    monthlyLimit: number;
+    canCallGoogle: boolean;
+  }>({
+    dailyUsed: 0,
+    dailyLimit: 30,
+    monthlyUsed: 0,
+    monthlyLimit: 900,
+    canCallGoogle: true,
+  });
+  const [hasApiKey, setHasApiKey] = useState(false);
 
+  // Active search location info
   const [searchLocation, setSearchLocation] = useState({
     country: "Bangladesh",
+    countryCode: "BD",
     state: "Dhaka",
     city: "Dhaka",
     area: "Banani",
   });
   const [categoryLabel, setCategoryLabel] = useState<string>("Restaurant & Fine Dining");
+
+  // Modal open states
+  const [isAreaScanOpen, setIsAreaScanOpen] = useState(false);
+  const [isCsvImportOpen, setIsCsvImportOpen] = useState(false);
+  const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [activeOutreachLead, setActiveOutreachLead] = useState<BusinessLead | null>(null);
+
+  const refreshBudget = () => {
+    fetch("/api/search")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.budget) setBudget(d.budget);
+        if (d?.hasApiKey !== undefined) setHasApiKey(Boolean(d.hasApiKey));
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    setMounted(true);
+    refreshBudget();
+  }, []);
 
   const handleSearchResults = (params: {
     country: string;
@@ -242,24 +98,36 @@ export default function DashboardPage() {
   }) => {
     setSearchLocation({
       country: params.country,
+      countryCode: params.countryCode,
       state: params.state,
       city: params.city,
       area: params.area,
     });
     setCategoryLabel(params.categoryLabel);
     setLeads(params.leads);
+    refreshBudget();
   };
 
-  // Metrics
+  // Metrics (Section 7)
   const totalLeads = leads.length;
-  const noWebsiteLeads = leads.filter((l) => !l.hasWebsite).length;
-  const hasWebsiteLeads = leads.filter((l) => l.hasWebsite).length;
-  const withEmailLeads = leads.filter((l) => l.email && l.email !== "N/A").length;
-  const withPhoneLeads = leads.filter((l) => l.phone && l.phone !== "N/A").length;
+  const noWebsiteLeads = leads.filter((l) => l.websiteStatus === "No Website").length;
+  const socialOnlyLeads = leads.filter((l) => l.websiteStatus === "Social Only").length;
+  const hasWebsiteLeads = leads.filter((l) => l.websiteStatus === "Has Website").length;
+
+  const withPhoneLeads = leads.filter((l) => l.phone && l.phoneStatus !== "Missing").length;
+  const withEmailLeads = leads.filter((l) => l.email && l.emailStatus !== "Missing").length;
+
+  // FIX Contactable per Section 7: unique businesses with at least one contact method (never add together)
+  const contactableLeads = leads.filter(
+    (l) => (l.phone && l.phoneStatus !== "Missing") || (l.email && l.emailStatus !== "Missing")
+  ).length;
 
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] dark:bg-[#090d16] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200" suppressHydrationWarning>
+      <div
+        className="min-h-screen bg-[#f8fafc] dark:bg-[#090d16] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200"
+        suppressHydrationWarning
+      >
         <Navbar />
         <main className="flex-1 max-w-[1560px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-center justify-center space-y-4">
           <div className="h-8 w-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -272,100 +140,313 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#090d16] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200" suppressHydrationWarning>
-      {/* Top Clean Navbar */}
+    <div
+      className="min-h-screen bg-[#f8fafc] dark:bg-[#090d16] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200"
+      suppressHydrationWarning
+    >
       <Navbar />
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-[1560px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        <AppErrorBoundary
-          fallbackTitle="Directory view encountered an issue"
-          fallbackMessage="An unexpected error occurred while displaying directory data. Try refreshing below."
-        >
-          {/* 5 Cascading Searchable Dropdowns Search Engine */}
-          <SearchPanel
-            onSearch={handleSearchResults}
-            isLoading={isLoading}
-            setIsLoading={setIsLoading}
-          />
+      <main className="flex-1 max-w-[1560px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-5">
+        {/* Top Header Strip: Mode Switcher, Google Usage Meter & Settings Trigger */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xs">
+          {/* Main Navigation Tabs */}
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setActiveTab("search")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                activeTab === "search"
+                  ? "bg-white dark:bg-blue-600 text-blue-600 dark:text-white shadow-xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              <span>Discovery Engine</span>
+            </button>
 
-          {/* Quick Analytics Cards Strip */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            {/* Card 1: Total Leads */}
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] shadow-xs space-y-1 transition-colors duration-200">
-              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
-                <span>Total Leads</span>
-                <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                {totalLeads}
-              </div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                In target geographic zone
-              </div>
-            </div>
-
-            {/* Card 2: Without Website (High Priority Cold Outreach) */}
-            <div className="p-4 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50/70 dark:bg-red-950/30 shadow-xs space-y-1 transition-colors duration-200">
-              <div className="flex items-center justify-between text-xs text-red-700 dark:text-red-300 font-semibold">
-                <span>Without Website</span>
-                <GlobeX className="w-4 h-4 text-red-600 dark:text-red-400" />
-              </div>
-              <div className="text-2xl font-bold text-red-700 dark:text-red-400 tracking-tight">
-                {noWebsiteLeads}
-              </div>
-              <div className="text-[11px] text-red-600/80 dark:text-red-300/80 font-medium">
-                Prime cold outreach prospects
-              </div>
-            </div>
-
-            {/* Card 3: Has Website */}
-            <div className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-950/30 shadow-xs space-y-1 transition-colors duration-200">
-              <div className="flex items-center justify-between text-xs text-emerald-700 dark:text-emerald-300 font-semibold">
-                <span>Has Website</span>
-                <Globe2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-300 tracking-tight">
-                {hasWebsiteLeads}
-              </div>
-              <div className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
-                Established web presence
-              </div>
-            </div>
-
-            {/* Card 4: Contactable Leads */}
-            <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/60 dark:bg-blue-950/30 shadow-xs space-y-1 transition-colors duration-200">
-              <div className="flex items-center justify-between text-xs text-blue-700 dark:text-blue-300 font-semibold">
-                <span>Contactable</span>
-                <PhoneCall className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="text-2xl font-bold text-blue-800 dark:text-blue-300 tracking-tight">
-                {withPhoneLeads + withEmailLeads}
-              </div>
-              <div className="text-[11px] text-blue-700/80 dark:text-blue-400/80">
-                {withPhoneLeads} Phones • {withEmailLeads} Emails
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab("crm")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                activeTab === "crm"
+                  ? "bg-white dark:bg-blue-600 text-blue-600 dark:text-white shadow-xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <BookmarkCheck className="w-4 h-4" />
+              <span>My Leads (CRM)</span>
+            </button>
           </div>
 
-          {/* Data Table Section */}
-          <DataTableView
-            leads={leads}
-            searchLocation={searchLocation}
-            categoryLabel={categoryLabel}
+          {/* Right: Usage Meter & Settings */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Google Usage Meter or Free Search Badge */}
+            {hasApiKey ? (
+              <div
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-xs text-slate-600 dark:text-slate-300 shadow-2xs"
+                title="Official Google Places API (New) Free-Tier Safe Call Usage"
+              >
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  Google Calls:
+                </span>
+                <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">
+                  {budget.monthlyUsed} / {budget.monthlyLimit}
+                </span>
+                <span className="text-[11px] text-slate-400 hidden md:inline">
+                  (Today: {budget.dailyUsed} / {budget.dailyLimit})
+                </span>
+              </div>
+            ) : (
+              <div
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs text-emerald-700 dark:text-emerald-300 shadow-2xs"
+                title="100% Free Live Discovery Engine (No Credit Card or Google Billing Required)"
+              >
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span className="font-bold">Live Free Search</span>
+                <span className="text-[11px] opacity-80 hidden md:inline font-medium">
+                  (No Card Needed)
+                </span>
+              </div>
+            )}
+
+            {/* Outreach Settings Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsSettingsOpen(true)}
+              className="h-8 text-xs gap-1.5 border-slate-200 dark:border-slate-800"
+              title="Configure freelance outreach settings & scripts"
+            >
+              <Settings className="w-3.5 h-3.5 text-slate-500" />
+              <span className="hidden sm:inline">Settings</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* TAB 1: DISCOVERY ENGINE */}
+        {activeTab === "search" && (
+          <AppErrorBoundary
+            fallbackTitle="Directory view encountered an issue"
+            fallbackMessage="An unexpected error occurred while displaying directory data."
+          >
+            {/* 5 Cascading Search Engine with Area Scan & Import buttons */}
+            <SearchPanel
+              onSearch={handleSearchResults}
+              isLoading={isLoading}
+              setIsLoading={setIsLoading}
+              onOpenAreaScan={(loc) => {
+                setSearchLocation((prev) => ({
+                  ...prev,
+                  area: loc.area,
+                  city: loc.city,
+                  countryCode: loc.countryCode,
+                }));
+                setIsAreaScanOpen(true);
+              }}
+              onOpenCsvImport={() => setIsCsvImportOpen(true)}
+              onOpenAddLead={() => setIsAddLeadOpen(true)}
+            />
+
+            {/* Quick Analytics Metrics Cards Strip */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              {/* Card 1: Total Leads */}
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] shadow-xs space-y-1 transition-colors duration-200">
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  <span>Total Leads</span>
+                  <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                  {totalLeads}
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {searchLocation.area}, {searchLocation.city}
+                </div>
+              </div>
+
+              {/* Card 2: Without Website (High Priority Cold Outreach) */}
+              <div className="p-4 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50/70 dark:bg-red-950/30 shadow-xs space-y-1 transition-colors duration-200">
+                <div className="flex items-center justify-between text-xs text-red-700 dark:text-red-300 font-semibold">
+                  <span>Without Website</span>
+                  <GlobeX className="w-4 h-4 text-red-600 dark:text-red-400" />
+                </div>
+                <div className="text-2xl font-bold text-red-700 dark:text-red-400 tracking-tight">
+                  {noWebsiteLeads}
+                </div>
+                <div className="text-[11px] text-red-600/80 dark:text-red-300/80 font-medium">
+                  {socialOnlyLeads > 0 ? `+${socialOnlyLeads} social only` : "Prime web prospects"}
+                </div>
+              </div>
+
+              {/* Card 3: Has Website */}
+              <div className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-950/30 shadow-xs space-y-1 transition-colors duration-200">
+                <div className="flex items-center justify-between text-xs text-emerald-700 dark:text-emerald-300 font-semibold">
+                  <span>Has Website</span>
+                  <Globe2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-300 tracking-tight">
+                  {hasWebsiteLeads}
+                </div>
+                <div className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
+                  Audit for redesign & speed
+                </div>
+              </div>
+
+              {/* Card 4: Contactable Leads (Unique Count - Section 7) */}
+              <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/60 dark:bg-blue-950/30 shadow-xs space-y-1 transition-colors duration-200">
+                <div className="flex items-center justify-between text-xs text-blue-700 dark:text-blue-300 font-semibold">
+                  <span>Contactable</span>
+                  <PhoneCall className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="text-2xl font-bold text-blue-800 dark:text-blue-300 tracking-tight">
+                  {contactableLeads}
+                </div>
+                <div className="text-[11px] text-blue-700/80 dark:text-blue-400/80">
+                  {withPhoneLeads} with phone, {withEmailLeads} with email
+                </div>
+              </div>
+            </div>
+
+            {/* Honest Empty State vs Data Table */}
+            {leads.length === 0 ? (
+              <div className="p-8 sm:p-14 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] text-center space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-xs">
+                  <Radar className="w-7 h-7" />
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Ready to discover verified businesses in {searchLocation.area}, {searchLocation.city}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                    Choose an action below to start building your outreach pipeline. All data is verified with zero mock records.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+                  <Button
+                    type="button"
+                    onClick={() => setIsAreaScanOpen(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1.5 font-semibold h-9 rounded-xl shadow-xs"
+                  >
+                    <Radar className="w-3.5 h-3.5 animate-pulse" />
+                    <span>Launch Area Coverage Scan</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsCsvImportOpen(true)}
+                    className="text-xs gap-1.5 font-semibold h-9 rounded-xl border-slate-200 dark:border-slate-700"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Import from CSV</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsAddLeadOpen(true)}
+                    className="text-xs gap-1.5 font-semibold h-9 rounded-xl border-slate-200 dark:border-slate-700"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Add Lead Manually</span>
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <DataTableView
+                leads={leads}
+                searchLocation={searchLocation}
+                categoryLabel={categoryLabel}
+                onLeadStatusChanged={(leadId, status) => {
+                  setLeads((prev) =>
+                    prev.map((l) => (l.id === leadId ? { ...l, crmStatus: status as any } : l))
+                  );
+                }}
+              />
+            )}
+          </AppErrorBoundary>
+        )}
+
+        {/* TAB 2: MY LEADS (CRM) */}
+        {activeTab === "crm" && (
+          <MyLeadsView
+            onOpenOutreachModal={(lead) => setActiveOutreachLead(lead)}
           />
-        </AppErrorBoundary>
+        )}
       </main>
 
-      {/* Clean Footer */}
-      <footer className="w-full border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] py-6 text-center text-xs text-slate-500 dark:text-slate-400 mt-12 transition-colors duration-200">
+      {/* Area Scan Modal */}
+      <AreaScanModal
+        isOpen={isAreaScanOpen}
+        onClose={() => setIsAreaScanOpen(false)}
+        areaName={searchLocation.area}
+        cityName={searchLocation.city}
+        countryCode={searchLocation.countryCode}
+        onLeadsDiscovered={(discovered) => {
+          setLeads(discovered);
+          refreshBudget();
+        }}
+      />
+
+      {/* CSV Import Modal */}
+      <CsvImportModal
+        isOpen={isCsvImportOpen}
+        onClose={() => setIsCsvImportOpen(false)}
+        existingLeads={leads}
+        onImportComplete={(imported) => {
+          setLeads((prev) => [...imported, ...prev]);
+        }}
+      />
+
+      {/* Manual Add Lead Modal */}
+      <AddLeadModal
+        isOpen={isAddLeadOpen}
+        onClose={() => setIsAddLeadOpen(false)}
+        defaultLocation={searchLocation}
+        onLeadAdded={(newLead) => {
+          setLeads((prev) => [newLead, ...prev]);
+        }}
+      />
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
+
+      {/* Outreach Pitch Modal */}
+      {activeOutreachLead && (
+        <OutreachModal
+          lead={activeOutreachLead}
+          isOpen={Boolean(activeOutreachLead)}
+          onClose={() => setActiveOutreachLead(null)}
+          searchLocation={searchLocation}
+        />
+      )}
+
+      {/* Clean Footer with Google Attribution & Legal Links (Section 5 & 13) */}
+      <footer className="w-full border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] py-6 text-xs text-slate-500 dark:text-slate-400 mt-12 transition-colors duration-200">
         <div className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="font-medium text-slate-600 dark:text-slate-300">
-            © 2026 LeadGen Pro. Worldwide Business Directory & Lead Discovery Engine.
-          </p>
-          <p className="text-slate-500 dark:text-slate-400">
-            Clean, verified B2B leads for high-conversion web development & marketing outreach.
-          </p>
+          <div className="space-y-0.5 text-center sm:text-left">
+            <p className="font-semibold text-slate-700 dark:text-slate-300">
+              © 2026 LeadGen Pro. B2B Lead Generation & Outreach Engine.
+            </p>
+            <p className="text-[11px] text-slate-500">
+              Complies with GDPR, CAN-SPAM Act, and local regulations. Places data attribution: Google Maps Platform.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs font-medium">
+            <Link href="/privacy" className="hover:text-blue-600 transition-colors">
+              Privacy Policy
+            </Link>
+            <span>•</span>
+            <Link href="/terms" className="hover:text-blue-600 transition-colors">
+              Terms of Service
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

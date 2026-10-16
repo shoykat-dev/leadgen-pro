@@ -11,14 +11,19 @@ import {
   AlertCircle,
   Copy,
   Check,
-  LayoutList,
-  Columns,
-  Map as MapIcon,
   Globe,
-  Compass,
-  Navigation,
-  Lock,
+  Star,
+  Activity,
+  BookmarkPlus,
   ShieldCheck,
+  Sparkles,
+  HelpCircle,
+  Info,
+  CheckSquare,
+  Square,
+  MessageSquare,
+  SearchCode,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +35,9 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-import { BusinessLead } from "@/app/api/places/route";
+import { BusinessLead } from "@/lib/data-integrity";
+import { OutreachModal } from "@/components/outreach-modal";
+import { WebsiteAuditModal } from "@/components/website-audit-modal";
 import { GoogleMapModal } from "@/components/google-map-modal";
 
 interface DataTableViewProps {
@@ -42,856 +49,829 @@ interface DataTableViewProps {
     area?: string;
   };
   categoryLabel: string;
+  onLeadStatusChanged?: (leadId: string, status: string) => void;
+  onRefreshLeads?: () => void;
 }
 
-type FilterType = "all" | "with_website" | "without_website";
-type ViewMode = "table" | "split" | "map";
+type WebsiteFilterType = "all" | "no_website" | "social_only" | "has_website";
 
 export function DataTableView({
   leads,
   searchLocation,
   categoryLabel,
+  onLeadStatusChanged,
+  onRefreshLeads,
 }: DataTableViewProps) {
-  const [filter, setFilter] = useState<FilterType>("all");
+  // Filters state
+  const [websiteFilter, setWebsiteFilter] = useState<WebsiteFilterType>("all");
+  const [phoneFilter, setPhoneFilter] = useState<boolean>(false);
+  const [emailFilter, setEmailFilter] = useState<boolean>(false);
+  const [minRating, setMinRating] = useState<number>(0);
+  const [minReviews, setMinReviews] = useState<number>(0);
+  const [scoreTierFilter, setScoreTierFilter] = useState<string>("all");
+  const [hideContacted, setHideContacted] = useState<boolean>(false);
   const [tableSearch, setTableSearch] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"score" | "rating" | "reviews" | "name">("score");
+
+  // Selection state
+  const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
+
+  // Modal states
+  const [outreachLead, setOutreachLead] = useState<BusinessLead | null>(null);
+  const [auditLead, setAuditLead] = useState<BusinessLead | null>(null);
+  const [mapLead, setMapLead] = useState<BusinessLead | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [selectedMapLead, setSelectedMapLead] = useState<BusinessLead | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>("table");
-  const [activeSplitLeadId, setActiveSplitLeadId] = useState<string | null>(null);
+  const [savedSuccessMsg, setSavedSuccessMsg] = useState<string | null>(null);
 
-  // Derived counts
-  const totalCount = leads.length;
-  const withWebsiteCount = useMemo(
-    () => leads.filter((l) => l.hasWebsite).length,
-    [leads]
-  );
-  const withoutWebsiteCount = useMemo(
-    () => leads.filter((l) => !l.hasWebsite).length,
-    [leads]
-  );
+  // Email finder on-demand state per row
+  const [findingEmailId, setFindingEmailId] = useState<string | null>(null);
+  const [localEmails, setLocalEmails] = useState<Record<string, { email: string | null; status: string }>>({});
 
-  // Filtered leads
-  const filteredLeads = useMemo(() => {
-    return leads.filter((lead) => {
+  // Filtered and Sorted Leads
+  const processedLeads = useMemo(() => {
+    let list = leads.filter((lead) => {
       // 1. Website Status filter
-      if (filter === "with_website" && !lead.hasWebsite) return false;
-      if (filter === "without_website" && lead.hasWebsite) return false;
+      if (websiteFilter === "no_website" && lead.websiteStatus !== "No Website") return false;
+      if (websiteFilter === "social_only" && lead.websiteStatus !== "Social Only") return false;
+      if (websiteFilter === "has_website" && lead.websiteStatus !== "Has Website") return false;
 
-      // 2. In-table search filter
+      // 2. Phone Filter
+      if (phoneFilter && (!lead.phone || lead.phoneStatus === "Missing")) return false;
+
+      // 3. Email Filter
+      const activeEmail = localEmails[lead.id]?.email || lead.email;
+      if (emailFilter && (!activeEmail || lead.emailStatus === "Missing")) return false;
+
+      // 4. Min Rating
+      if (minRating > 0 && (lead.rating || 0) < minRating) return false;
+
+      // 5. Min Reviews
+      if (minReviews > 0 && (lead.userRatingCount || 0) < minReviews) return false;
+
+      // 6. Score Tier
+      if (scoreTierFilter !== "all" && lead.leadScoreTier !== scoreTierFilter) return false;
+
+      // 7. Hide Contacted
+      if (hideContacted && lead.crmStatus === "Contacted") return false;
+
+      // 8. Search query
       if (tableSearch.trim()) {
-        const query = tableSearch.toLowerCase();
-        const matchesName = lead.name.toLowerCase().includes(query);
-        const matchesPhone = lead.phone.toLowerCase().includes(query);
-        const matchesEmail = lead.email.toLowerCase().includes(query);
-        const matchesAddress = lead.address.toLowerCase().includes(query);
-        return matchesName || matchesPhone || matchesEmail || matchesAddress;
+        const q = tableSearch.toLowerCase();
+        const matchesName = lead.name.toLowerCase().includes(q);
+        const matchesPhone = (lead.phone || "").toLowerCase().includes(q);
+        const matchesEmail = (activeEmail || "").toLowerCase().includes(q);
+        const matchesAddress = lead.address.toLowerCase().includes(q);
+        const matchesCategory = lead.category.toLowerCase().includes(q);
+        return matchesName || matchesPhone || matchesEmail || matchesAddress || matchesCategory;
       }
 
       return true;
     });
-  }, [leads, filter, tableSearch]);
 
-  // Active lead for Split/Map views
-  const activeLead = useMemo(() => {
-    if (activeSplitLeadId) {
-      const found = filteredLeads.find((l) => l.id === activeSplitLeadId);
-      if (found) return found;
+    // Sort
+    list.sort((a, b) => {
+      if (sortBy === "score") return b.leadScore - a.leadScore;
+      if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
+      if (sortBy === "reviews") return (b.userRatingCount || 0) - (a.userRatingCount || 0);
+      if (sortBy === "name") return a.name.localeCompare(b.name);
+      return 0;
+    });
+
+    return list;
+  }, [
+    leads,
+    websiteFilter,
+    phoneFilter,
+    emailFilter,
+    minRating,
+    minReviews,
+    scoreTierFilter,
+    hideContacted,
+    tableSearch,
+    sortBy,
+    localEmails,
+  ]);
+
+  // Derived counts for filter badges
+  const totalCount = leads.length;
+  const noWebsiteCount = useMemo(() => leads.filter((l) => l.websiteStatus === "No Website").length, [leads]);
+  const socialOnlyCount = useMemo(() => leads.filter((l) => l.websiteStatus === "Social Only").length, [leads]);
+  const hasWebsiteCount = useMemo(() => leads.filter((l) => l.websiteStatus === "Has Website").length, [leads]);
+
+  // Selection handlers
+  const handleToggleSelectAll = () => {
+    if (selectedLeadIds.size === processedLeads.length) {
+      setSelectedLeadIds(new Set());
+    } else {
+      setSelectedLeadIds(new Set(processedLeads.map((l) => l.id)));
     }
-    return filteredLeads[0] || null;
-  }, [filteredLeads, activeSplitLeadId]);
-
-  // Copy to clipboard helper
-  const handleCopy = (text: string, id: string) => {
-    if (text === "N/A" || !text) return;
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // CSV Export handler
-  const handleExportCSV = () => {
-    if (filteredLeads.length === 0) return;
+  const handleToggleSelectLead = (id: string) => {
+    setSelectedLeadIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Bulk Save to My Leads
+  const handleBulkSave = async () => {
+    const leadsToSave = leads.filter((l) =>
+      selectedLeadIds.size > 0 ? selectedLeadIds.has(l.id) : true
+    );
+    if (leadsToSave.length === 0) return;
+
+    try {
+      await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leads: leadsToSave }),
+      });
+      setSavedSuccessMsg(`Saved ${leadsToSave.length} leads to My Leads!`);
+      setTimeout(() => setSavedSuccessMsg(null), 3000);
+    } catch (err) {
+      console.warn("Failed to bulk save", err);
+    }
+  };
+
+  // Save single lead
+  const handleSaveSingleLead = async (lead: BusinessLead) => {
+    try {
+      await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lead }),
+      });
+      setSavedSuccessMsg(`Saved ${lead.name} to My Leads!`);
+      setTimeout(() => setSavedSuccessMsg(null), 2500);
+    } catch (err) {
+      console.warn("Failed to save lead", err);
+    }
+  };
+
+  // On-demand Email Finder
+  const handleFindEmail = async (lead: BusinessLead) => {
+    if (!lead.website) return;
+    setFindingEmailId(lead.id);
+
+    try {
+      const res = await fetch("/api/find-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ website: lead.website }),
+      });
+      const data = await res.json();
+      if (data?.success) {
+        setLocalEmails((prev) => ({
+          ...prev,
+          [lead.id]: {
+            email: data.email,
+            status: data.emailStatus || "Missing",
+          },
+        }));
+      }
+    } catch (e) {
+      console.warn("Email find failed", e);
+    } finally {
+      setFindingEmailId(null);
+    }
+  };
+
+  // Export CSV
+  const handleExportCSV = (mode: "all" | "selected" = "all") => {
+    const targetLeads =
+      mode === "selected" && selectedLeadIds.size > 0
+        ? processedLeads.filter((l) => selectedLeadIds.has(l.id))
+        : processedLeads;
+
+    if (targetLeads.length === 0) return;
 
     const headers = [
-      "Business Name",
-      "Category",
-      "Phone Number",
+      "Company Name",
+      "Industry",
+      "Rating",
+      "Reviews",
+      "Phone",
+      "Phone E164",
+      "Phone Status",
       "Email",
-      "Address",
+      "Email Status",
+      "Email Source",
+      "Website",
       "Website Status",
-      "Website URL",
-      "Latitude",
-      "Longitude",
-      "Google Maps Link",
-      "Google Maps Directions",
+      "Address",
+      "Data Quality",
+      "Lead Score",
+      "Score Tier",
+      "Google Maps URL",
+      "Fetched Date",
     ];
 
-    const rows = filteredLeads.map((lead) => {
-      const placeQuery = encodeURIComponent(`${lead.name}, ${lead.address}`);
-      const gMaps =
-        lead.googleMapsUrl ||
-        `https://www.google.com/maps/search/?api=1&query=${placeQuery}`;
-      const gDirections =
-        lead.googleMapsDirectionsUrl ||
-        `https://www.google.com/maps/dir/?api=1&destination=${placeQuery}`;
+    const rows = targetLeads.map((l) => {
+      const activeEmail = localEmails[l.id]?.email || l.email;
+      const activeEmailStatus = localEmails[l.id]?.status || l.emailStatus;
+      const gMapsUrl =
+        l.googleMapsUri ||
+        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+          `${l.name}, ${l.address}`
+        )}`;
 
       return [
-        `"${lead.name.replace(/"/g, '""')}"`,
-        `"${lead.category.replace(/"/g, '""')}"`,
-        `"${lead.phone.replace(/"/g, '""')}"`,
-        `"${lead.email.replace(/"/g, '""')}"`,
-        `"${lead.address.replace(/"/g, '""')}"`,
-        `"${lead.hasWebsite ? "Has Website" : "No Website"}"`,
-        `"${(lead.website || "").replace(/"/g, '""')}"`,
-        lead.lat,
-        lead.lon,
-        `"${gMaps}"`,
-        `"${gDirections}"`,
+        `"${l.name.replace(/"/g, '""')}"`,
+        `"${l.category.replace(/"/g, '""')}"`,
+        l.rating || "",
+        l.userRatingCount || "",
+        `"${(l.phone || "").replace(/"/g, '""')}"`,
+        `"${(l.phoneE164 || "").replace(/"/g, '""')}"`,
+        `"${l.phoneStatus}"`,
+        `"${(activeEmail || "").replace(/"/g, '""')}"`,
+        `"${activeEmailStatus}"`,
+        `"${l.emailProvenance || "google"}"`,
+        `"${(l.website || "").replace(/"/g, '""')}"`,
+        `"${l.websiteStatus}"`,
+        `"${l.address.replace(/"/g, '""')}"`,
+        `"${l.dataQuality}"`,
+        l.leadScore,
+        `"${l.leadScoreTier}"`,
+        `"${gMapsUrl}"`,
+        `"${l.fetchedAt || ""}"`,
       ];
     });
 
     const csvContent =
-      "data:text/csv;charset=utf-8,\uFEFF" +
+      "data:text/csv;charset=utf-8," +
       [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    const fileName = `LeadGenPro_${searchLocation.area || searchLocation.city}_${filter}_${new Date().toISOString().slice(0, 10)}.csv`;
-    link.setAttribute("download", fileName);
+    link.setAttribute(
+      "download",
+      `LeadGenPro_Leads_${searchLocation.area || searchLocation.city || "Export"}.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const displayLocation = [
-    searchLocation.area || searchLocation.city,
-    searchLocation.state || searchLocation.country,
-  ]
-    .filter(Boolean)
-    .join(", ");
-
-  const defaultLocationQuery = encodeURIComponent(
-    `${searchLocation.area || searchLocation.city}, ${searchLocation.state || searchLocation.country}`
-  );
+  const handleCopy = (text: string, id: string) => {
+    if (!text || text === "N/A") return;
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 1800);
+  };
 
   return (
-    <div className="w-full space-y-4">
-      {/* Top Header & Action Row */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-1">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-            Found {totalCount} businesses in {displayLocation}
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
-            <span className="text-blue-600 dark:text-blue-400 font-medium">Targeting {categoryLabel}</span>
-            <span>•</span>
-            <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 text-rose-500 inline" />
-              Direct Google Maps Geolocation
-            </span>
-          </p>
+    <div className="space-y-4">
+      {/* Toast Notification */}
+      {savedSuccessMsg && (
+        <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 text-xs font-semibold animate-in fade-in slide-in-from-bottom-4">
+          <CheckCircle2 className="w-4 h-4" />
+          <span>{savedSuccessMsg}</span>
         </div>
+      )}
 
-        {/* Action Controls: View Switcher & CSV Export */}
-        <div className="flex items-center gap-2.5 flex-wrap self-start md:self-auto">
-          {/* View Mode Toggle */}
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
-            <button
-              onClick={() => setViewMode("table")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                viewMode === "table"
-                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs border border-slate-200 dark:border-slate-600"
-                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-              }`}
-              title="Table View (List with details)"
-            >
-              <LayoutList className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Table</span>
-            </button>
-
-            <button
-              onClick={() => setViewMode("split")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                viewMode === "split"
-                  ? "bg-blue-600 text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-              }`}
-              title="Split View (List + Interactive Google Map)"
-            >
-              <Columns className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Split View</span>
-            </button>
-
-            <button
-              onClick={() => setViewMode("map")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                viewMode === "map"
-                  ? "bg-rose-600 text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-              }`}
-              title="Google Map View (Full screen map with lead cards)"
-            >
-              <MapIcon className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Map View</span>
-            </button>
-          </div>
-
-          {/* Data Protection & Anti-Copy Indicator */}
-          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-xs select-none">
-            <Lock className="w-3.5 h-3.5 text-rose-500" />
-            <span>DRM Protected</span>
-            <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">
-              ({filteredLeads.length} Verified Leads)
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Filter Tabs & Search Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2 rounded-xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xs">
-        {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-          {/* All */}
+      {/* Primary Filter Strip & Actions Bar */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xs">
+        {/* Left: Website Status Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0">
           <button
-            onClick={() => setFilter("all")}
-            className={`px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
-              filter === "all"
+            type="button"
+            onClick={() => setWebsiteFilter("all")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+              websiteFilter === "all"
                 ? "bg-slate-900 dark:bg-blue-600 text-white shadow-xs"
-                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+                : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
-            All ({totalCount})
+            All Leads ({totalCount})
           </button>
 
-          {/* With Website */}
           <button
-            onClick={() => setFilter("with_website")}
-            className={`px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
-              filter === "with_website"
+            type="button"
+            onClick={() => setWebsiteFilter("no_website")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+              websiteFilter === "no_website"
+                ? "bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 shadow-xs"
+                : "text-slate-600 dark:text-slate-300 hover:text-red-700 hover:bg-red-50/50"
+            }`}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+            <span>No Website ({noWebsiteCount})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setWebsiteFilter("social_only")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+              websiteFilter === "social_only"
+                ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shadow-xs"
+                : "text-slate-600 dark:text-slate-300 hover:text-amber-700 hover:bg-amber-50/50"
+            }`}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+            <span>Social Only ({socialOnlyCount})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setWebsiteFilter("has_website")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+              websiteFilter === "has_website"
                 ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-xs"
-                : "text-slate-600 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
+                : "text-slate-600 dark:text-slate-300 hover:text-emerald-700 hover:bg-emerald-50/50"
             }`}
           >
-            With Website ({withWebsiteCount})
-          </button>
-
-          {/* Without Website */}
-          <button
-            onClick={() => setFilter("without_website")}
-            className={`px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
-              filter === "without_website"
-                ? "bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 shadow-xs ring-1 ring-red-400"
-                : "text-slate-600 dark:text-slate-300 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50/50 dark:hover:bg-red-950/30"
-            }`}
-          >
-            Without Website ({withoutWebsiteCount})
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span>Has Website ({hasWebsiteCount})</span>
           </button>
         </div>
 
-        {/* In-table Quick Search Input */}
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
-          <input
-            type="text"
-            value={tableSearch}
-            onChange={(e) => setTableSearch(e.target.value)}
-            placeholder="Search within results..."
-            className="w-full h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-8 pr-3 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
-          />
+        {/* Right: Quick Search & Export */}
+        <div className="flex items-center gap-2">
+          <div className="relative w-full sm:w-60">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <input
+              type="text"
+              value={tableSearch}
+              onChange={(e) => setTableSearch(e.target.value)}
+              placeholder="Search in results..."
+              className="w-full h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-8 pr-3 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleBulkSave}
+            disabled={processedLeads.length === 0}
+            className="h-8 text-xs gap-1.5 shrink-0 border-blue-200 dark:border-blue-900/60 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+          >
+            <BookmarkPlus className="w-3.5 h-3.5 text-blue-600" />
+            <span>
+              Save {selectedLeadIds.size > 0 ? `(${selectedLeadIds.size})` : "All"} to CRM
+            </span>
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => handleExportCSV("all")}
+            disabled={processedLeads.length === 0}
+            className="h-8 text-xs gap-1.5 shrink-0"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
+          </Button>
         </div>
       </div>
 
-      {/* 1. TABLE VIEW */}
-      {viewMode === "table" && (
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] shadow-xs overflow-hidden">
-          {/* Mobile swipe helper badge */}
-          <div className="md:hidden px-4 py-2.5 bg-gradient-to-r from-blue-50/80 dark:from-blue-950/40 via-slate-50 dark:via-slate-900 to-blue-50/80 dark:to-blue-950/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-medium">
-            <span className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
-              </span>
-              <span>Swipe table horizontally to view all fields</span>
-            </span>
-            <span className="text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1 text-[11px] bg-white dark:bg-slate-800 px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-slate-700 shadow-2xs">
-              ← Drag to Scroll →
-            </span>
+      {/* Secondary Filter & Sort Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 text-xs">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Has Valid Phone Toggle */}
+          <label className="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700 dark:text-slate-300">
+            <input
+              type="checkbox"
+              checked={phoneFilter}
+              onChange={(e) => setPhoneFilter(e.target.checked)}
+              className="rounded text-blue-600 focus:ring-blue-500 h-3.5 w-3.5"
+            />
+            <span>Valid Phone Only</span>
+          </label>
+
+          {/* Has Email Toggle */}
+          <label className="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700 dark:text-slate-300">
+            <input
+              type="checkbox"
+              checked={emailFilter}
+              onChange={(e) => setEmailFilter(e.target.checked)}
+              className="rounded text-blue-600 focus:ring-blue-500 h-3.5 w-3.5"
+            />
+            <span>Has Email</span>
+          </label>
+
+          {/* Hide Contacted Toggle */}
+          <label className="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700 dark:text-slate-300">
+            <input
+              type="checkbox"
+              checked={hideContacted}
+              onChange={(e) => setHideContacted(e.target.checked)}
+              className="rounded text-blue-600 focus:ring-blue-500 h-3.5 w-3.5"
+            />
+            <span>Hide Contacted</span>
+          </label>
+
+          {/* Score Tier Selector */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-500">Lead Score:</span>
+            <select
+              value={scoreTierFilter}
+              onChange={(e) => setScoreTierFilter(e.target.value)}
+              className="h-7 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-[11px] font-semibold text-slate-800 dark:text-slate-200"
+            >
+              <option value="all">All Tiers</option>
+              <option value="High">High Priority (60+)</option>
+              <option value="Medium">Medium (35-59)</option>
+              <option value="Low">Low (0-34)</option>
+            </select>
           </div>
 
-          <div className="w-full overflow-x-auto custom-table-scrollbar">
-            <Table className="min-w-[1100px] w-full">
-              <TableHeader>
-                <TableRow className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 hover:bg-slate-50/90 dark:hover:bg-slate-900/90">
-                  <TableHead className="min-w-[240px] text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider whitespace-nowrap py-3.5 px-4">
-                    Business Name
-                  </TableHead>
-                  <TableHead className="min-w-[170px] text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider whitespace-nowrap py-3.5 px-4">
-                    Phone Number
-                  </TableHead>
-                  <TableHead className="min-w-[200px] text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider whitespace-nowrap py-3.5 px-4">
-                    Email / Contact
-                  </TableHead>
-                  <TableHead className="min-w-[240px] text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider whitespace-nowrap py-3.5 px-4">
-                    Address
-                  </TableHead>
-                  <TableHead className="min-w-[140px] text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider whitespace-nowrap text-center py-3.5 px-4">
-                    Website Status
-                  </TableHead>
-                  <TableHead className="min-w-[180px] text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider whitespace-nowrap text-right py-3.5 px-4">
-                    Google Maps
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredLeads.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="h-48 text-center text-slate-500 dark:text-slate-400"
-                    >
-                      <div className="flex flex-col items-center justify-center space-y-2">
-                        <AlertCircle className="w-8 h-8 text-slate-400 dark:text-slate-500" />
-                        <p className="text-base font-semibold text-slate-800 dark:text-slate-200">
-                          No matching businesses found
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm">
-                          {tableSearch
-                            ? `No results matched "${tableSearch}". Clear your search query to see all results.`
-                            : "Try selecting a broader city, nearby region, or different business category."}
-                        </p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredLeads.map((lead) => {
-                    const phoneHasVal = lead.phone && lead.phone !== "N/A";
-                    const emailHasVal = lead.email && lead.email !== "N/A";
+          {/* Min Reviews */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-500">Min Reviews:</span>
+            <select
+              value={minReviews}
+              onChange={(e) => setMinReviews(parseInt(e.target.value, 10))}
+              className="h-7 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-[11px] font-semibold text-slate-800 dark:text-slate-200"
+            >
+              <option value={0}>Any</option>
+              <option value={20}>20+ Reviews</option>
+              <option value={50}>50+ Reviews</option>
+            </select>
+          </div>
+        </div>
 
-                    return (
-                      <TableRow
-                        key={lead.id}
-                        className="border-b border-slate-100 dark:border-slate-800/80 hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
-                      >
-                        {/* Business Name */}
-                        <TableCell className="min-w-[240px] align-middle font-semibold text-slate-900 dark:text-white py-3.5 px-4">
-                          <div className="space-y-0.5 whitespace-nowrap">
-                            <div className="text-sm font-semibold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors whitespace-nowrap">
-                              {lead.name}
+        {/* Sort Selector */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-slate-500">Sort by:</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="h-7 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-[11px] font-semibold text-slate-800 dark:text-slate-200"
+          >
+            <option value="score">Lead Score (Highest)</option>
+            <option value="reviews">Reviews Count</option>
+            <option value="rating">Rating (Highest)</option>
+            <option value="name">Name (A-Z)</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Main Table */}
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] shadow-xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800">
+              <TableRow className="text-[11px] text-slate-500 hover:bg-transparent">
+                <TableHead className="w-10 px-3 py-3">
+                  <button
+                    type="button"
+                    onClick={handleToggleSelectAll}
+                    className="p-1 rounded text-slate-400 hover:text-slate-600"
+                  >
+                    {selectedLeadIds.size > 0 && selectedLeadIds.size === processedLeads.length ? (
+                      <CheckSquare className="w-4 h-4 text-blue-600" />
+                    ) : (
+                      <Square className="w-4 h-4" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead className="min-w-[220px] font-semibold py-3 px-3">Business Name & Category</TableHead>
+                <TableHead className="min-w-[130px] font-semibold py-3 px-3">Lead Score</TableHead>
+                <TableHead className="min-w-[170px] font-semibold py-3 px-3">Phone (E.164)</TableHead>
+                <TableHead className="min-w-[190px] font-semibold py-3 px-3">Email Address</TableHead>
+                <TableHead className="min-w-[140px] font-semibold py-3 px-3">Website Status</TableHead>
+                <TableHead className="min-w-[130px] font-semibold py-3 px-3">Rating / Reviews</TableHead>
+                <TableHead className="min-w-[180px] font-semibold py-3 px-3">Address</TableHead>
+                <TableHead className="min-w-[180px] font-semibold py-3 px-4 text-right">Outreach Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+
+            <TableBody>
+              {processedLeads.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="py-20 text-center space-y-2">
+                    <AlertCircle className="w-9 h-9 text-slate-300 dark:text-slate-600 mx-auto" />
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                      No businesses found matching current filters
+                    </p>
+                    <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                      Try resetting filters, searching a broader area, or running an Area Scan above.
+                    </p>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                processedLeads.map((lead) => {
+                  const isSelected = selectedLeadIds.has(lead.id);
+                  const activeEmail = localEmails[lead.id]?.email || lead.email;
+                  const activeEmailStatus = localEmails[lead.id]?.status || lead.emailStatus;
+                  const phoneHasVal = lead.phone && lead.phoneStatus !== "Missing";
+
+                  return (
+                    <TableRow
+                      key={lead.id}
+                      className={`border-b border-slate-100 dark:border-slate-800/80 transition-colors ${
+                        isSelected
+                          ? "bg-blue-50/40 dark:bg-blue-950/20"
+                          : "hover:bg-slate-50/60 dark:hover:bg-slate-800/40"
+                      }`}
+                    >
+                      {/* Checkbox */}
+                      <TableCell className="w-10 px-3 py-3 align-middle">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleSelectLead(lead.id)}
+                          className="p-1 rounded text-slate-400 hover:text-slate-600"
+                        >
+                          {isSelected ? (
+                            <CheckSquare className="w-4 h-4 text-blue-600" />
+                          ) : (
+                            <Square className="w-4 h-4" />
+                          )}
+                        </button>
+                      </TableCell>
+
+                      {/* Business Name & Attribution */}
+                      <TableCell className="py-3 px-3 align-middle font-medium text-slate-900 dark:text-white">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900 dark:text-white hover:text-blue-600">
+                            <span>{lead.name}</span>
+                            {lead.googleMapsUri && (
+                              <a
+                                href={lead.googleMapsUri}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-slate-400 hover:text-blue-500"
+                                title="Verify on Google Maps"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                            <span>{lead.category}</span>
+                            <span className="text-[9px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1 rounded">
+                              {lead.source === "google_places" ? "Google" : lead.source}
+                            </span>
+                          </div>
+                        </div>
+                      </TableCell>
+
+                      {/* Lead Score Badge with breakdown tooltip */}
+                      <TableCell className="py-3 px-3 align-middle">
+                        <div
+                          className="inline-flex items-center gap-1.5 cursor-help group"
+                          title={`Lead Score: ${lead.leadScore}/100\n• Website Status: ${lead.websiteStatus} (${
+                            lead.websiteStatus === "No Website"
+                              ? "+40"
+                              : lead.websiteStatus === "Social Only"
+                              ? "+30"
+                              : "+0"
+                          })\n• Phone: ${lead.phoneStatus === "Valid" ? "+15" : "+0"}\n• Email: ${
+                            lead.email ? "+10" : "+0"
+                          }\n• Rating/Reviews: ${
+                            (lead.rating || 0) >= 4 ? "+10" : "+0"
+                          }`}
+                        >
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold ${
+                              lead.leadScoreTier === "High"
+                                ? "bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900"
+                                : lead.leadScoreTier === "Medium"
+                                ? "bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                            }`}
+                          >
+                            ★ {lead.leadScore}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-semibold uppercase">
+                            {lead.leadScoreTier}
+                          </span>
+                        </div>
+                      </TableCell>
+
+                      {/* Phone Number */}
+                      <TableCell className="py-3 px-3 align-middle font-mono">
+                        {phoneHasVal ? (
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1 text-xs font-medium text-slate-800 dark:text-slate-200">
+                              <span>{lead.phone}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopy(lead.phone!, `p-${lead.id}`)}
+                                className="text-slate-400 hover:text-slate-600 p-0.5"
+                                title="Copy Phone"
+                              >
+                                {copiedId === `p-${lead.id}` ? (
+                                  <Check className="w-3 h-3 text-emerald-500" />
+                                ) : (
+                                  <Copy className="w-3 h-3" />
+                                )}
+                              </button>
                             </div>
-                            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-normal whitespace-nowrap">
-                              {lead.category}
+                            <div className="text-[10px]">
+                              {lead.phoneStatus === "Valid" ? (
+                                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                                  ✓ Verified Mobile
+                                </span>
+                              ) : (
+                                <span className="text-amber-600 dark:text-amber-400">
+                                  Format Unverified
+                                </span>
+                              )}
                             </div>
                           </div>
-                        </TableCell>
+                        ) : (
+                          <span className="text-xs text-slate-400">N/A</span>
+                        )}
+                      </TableCell>
 
-                        {/* Phone Number - Protected against copy */}
-                        <TableCell className="whitespace-nowrap min-w-[170px] py-3.5 px-4 font-mono select-none">
-                          {phoneHasVal ? (
-                            <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                              <a
-                                href={`tel:${lead.phone.replace(/[^0-9+]/g, "")}`}
-                                className="text-xs font-mono font-medium text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors whitespace-nowrap bg-slate-50 dark:bg-slate-800/80 hover:bg-blue-50 dark:hover:bg-blue-950/40 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700 inline-block select-none pointer-events-auto"
-                                title="Click to call directly"
+                      {/* Email */}
+                      <TableCell className="py-3 px-3 align-middle font-mono">
+                        {activeEmail ? (
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 truncate max-w-[170px]">
+                              <span className="truncate">{activeEmail}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopy(activeEmail, `e-${lead.id}`)}
+                                className="text-slate-400 hover:text-slate-600 p-0.5 shrink-0"
+                                title="Copy Email"
                               >
-                                {lead.phone}
-                              </a>
+                                {copiedId === `e-${lead.id}` ? (
+                                  <Check className="w-3 h-3 text-emerald-500" />
+                                ) : (
+                                  <Copy className="w-3 h-3" />
+                                )}
+                              </button>
                             </div>
-                          ) : (
-                            <span className="text-xs text-slate-400 dark:text-slate-500 font-mono whitespace-nowrap">N/A</span>
-                          )}
-                        </TableCell>
+                            <div className="text-[10px] text-slate-500">
+                              <span className="bg-slate-100 dark:bg-slate-800 px-1 py-0.2 rounded">
+                                {activeEmailStatus}
+                              </span>
+                            </div>
+                          </div>
+                        ) : lead.websiteStatus === "Has Website" ? (
+                          <button
+                            type="button"
+                            onClick={() => handleFindEmail(lead)}
+                            disabled={findingEmailId === lead.id}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            {findingEmailId === lead.id ? (
+                              <span className="animate-spin text-xs">⏳</span>
+                            ) : (
+                              <SearchCode className="w-3 h-3" />
+                            )}
+                            <span>Find email</span>
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-400">N/A</span>
+                        )}
+                      </TableCell>
 
-                        {/* Email - Protected against copy */}
-                        <TableCell className="whitespace-nowrap min-w-[200px] py-3.5 px-4 font-mono select-none">
-                          {emailHasVal ? (
-                            <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                      {/* Website Status & Audit */}
+                      <TableCell className="py-3 px-3 align-middle">
+                        <div className="space-y-1">
+                          {lead.websiteStatus === "Has Website" ? (
+                            <div className="flex items-center gap-1.5">
                               <a
-                                href={`mailto:${lead.email}`}
-                                className="text-xs font-mono text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline transition-colors whitespace-nowrap max-w-[210px] truncate inline-block select-none pointer-events-auto"
-                                title="Click to email directly"
-                              >
-                                {lead.email}
-                              </a>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-slate-400 dark:text-slate-500 font-mono whitespace-nowrap">N/A</span>
-                          )}
-                        </TableCell>
-
-                        {/* Address - Clean single-line truncated */}
-                        <TableCell className="min-w-[240px] text-xs text-slate-600 dark:text-slate-400 py-3.5 px-4">
-                          <span className="whitespace-nowrap block truncate max-w-[280px]" title={lead.address}>
-                            {lead.address}
-                          </span>
-                        </TableCell>
-
-                        {/* Website Status Badge - Guaranteed single-line badge */}
-                        <TableCell className="text-center whitespace-nowrap min-w-[140px] py-3.5 px-4">
-                          {lead.hasWebsite ? (
-                            <a
-                              href={
-                                lead.website?.startsWith("http")
-                                  ? lead.website
-                                  : `https://${lead.website}`
-                              }
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center whitespace-nowrap group"
-                            >
-                              <Badge
-                                variant="success"
-                                className="px-2.5 py-1 text-[11px] font-semibold cursor-pointer group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/60 whitespace-nowrap shrink-0 inline-flex items-center gap-1"
+                                href={lead.website || "#"}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full hover:bg-emerald-100 transition-colors"
                               >
                                 <span>Has Website</span>
-                                <ExternalLink className="w-3 h-3 ml-0.5 opacity-70 group-hover:opacity-100 shrink-0" />
-                              </Badge>
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => setAuditLead(lead)}
+                                className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                title="Run Website Health Audit"
+                              >
+                                <Activity className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : lead.websiteStatus === "Social Only" ? (
+                            <a
+                              href={lead.website || "#"}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-full"
+                            >
+                              <span>Social Only</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
                             </a>
                           ) : (
-                            <Badge
-                              variant="destructive"
-                              className="px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap shrink-0 inline-flex items-center justify-center"
-                            >
+                            <Badge variant="destructive" className="text-[10px] px-2 py-0.5">
                               No Website
                             </Badge>
                           )}
-                        </TableCell>
+                        </div>
+                      </TableCell>
 
-                        {/* Google Maps Actions - Clean inline buttons */}
-                        <TableCell className="text-right whitespace-nowrap min-w-[180px] py-3.5 px-4">
-                          <div className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedMapLead(lead)}
-                              className="h-8 px-2.5 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white shadow-xs inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
-                              title="Open Google Maps Exact Location Preview"
-                            >
-                              <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                              <span>Map Pin</span>
-                            </Button>
+                      {/* Rating / Reviews */}
+                      <TableCell className="py-3 px-3 align-middle text-xs">
+                        {lead.rating ? (
+                          <div className="flex items-center gap-1 font-semibold text-slate-800 dark:text-slate-200">
+                            <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                            <span>{lead.rating.toFixed(1)}</span>
+                            <span className="text-[11px] text-slate-400 font-normal">
+                              ({lead.userRatingCount || 0})
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 text-xs">-</span>
+                        )}
+                      </TableCell>
 
+                      {/* Address */}
+                      <TableCell className="py-3 px-3 align-middle text-xs text-slate-600 dark:text-slate-400">
+                        <span className="block truncate max-w-[200px]" title={lead.address}>
+                          {lead.address}
+                        </span>
+                      </TableCell>
+
+                      {/* Outreach & CRM Actions */}
+                      <TableCell className="py-3 px-4 align-middle text-right">
+                        <div className="inline-flex items-center justify-end gap-1.5">
+                          {/* WhatsApp / Outreach Pitch Button */}
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => setOutreachLead(lead)}
+                            className="h-7 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs gap-1 font-semibold shadow-2xs"
+                            title="Outreach via WhatsApp or Email"
+                          >
+                            <MessageSquare className="w-3 h-3" />
+                            <span>Pitch</span>
+                          </Button>
+
+                          {/* Save to CRM button */}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSaveSingleLead(lead)}
+                            className="h-7 w-7 p-0 rounded-lg text-slate-500 hover:text-blue-600"
+                            title="Save to My Leads CRM"
+                          >
+                            <BookmarkPlus className="w-3.5 h-3.5" />
+                          </Button>
+
+                          {/* Google Maps verify */}
+                          {lead.googleMapsUri && (
                             <a
-                              href={
-                                lead.googleMapsUrl ||
-                                `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lead.name}, ${lead.address}`)}`
-                              }
+                              href={lead.googleMapsUri}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="h-8 w-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-all shrink-0 shadow-xs"
-                              title="Open business directly in Google Maps"
+                              className="h-7 w-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-blue-600"
+                              title="Verify on Google Maps"
                             >
-                              <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                              <ExternalLink className="w-3 h-3" />
                             </a>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      )}
-
-      {/* 2. SPLIT VIEW */}
-      {viewMode === "split" && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Left Column: Scrollable List of Businesses */}
-          <div className="lg:col-span-5 space-y-2.5 max-h-[640px] overflow-y-auto pr-1">
-            {filteredLeads.length === 0 ? (
-              <div className="p-8 text-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] text-slate-500 dark:text-slate-400">
-                <AlertCircle className="w-8 h-8 text-slate-400 dark:text-slate-500 mx-auto mb-2" />
-                <p>No businesses found for this filter</p>
-              </div>
-            ) : (
-              filteredLeads.map((lead) => {
-                const isSelected = activeLead?.id === lead.id;
-                return (
-                  <div
-                    key={lead.id}
-                    onClick={() => setActiveSplitLeadId(lead.id)}
-                    className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-blue-50/70 dark:bg-blue-950/50 border-blue-400 dark:border-blue-500 shadow-sm ring-1 ring-blue-300 dark:ring-blue-700"
-                        : "bg-white dark:bg-[#0f172a] border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
-                          {lead.name}
-                        </h4>
-                        <p className="text-[11px] text-blue-600 dark:text-blue-400 mt-0.5 font-medium">
-                          {lead.category}
-                        </p>
-                      </div>
-                      {lead.hasWebsite ? (
-                        <Badge variant="success" className="text-[10px] shrink-0">
-                          Has Website
-                        </Badge>
-                      ) : (
-                        <Badge variant="destructive" className="text-[10px] shrink-0">
-                          No Website
-                        </Badge>
-                      )}
-                    </div>
-
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 line-clamp-1">
-                      {lead.address}
-                    </p>
-
-                    <div className="mt-2.5 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-2">
-                      <span className="font-mono text-[11px]">
-                        {lead.phone !== "N/A" ? lead.phone : "No phone"}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedMapLead(lead);
-                          }}
-                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-[11px] flex items-center gap-1 font-medium"
-                        >
-                          <MapPin className="w-3 h-3 text-rose-500" />
-                          <span>Exact Pin</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          {/* Right Column: Embedded Google Map for Exact Selected Place */}
-          <div className="lg:col-span-7 flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] overflow-hidden shadow-xs">
-            {/* Top Toolbar */}
-            <div className="p-4 bg-slate-50 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2.5">
-                <div className="h-8 w-8 rounded-lg bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 flex items-center justify-center text-rose-600 dark:text-rose-400">
-                  <MapPin className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[280px]">
-                    {activeLead ? activeLead.name : `Google Map - ${displayLocation}`}
-                  </h3>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[320px]">
-                    {activeLead ? activeLead.address : "Specific place interactive pin"}
-                  </p>
-                </div>
-              </div>
-
-              {activeLead && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white"
-                  >
-                    <a
-                      href={
-                        activeLead.googleMapsDirectionsUrl ||
-                        `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${activeLead.name}, ${activeLead.address}`)}`
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Compass className="w-3 h-3 text-blue-600 dark:text-blue-400 mr-1" />
-                      <span>Directions</span>
-                    </a>
-                  </Button>
-
-                  <Button
-                    asChild
-                    size="sm"
-                    className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <a
-                      href={
-                        activeLead.googleMapsUrl ||
-                        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${activeLead.name}, ${activeLead.address}`)}`
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Navigation className="w-3 h-3 mr-1" />
-                      <span>Open on Google Maps</span>
-                      <ExternalLink className="w-2.5 h-2.5 ml-1 opacity-80" />
-                    </a>
-                  </Button>
-                </div>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
-            </div>
-
-            {/* Embedded Google Map focusing on exact single-pin location */}
-            <div className="relative w-full h-[520px] bg-slate-100 dark:bg-slate-900 overflow-hidden">
-              <iframe
-                key={activeLead?.id || "default"}
-                title={`Google Map - ${activeLead?.name || displayLocation}`}
-                src={
-                  activeLead
-                    ? activeLead.googleMapsEmbedUrl ||
-                      `https://maps.google.com/maps?q=${encodeURIComponent(`${activeLead.name}, ${activeLead.address}`)}&hl=en&z=16&output=embed`
-                    : `https://maps.google.com/maps?q=${encodeURIComponent(displayLocation)}&hl=en&z=14&output=embed`
-                }
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                className="w-full h-full"
-              />
-
-              {/* Floating Verified Business Information Card on Split Map */}
-              {activeLead && (
-                <div className="absolute top-3 left-3 z-10 max-w-[280px] sm:max-w-xs rounded-xl bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-md p-3 shadow-xl border border-slate-200/90 dark:border-slate-700 pointer-events-auto">
-                  <div className="flex items-start justify-between gap-1.5 mb-1">
-                    <div>
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 block">
-                        {activeLead.category}
-                      </span>
-                      <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug line-clamp-2">
-                        {activeLead.name}
-                      </h4>
-                    </div>
-                    {activeLead.hasWebsite ? (
-                      <Badge variant="success" className="text-[9px] px-1.5 py-0.5 shrink-0">
-                        Website
-                      </Badge>
-                    ) : (
-                      <Badge variant="destructive" className="text-[9px] px-1.5 py-0.5 shrink-0">
-                        No Web
-                      </Badge>
-                    )}
-                  </div>
-
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400 flex items-start gap-1 leading-tight mb-2">
-                    <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
-                    <span className="line-clamp-2">{activeLead.address}</span>
-                  </p>
-
-                  <div className="border-t border-slate-100 dark:border-slate-800 pt-1.5 space-y-1 text-[11px]">
-                    {activeLead.phone && activeLead.phone !== "N/A" && (
-                      <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
-                        <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-[10px]">
-                          <Phone className="w-3 h-3 text-blue-500" /> Phone:
-                        </span>
-                        <a
-                          href={`tel:${activeLead.phone.replace(/[^0-9+]/g, "")}`}
-                          className="font-mono font-medium hover:text-blue-600 dark:hover:text-blue-400 text-[10px]"
-                        >
-                          {activeLead.phone}
-                        </a>
-                      </div>
-                    )}
-                    {activeLead.email && activeLead.email !== "N/A" && (
-                      <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
-                        <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-[10px]">
-                          <Mail className="w-3 h-3 text-indigo-500" /> Email:
-                        </span>
-                        <a
-                          href={`mailto:${activeLead.email}`}
-                          className="font-mono text-blue-600 dark:text-blue-400 hover:underline text-[10px] truncate max-w-[150px]"
-                        >
-                          {activeLead.email}
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+            </TableBody>
+          </Table>
         </div>
+      </div>
+
+      {/* Outreach Modal */}
+      {outreachLead && (
+        <OutreachModal
+          lead={outreachLead}
+          isOpen={Boolean(outreachLead)}
+          onClose={() => setOutreachLead(null)}
+          onStatusUpdated={(leadId, status) => {
+            onLeadStatusChanged?.(leadId, status);
+          }}
+          searchLocation={searchLocation}
+        />
       )}
 
-      {/* 3. FULL MAP VIEW */}
-      {viewMode === "map" && (
-        <div className="flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] overflow-hidden shadow-xs">
-          {/* Map Header */}
-          <div className="p-4 bg-slate-50 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-rose-100 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 flex items-center justify-center text-rose-600 dark:text-rose-400">
-                <MapPin className="h-4 w-4" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>Google Maps Lead Navigator</span>
-                  <Badge variant="outline" className="border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-[10px]">
-                    {filteredLeads.length} Leads
-                  </Badge>
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Targeted business:{" "}
-                  <span className="text-blue-600 dark:text-blue-400 font-semibold">
-                    {activeLead?.name || displayLocation}
-                  </span>
-                </p>
-              </div>
-            </div>
-
-            {activeLead && (
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={() => setSelectedMapLead(activeLead)}
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-xs border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white"
-                >
-                  <MapPin className="w-3.5 h-3.5 text-rose-500 mr-1" />
-                  <span>Exact Pin Details</span>
-                </Button>
-
-                <Button
-                  asChild
-                  size="sm"
-                  className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <a
-                    href={
-                      activeLead.googleMapsUrl ||
-                      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${activeLead.name}, ${activeLead.address}`)}`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Navigation className="w-3 h-3 mr-1" />
-                    <span>Open in Google Maps</span>
-                    <ExternalLink className="w-2.5 h-2.5 ml-1 opacity-80" />
-                  </a>
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Full Height Map */}
-          <div className="relative w-full h-[540px] bg-slate-100 dark:bg-slate-900 overflow-hidden">
-            <iframe
-              key={`full-${activeLead?.id || "default"}`}
-              title={`Google Map - ${activeLead?.name || displayLocation}`}
-              src={
-                activeLead
-                  ? activeLead.googleMapsEmbedUrl ||
-                    `https://maps.google.com/maps?q=${encodeURIComponent(`${activeLead.name}, ${activeLead.address}`)}&hl=en&z=16&output=embed`
-                  : `https://maps.google.com/maps?q=${encodeURIComponent(displayLocation)}&hl=en&z=14&output=embed`
-              }
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="w-full h-full"
-            />
-
-            {/* Floating Business Information Overlay Card on Full Map */}
-            {activeLead && (
-              <div className="absolute top-3 left-3 z-10 max-w-[280px] sm:max-w-xs rounded-xl bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-md p-3 shadow-xl border border-slate-200/90 dark:border-slate-700 pointer-events-auto">
-                <div className="flex items-start justify-between gap-1.5 mb-1">
-                  <div>
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 block">
-                      {activeLead.category}
-                    </span>
-                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug line-clamp-2">
-                      {activeLead.name}
-                    </h4>
-                  </div>
-                  {activeLead.hasWebsite ? (
-                    <Badge variant="success" className="text-[9px] px-1.5 py-0.5 shrink-0">
-                      Website
-                    </Badge>
-                  ) : (
-                    <Badge variant="destructive" className="text-[9px] px-1.5 py-0.5 shrink-0">
-                      No Web
-                    </Badge>
-                  )}
-                </div>
-
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 flex items-start gap-1 leading-tight mb-2">
-                  <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
-                  <span className="line-clamp-2">{activeLead.address}</span>
-                </p>
-
-                <div className="border-t border-slate-100 dark:border-slate-800 pt-1.5 space-y-1 text-[11px]">
-                  {activeLead.phone && activeLead.phone !== "N/A" && (
-                    <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
-                      <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-[10px]">
-                        <Phone className="w-3 h-3 text-blue-500" /> Phone:
-                      </span>
-                      <a
-                        href={`tel:${activeLead.phone.replace(/[^0-9+]/g, "")}`}
-                        className="font-mono font-medium hover:text-blue-600 dark:hover:text-blue-400 text-[10px]"
-                      >
-                        {activeLead.phone}
-                      </a>
-                    </div>
-                  )}
-                  {activeLead.email && activeLead.email !== "N/A" && (
-                    <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
-                      <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-[10px]">
-                        <Mail className="w-3 h-3 text-indigo-500" /> Email:
-                      </span>
-                      <a
-                        href={`mailto:${activeLead.email}`}
-                        className="font-mono text-blue-600 dark:text-blue-400 hover:underline text-[10px] truncate max-w-[150px]"
-                      >
-                        {activeLead.email}
-                      </a>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Horizontal Quick Lead Selector Bar */}
-          <div className="p-3 bg-slate-50 dark:bg-slate-900/90 border-t border-slate-200 dark:border-slate-800 overflow-x-auto flex items-center gap-2.5">
-            {filteredLeads.map((lead) => {
-              const isSelected = activeLead?.id === lead.id;
-              return (
-                <button
-                  key={lead.id}
-                  onClick={() => setActiveSplitLeadId(lead.id)}
-                  className={`px-3 py-2 rounded-xl text-left border transition-all shrink-0 flex items-center gap-2.5 ${
-                    isSelected
-                      ? "bg-white dark:bg-slate-800 border-blue-500 ring-1 ring-blue-400"
-                      : "bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
-                  }`}
-                >
-                  <MapPin
-                    className={`w-3.5 h-3.5 shrink-0 ${
-                      isSelected ? "text-rose-500" : "text-slate-400 dark:text-slate-500"
-                    }`}
-                  />
-                  <div>
-                    <div className="text-xs font-semibold text-slate-900 dark:text-white max-w-[160px] truncate">
-                      {lead.name}
-                    </div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                      {lead.hasWebsite ? (
-                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">Has Website</span>
-                      ) : (
-                        <span className="text-red-600 dark:text-red-400 font-medium">No Website</span>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+      {/* Website Audit Modal */}
+      {auditLead && (
+        <WebsiteAuditModal
+          lead={auditLead}
+          isOpen={Boolean(auditLead)}
+          onClose={() => setAuditLead(null)}
+          onOpenOutreach={() => {
+            const current = auditLead;
+            setAuditLead(null);
+            setOutreachLead(current);
+          }}
+        />
       )}
 
-      {/* Interactive Google Map Modal */}
-      <GoogleMapModal
-        lead={selectedMapLead}
-        isOpen={Boolean(selectedMapLead)}
-        onClose={() => setSelectedMapLead(null)}
-      />
+      {/* Map Pin Modal */}
+      {mapLead && (
+        <GoogleMapModal
+          lead={mapLead}
+          isOpen={Boolean(mapLead)}
+          onClose={() => setMapLead(null)}
+        />
+      )}
     </div>
   );
 }

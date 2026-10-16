@@ -1,38 +1,57 @@
-# LeadGen Pro — Free B2B Lead Generation Engine
+# LeadGen Pro — B2B Lead Discovery & Outreach Engine
 
-LeadGen Pro is an ultra-modern, high-performance B2B lead generation web application built with **Next.js (App Router)**, **TypeScript (Strict Mode)**, **Tailwind CSS**, **Shadcn UI**, and **Clerk Authentication**.
-
-> **CRITICAL FEATURE: 100% FREE TO RUN**  
-> This project uses **OpenStreetMap (Overpass API)** for real-time global business data extraction.  
-> **No Google Places API, no paid subscriptions, and no credit cards are required.**
+LeadGen Pro is a professional, production-quality B2B lead generation and cold outreach platform built for freelance web developers. It identifies high-intent local businesses worldwide (with primary focus on Bangladesh), particularly businesses **without a website** or with **outdated web presences**, allowing you to contact them directly via WhatsApp, phone, or email to offer modern web solutions.
 
 ---
 
-## 🚀 Key Features
+## 🌟 Key Features
 
-1. **4 Cascading Dependent Dropdowns**:
-   - **Country**: Populates all countries worldwide with flag emojis using `country-state-city` (Defaults to 🇧🇩 Bangladesh).
-   - **State / Region**: Dynamically populates states based on selected country (Defaults to Dhaka Division).
-   - **City / Area**: Dynamically populates cities based on selected state + custom neighborhood input (e.g. `Banani`, `Gulshan`, `Dhanmondi`).
-   - **Business Category**: 12 high-intent niches (IT Agency & Software, Restaurants, Beauty Salons, Real Estate, Gyms, Clinics, Plumbers, Legal, Marketing, Hotels, Auto, Retail).
+1. **Zero-Fake-Data Guarantee**:
+   - Zero mock, placeholder, seeded, or synthetic leads anywhere in the application.
+   - Contact numbers and emails are shown only when retrieved from official Google Places listings, discovered on the business's own public website, or provided through user CSV import.
+   - Strict junk detection rejecting dummy patterns (e.g. `123456`, `345678`, trailing `000000`), junk domains (`example.com`, `localhost`, `sentry`, `wixpress`), and false-positive image extensions (`.png@2x`).
 
-2. **Ultra-Fast Overpass OSM Engine**:
-   - Parallel mirror querying across top OpenStreetMap Overpass servers with automated fallback.
-   - Extracts Business Name, Phone Number, Verified Email / Gmail, Street Address, Website URL, Lat/Lng coordinates, and OpenStreetMap map view links.
+2. **Official Google Places API (New) Integration**:
+   - Uses `POST https://places.googleapis.com/v1/places:searchText` with official FieldMask constants.
+   - API keys are handled strictly server-side and never exposed in client bundles.
+   - **Hard Budget Guard**: Tracks daily and monthly calls in local SQLite. Default limits: `GOOGLE_MONTHLY_CALL_LIMIT=900`, `GOOGLE_DAILY_CALL_LIMIT=30`. Calls are automatically blocked when limits are reached with friendly user messages.
+   - **30-Day Response Caching**: Normalized search queries and viewports are cached in SQLite for up to 30 days to avoid duplicate API calls.
 
-3. **High-Conversion Cold Outreach Data Table**:
-   - **Website Status Badges**:
-     - 🟢 **Has Website**: Emerald badge with direct link to their site.
-     - 🔴 **No Website**: Glowing red badge for high-ticket web design & marketing cold outreach.
-   - **Filter Pills**: "All", "With Website", and "Without Website (count)" with active red glowing badge.
-   - **Live In-Table Search**: Filter leads by name, phone, email, or address in real-time.
-   - **Map Action**: 1-click "View Map" opening direct OpenStreetMap marker pin.
-   - **1-Click CSV Export**: Instant download formatted for CRM, Apollo, Instantly, or Lemlist.
+3. **Area Coverage Scan Engine**:
+   - Systematic scanning of target neighborhoods and cities.
+   - **Scan Modes**: (a) Web-service-relevant priority categories (21 prime industries), (b) Selected categories, (c) All 99 services A to Z.
+   - **Adaptive Quadrant Tiling**: If a dense area hits Google's page cap (20 results), the engine automatically splits the viewport into 4 quadrants (SW, SE, NW, NE) to discover hidden businesses within budget.
+   - **Honest Coverage Report**: Displays category-by-category status: *Complete*, *Probably complete*, or *Possibly incomplete* with exact reasons.
 
-4. **Clerk Authentication & Dark Mode Layout**:
-   - Modern Sign-In & Sign-Up page with value proposition cards.
-   - Interactive user profile modal showing account security, session details, and sign-out controls.
-   - 1-Click "Quick Live Demo" option for immediate testing without login friction.
+4. **Lead Scoring Formula (0–100)**:
+   - **No Website**: +40 points (prime cold outreach prospect)
+   - **Social Only** (FB/Instagram/Linktree): +30 points
+   - **Valid Phone (E.164)**: +15 points (WhatsApp ready)
+   - **Valid Email**: +10 points
+   - **Rating >= 4.0**: +10 points (established reputation)
+   - **Reviews >= 50**: +10 points (>= 20: +5 points)
+
+5. **On-Demand Website Audit**:
+   - Server-side health checker evaluating HTTPS security, response time (ms), mobile viewport responsiveness, page title, and meta description.
+   - Highlights specific pitch angles (e.g. slow mobile loading, missing SEO) to close redesign clients.
+
+6. **Honest Email Finder**:
+   - Crawls the business's own domain homepage, `/contact`, and `/about` pages for public `mailto:` links and email addresses.
+   - Validates syntax and flags whether the email matches the business's official domain.
+
+7. **Free Fill-in Options**:
+   - **Google Maps / Outscraper CSV Import**: Auto-detects columns, applies Section 2 data integrity validation, deduplicates against existing leads, and imports zero-cost records.
+   - **Add Lead Manually**: Instant entry with real-time phone E.164 conversion and email validation.
+
+8. **Multi-Channel Outreach Engine**:
+   - **1-Click WhatsApp**: Formatted `https://wa.me/<E164>?text=<encoded_pitch>` links with unverified phone guard.
+   - **Pre-Built Outreach Templates**: 3 English & 3 Bengali scripts for "No Website" prospects, 2 for "Outdated Website" redesigns, and email templates with standard unsubscribe lines.
+   - Automatic activity logging in SQLite updating lead status to "Contacted" with timestamp.
+
+9. **My Leads CRM**:
+   - Pipeline tracking with statuses: *New*, *Contacted*, *Replied*, *Meeting*, *Won*, *Lost*.
+   - **Follow-up due alert**: Prioritizes leads requiring follow-up today or overdue.
+   - Export formatted for CRM systems, Apollo, Instantly, and Lemlist.
 
 ---
 
@@ -40,65 +59,80 @@ LeadGen Pro is an ultra-modern, high-performance B2B lead generation web applica
 
 - **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript (Strict Mode)
-- **Styling**: Tailwind CSS & Shadcn UI design system
+- **Database**: Local SQLite via native Node `node:sqlite` (`leadgen.db`)
 - **Authentication**: Clerk (`@clerk/nextjs`, `@clerk/themes`)
-- **Location Database**: `country-state-city`
-- **Data Engine**: OpenStreetMap Overpass API (Free)
+- **Validation**: `libphonenumber-js`
+- **Styling**: Tailwind CSS & Shadcn UI design system
 - **Icons**: `lucide-react`
 
 ---
 
-## ⚙️ Running Locally
+## ⚙️ Environment Variables
 
-1. **Navigate to the project directory**:
-   ```bash
-   cd C:\Users\USER\.gemini\antigravity-ide\scratch\leadgen-pro
-   ```
+Copy `.env.example` to `.env.local` and configure your credentials:
 
-2. **Environment Variables** (`.env.local` is already configured):
-   ```env
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_aHVtYW5lLWJlZGJ1Zy05MjA2LmNsZXJrLmFjY291bnRzLmRldiQ
-   CLERK_SECRET_KEY=sk_test_gnc63aMKHUGQOTGGz1ilMj2NySziIgpK0tQ4fBRGLu
-   ```
+```env
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
 
-3. **Start the Development Server**:
-   ```bash
-   npm.cmd run dev
-   ```
+# Google Places API (New) - Server Side Only
+GOOGLE_PLACES_API_KEY=AIzaSy...
 
-4. **Open in your browser**:
-   ```
-   http://localhost:3000
-   ```
+# Budget Guards (Free Tier Protection)
+GOOGLE_MONTHLY_CALL_LIMIT=900
+GOOGLE_DAILY_CALL_LIMIT=30
+```
+
+> **Note**: If `GOOGLE_PLACES_API_KEY` is not provided, the app continues to function seamlessly with CSV imports, manual lead management, and CRM outreach.
 
 ---
 
-## 🛡️ Error Handling & Friendly Auth Architecture
+## 🌐 Google Cloud Setup Guide
 
-LeadGen Pro incorporates an enterprise-grade, human-friendly error handling system designed to prevent ugly stack traces, provider codes, or blank screens:
+To obtain and restrict your Google Places API key:
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new project (e.g. `LeadGen-Pro`).
+3. Enable billing (Google provides a monthly free tier credit for Places API).
+4. Navigate to **APIs & Services > Library** and enable **Places API (New)**.
+5. Navigate to **APIs & Services > Credentials** and click **Create Credentials > API Key**.
+6. **Restrict the Key**:
+   - Under **API restrictions**, select **Restrict key** and choose only **Places API (New)**.
+   - Under **Application restrictions**, leave as None or restrict to your server IP. *Never expose this key in client-side code.*
+7. Set up a Budget Alert in **Billing > Budgets & alerts** at $1 to ensure you are alerted before any unintended spend.
 
-### 1. Centralized Auth Error Mapper (`src/lib/auth-errors.ts`)
-All authentication errors (Google OAuth popups, SSO callbacks, email/password validation, rate limits) are mapped consistently to human-friendly messages via `getAuthErrorMessage(error, context)`. Raw provider errors and stack traces are logged exclusively to server/developer consoles.
+---
 
-| Scenario / Code | User-Facing Message | Inline Action |
-| :--- | :--- | :--- |
-| **Account Not Found** | *"No account found with this Google email. Please create an account first, then sign in."* | "Create account" + "Try another account" |
-| **Popup Cancelled / Closed** | *"Sign-in was cancelled. Please try again."* | Retry |
-| **Popup Blocked** | *"Your browser blocked the sign-in window. Please allow popups for this site and try again."* | Retry |
-| **Access Denied / Refused** | *"Google sign-in permission was denied. Please try again and allow access."* | Retry |
-| **Account Disabled / Locked** | *"This account has been disabled. Please contact support."* | "Contact support" |
-| **Different Sign-In Method** | *"This email is already registered using a different method. Please sign in with your email and password."* | "Sign in with password" |
-| **Network Error / Offline** | *"Network problem. Please check your internet connection and try again."* | Retry |
-| **Incorrect Password / Email** | *"Incorrect email or password."* (preserves privacy) | Retry |
-| **Rate Limited** | *"Too many attempts. Please wait a few minutes and try again."* | Retry |
-| **Account Already Exists (Sign-up)** | *"This Google account already has an account. Please sign in instead."* | "Sign in" |
-| **Generic / Unknown Error** | *"Something went wrong while signing in. Please try again."* | Retry |
+## 🗄️ Database & Serverless Persistence Note
 
-### 2. Custom Error Pages & Boundaries
-- **`app/not-found.tsx`**: Custom 404 page styled with dark theme branding, `noindex` meta, "Go to Home", and contextual back navigation ("Go to Directory" if signed in, "Go to Sign in" if signed out).
-- **`app/error.tsx`**: Runtime error page providing a `reset()` button and "Go to Home" without exposing production stack traces.
-- **`app/global-error.tsx`**: Root layout emergency boundary with standalone HTML/body structure.
-- **`app/forbidden.tsx`**: Custom 403 Forbidden screen.
-- **`AppErrorBoundary` (`src/components/app-error-boundary.tsx`)**: Component-level React error boundary preventing single widget errors from crashing the main directory layout.
-- **`OfflineBanner` (`src/components/offline-banner.tsx`)**: Real-time network listener showing a floating status warning whenever connectivity drops.
-- **Standardized API Errors**: `/api/places` returns consistent JSON `{ error: { code, message } }` with proper HTTP status codes, and `SearchPanel` renders inline dark-themed alerts with zero disruptive popups.
+LeadGen Pro stores budget usage, response cache, scan jobs, and CRM leads locally in `./data/leadgen.db` using native `node:sqlite`.
+
+> ⚠️ **Important Deployment Notice**:  
+> On serverless platforms like **Vercel**, the local filesystem is ephemeral and does not persist SQLite files across function cold-starts or redeployments.
+> 
+> To deploy permanently to production:
+> - Use a free hosted SQLite-compatible database service like **Turso** (`@libsql/client`) or **Supabase** (PostgreSQL free tier).
+> - All database queries in `src/lib/db.ts` are isolated behind a repository pattern, making it straightforward to swap the driver for Turso or Supabase.
+
+---
+
+## 🧪 Automated Testing & QA
+
+Run the comprehensive QA verification suite:
+
+```bash
+npm run qa
+```
+
+This automated script performs:
+1. `.gitignore` audit (ensuring `.env*`, `*.sqlite`, `*.db`, and `data/` are never committed).
+2. Secrets scan (verifying no Google API keys like `AIza...` exist in repository files or client bundles).
+3. No-fake-data scanner (confirming zero hardcoded dummy phones, synthetic emails, or mock arrays exist in `src/`).
+4. Data integrity unit tests (phone E.164 parsing, junk email rejection, lead scoring formula, contactable counts, and adaptive quadrant tiling).
+
+---
+
+## 📜 Compliance & Attribution
+
+- **GDPR & CAN-SPAM**: All commercial communications should include clear sender identification and opt-out instructions. Default email templates provide an unsubscribe reply option.
+- **Google Maps Platform**: Public listings and place IDs are attributed to Google Maps Platform in accordance with terms of use.

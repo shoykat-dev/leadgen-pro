@@ -279,7 +279,7 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
           {/* Action Buttons Row */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 pt-1">
             <span className="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline font-mono">
-              GPS: {lead.lat.toFixed(5)}, {lead.lon.toFixed(5)}
+              GPS: {lead.lat != null && lead.lon != null ? `${lead.lat.toFixed(5)}, ${lead.lon.toFixed(5)}` : "Location mapped"}
             </span>
 
             <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
