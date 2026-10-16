@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Country } from "country-state-city";
 import { BusinessLead } from "@/lib/data-integrity";
 import { searchGooglePlaces } from "@/lib/google-places";
 import { searchFreeLiveDirectory } from "@/lib/free-search";
@@ -23,18 +24,27 @@ export async function POST(req: NextRequest) {
     let cached = false;
     let engineSource = "google_places";
 
-    const resolvedCountryCode = (
-      body.countryCode ||
-      (country?.toLowerCase().includes("kingdom") || country?.toLowerCase().includes("uk")
-        ? "GB"
-        : country?.toLowerCase().includes("united states") || country?.toLowerCase().includes("usa")
-        ? "US"
-        : country?.toLowerCase().includes("canada")
-        ? "CA"
-        : country?.toLowerCase().includes("australia")
-        ? "AU"
-        : "BD")
-    ).toUpperCase();
+    let resolvedCountryCode = (body.countryCode || "").toUpperCase();
+    if (!resolvedCountryCode && country) {
+      const cLower = country.toLowerCase().trim();
+      if (cLower.includes("kingdom") || cLower === "uk" || cLower === "great britain") {
+        resolvedCountryCode = "GB";
+      } else if (cLower.includes("united states") || cLower === "usa" || cLower === "us") {
+        resolvedCountryCode = "US";
+      } else if (cLower.includes("uae") || cLower.includes("emirates")) {
+        resolvedCountryCode = "AE";
+      } else {
+        const cMatch = Country.getAllCountries().find(
+          (c) => c.name.toLowerCase() === cLower || cLower.includes(c.name.toLowerCase())
+        );
+        if (cMatch) {
+          resolvedCountryCode = cMatch.isoCode;
+        }
+      }
+    }
+    if (!resolvedCountryCode) {
+      resolvedCountryCode = "BD";
+    }
 
     if (apiKey) {
       const googleRes = await searchGooglePlaces({

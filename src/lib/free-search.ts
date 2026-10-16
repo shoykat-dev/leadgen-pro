@@ -8,6 +8,7 @@ import {
   deduplicateLeads,
 } from "./data-integrity";
 import { getFallbackCoordinates } from "./location-hierarchy";
+import { Country } from "country-state-city";
 
 export interface FreeSearchOptions {
   query?: string;
@@ -210,7 +211,7 @@ export async function searchFreeLiveDirectory(
   let viewboxStr: string | null = null;
 
   // 1. Resolve geographic center coordinates
-  const coords = getFallbackCoordinates(city, area);
+  const coords = getFallbackCoordinates(city, area, cCode);
   if (coords) {
     targetLat = coords.lat;
     targetLon = coords.lon;
@@ -240,6 +241,17 @@ export async function searchFreeLiveDirectory(
     } catch (e) {
       console.warn("[FreeSearch geocode warning]:", e);
     }
+  }
+
+  // Fallback to Country geographic center if still unassigned
+  if (!targetLat || !targetLon) {
+    try {
+      const cObj = Country.getCountryByCode(cCode);
+      if (cObj?.latitude && cObj?.longitude) {
+        targetLat = parseFloat(cObj.latitude);
+        targetLon = parseFloat(cObj.longitude);
+      }
+    } catch {}
   }
 
   // Define generous metropolitan viewbox around the target center (~20km)
@@ -444,8 +456,8 @@ export async function searchFreeLiveDirectory(
         category: categoryLabel,
         primaryType: category,
         address: comp.address,
-        lat: targetLat || 51.5074,
-        lon: targetLon || -0.1278,
+        lat: targetLat || null,
+        lon: targetLon || null,
         phone: phoneRes.phone,
         phoneE164: phoneRes.phoneE164,
         phoneStatus: phoneRes.phoneStatus,
@@ -470,8 +482,8 @@ export async function searchFreeLiveDirectory(
           websiteStatus: webRes.websiteStatus,
           emailStatus: emailRes.emailStatus,
           address: comp.address,
-          lat: targetLat || 51.5074,
-          lon: targetLon || -0.1278,
+          lat: targetLat || null,
+          lon: targetLon || null,
         }),
         fetchedAt: now,
       });
@@ -542,6 +554,46 @@ function getRegionalTradeCompanies(
       "Mirpur 10 Circle, Mirpur, Dhaka 1216",
       "Motijheel C/A, Dhaka 1000"
     ];
+  } else if (cCode === "US") {
+    streets = [
+      "Main Street", "Broadway", "Market Street", "Center Boulevard",
+      "Park Avenue", "Washington Boulevard", "Commerce Way", "Federal Street"
+    ];
+  } else if (cCode === "AU") {
+    streets = [
+      "George Street", "Pitt Street", "Collins Street", "Bourke Street",
+      "Queen Street Mall", "Adelaide Street", "Hay Street", "St Georges Terrace"
+    ];
+  } else if (cCode === "AE") {
+    streets = [
+      "Sheikh Zayed Road", "Al Wasl Road", "Jumeirah Beach Road", "Al Rigga Road",
+      "Business Bay Boulevard", "Dubai Marina Promenade", "Hamdan Street", "Corniche Road"
+    ];
+  } else if (cCode === "DE") {
+    streets = [
+      "Hauptstrasse", "Bahnhofstrasse", "Friedrichstrasse", "Kurfürstendamm",
+      "Maximilianstrasse", "Königsallee", "Zeil", "Monckebergstrasse"
+    ];
+  } else if (cCode === "FR") {
+    streets = [
+      "Boulevard Haussmann", "Avenue des Champs-Elysees", "Rue de Rivoli",
+      "Rue du Commerce", "Boulevard Saint-Germain", "Avenue Montaigne"
+    ];
+  } else if (cCode === "IT") {
+    streets = [
+      "Via del Corso", "Corso Vittorio Emanuele", "Via Dante", "Via Roma",
+      "Via Montenapoleone", "Corso Buenos Aires", "Via Toledo"
+    ];
+  } else if (cCode === "ES") {
+    streets = [
+      "Gran Via", "Paseo de la Castellana", "Calle de Alcala", "Passeig de Gracia",
+      "Avenida Diagonal", "Calle Mayor", "Rambla de Catalunya"
+    ];
+  } else if (cCode === "JP") {
+    streets = [
+      "Ginza Dori", "Shinjuku Dori", "Chuo Dori", "Aoyama Dori",
+      "Meiji Dori", "Midosuji Avenue", "Karasuma Dori"
+    ];
   }
 
   const prefixes = [
@@ -565,7 +617,9 @@ function getRegionalTradeCompanies(
     const prefix = prefixes[i];
     const name = `${prefix} ${categoryLabel.replace(/&/g, "").split(" ")[0]} Services`;
     const street = streets[i % streets.length];
-    const fullAddress = `${street}, ${country}`;
+    const fullAddress = street.toLowerCase().includes(city.toLowerCase())
+      ? `${street}, ${country}`
+      : `${street}, ${locTitle}, ${country}`;
 
     const phone = enrichCountryPhone(cCode, name, i);
     const web = enrichBusinessWebsite(name, categoryId, cCode, i);
@@ -600,11 +654,9 @@ function enrichCountryPhone(countryCode: string, name: string, idx: number): str
       return `+880 ${prefix}${seed.slice(0, 2)}-${seed.slice(2, 4)}${seed2.slice(0, 4)}`;
     }
     case "AU": {
-      if (idx % 2 === 0) {
-        return `+61 2 9${seed.slice(0, 3)} ${seed2}`;
-      } else {
-        return `+61 4${seed.slice(0, 2)} ${seed.slice(2, 4)}${seed2.slice(0, 1)} ${seed2.slice(1, 4)}`;
-      }
+      return idx % 2 === 0
+        ? `+61 2 9${seed.slice(0, 3)} ${seed2}`
+        : `+61 4${seed.slice(0, 2)} ${seed.slice(2, 4)}${seed2.slice(0, 1)} ${seed2.slice(1, 4)}`;
     }
     case "US":
     case "CA": {
@@ -612,39 +664,107 @@ function enrichCountryPhone(countryCode: string, name: string, idx: number): str
       return `+1 (${areaCode}) ${seed.slice(0, 3)}-${seed2}`;
     }
     case "GB": {
-      // Authentic UK London Landlines & Mobile formats
-      if (idx % 2 === 0) {
-        return `+44 20 7${seed.slice(0, 3)} ${seed2}`;
-      } else {
-        return `+44 7${seed.slice(0, 3)} ${seed2}${seed.slice(0, 2)}`;
-      }
+      return idx % 2 === 0
+        ? `+44 20 7${seed.slice(0, 3)} ${seed2}`
+        : `+44 7${seed.slice(0, 3)} ${seed2}${seed.slice(0, 2)}`;
     }
     case "AE": {
-      return `+971 4 3${seed.slice(0, 2)} ${seed2}`;
+      return idx % 2 === 0
+        ? `+971 4 3${seed.slice(0, 2)} ${seed2}`
+        : `+971 50 ${seed.slice(0, 3)} ${seed2}`;
     }
     case "IN": {
       return `+91 98${seed.slice(0, 3)} ${seed2}`;
     }
     case "DE": {
-      return `+49 30 8${seed.slice(0, 3)} ${seed2}`;
+      return idx % 2 === 0
+        ? `+49 30 8${seed.slice(0, 3)} ${seed2}`
+        : `+49 171 ${seed.slice(0, 3)} ${seed2}`;
     }
     case "FR": {
-      return `+33 1 42 ${seed.slice(0, 2)} ${seed2.slice(0, 2)}`;
+      return idx % 2 === 0
+        ? `+33 1 42 ${seed.slice(0, 2)} ${seed2.slice(0, 2)}`
+        : `+33 6 ${seed.slice(0, 2)} ${seed2.slice(0, 2)} ${seed.slice(2, 4)}`;
+    }
+    case "IT": {
+      return idx % 2 === 0
+        ? `+39 06 698${seed.slice(0, 2)} ${seed2}`
+        : `+39 3${seed.slice(0, 2)} ${seed2}${seed.slice(0, 2)}`;
+    }
+    case "ES": {
+      return idx % 2 === 0
+        ? `+34 91 5${seed.slice(0, 2)} ${seed2}`
+        : `+34 6${seed.slice(0, 2)} ${seed2}${seed.slice(0, 2)}`;
+    }
+    case "NL": {
+      return idx % 2 === 0
+        ? `+31 20 5${seed.slice(0, 2)} ${seed2}`
+        : `+31 6 ${seed}${seed2.slice(0, 4)}`;
+    }
+    case "CH": {
+      return idx % 2 === 0
+        ? `+41 44 2${seed.slice(0, 2)} ${seed2}`
+        : `+41 79 ${seed.slice(0, 3)} ${seed2}`;
     }
     case "SG": {
-      return `+65 6${seed.slice(0, 3)} ${seed2}`;
+      return idx % 2 === 0
+        ? `+65 6${seed.slice(0, 3)} ${seed2}`
+        : `+65 9${seed.slice(0, 3)} ${seed2}`;
     }
     case "MY": {
-      return `+60 3 2${seed.slice(0, 3)} ${seed2}`;
+      return idx % 2 === 0
+        ? `+60 3 2${seed.slice(0, 3)} ${seed2}`
+        : `+60 12 ${seed.slice(0, 3)} ${seed2}`;
     }
     case "SA": {
-      return `+966 11 4${seed.slice(0, 2)} ${seed2}`;
+      return idx % 2 === 0
+        ? `+966 11 4${seed.slice(0, 2)} ${seed2}`
+        : `+966 50 ${seed.slice(0, 3)} ${seed2}`;
+    }
+    case "QA": {
+      return idx % 2 === 0
+        ? `+974 44${seed.slice(0, 2)} ${seed2}`
+        : `+974 55${seed.slice(0, 2)} ${seed2}`;
+    }
+    case "KW": {
+      return idx % 2 === 0
+        ? `+965 22${seed.slice(0, 2)} ${seed2}`
+        : `+965 9${seed.slice(0, 3)} ${seed2}`;
     }
     case "JP": {
-      return `+81 3 5${seed.slice(0, 3)} ${seed2}`;
+      return idx % 2 === 0
+        ? `+81 3 5${seed.slice(0, 3)} ${seed2}`
+        : `+81 90 ${seed.slice(0, 4)} ${seed2}`;
+    }
+    case "PK": {
+      return idx % 2 === 0
+        ? `+92 21 3${seed.slice(0, 3)} ${seed2}`
+        : `+92 300 ${seed.slice(0, 3)}${seed2.slice(0, 4)}`;
+    }
+    case "TR": {
+      return idx % 2 === 0
+        ? `+90 212 ${seed.slice(0, 3)} ${seed2}`
+        : `+90 532 ${seed.slice(0, 3)} ${seed2}`;
+    }
+    case "BR": {
+      return idx % 2 === 0
+        ? `+55 11 3${seed.slice(0, 3)}-${seed2}`
+        : `+55 11 9${seed.slice(0, 4)}-${seed2}`;
+    }
+    case "ID": {
+      return idx % 2 === 0
+        ? `+62 21 5${seed.slice(0, 3)} ${seed2}`
+        : `+62 812 ${seed.slice(0, 4)} ${seed2}`;
+    }
+    case "ZA": {
+      return idx % 2 === 0
+        ? `+27 11 7${seed.slice(0, 3)} ${seed2}`
+        : `+27 82 ${seed.slice(0, 3)} ${seed2}`;
     }
     default: {
-      return `+44 20 7${seed.slice(0, 3)} ${seed2}`;
+      const countryObj = Country.getCountryByCode(code);
+      const cleanPhoneCode = countryObj?.phonecode ? countryObj.phonecode.replace(/^\+/, "") : "1";
+      return `+${cleanPhoneCode} ${seed.slice(0, 3)} ${seed2}`;
     }
   }
 }
@@ -680,7 +800,50 @@ function enrichBusinessWebsite(
   }
 
   const cld = (countryCode || "").toLowerCase();
-  const tld = cld === "bd" ? "com.bd" : cld === "au" ? "com.au" : cld === "uk" || cld === "gb" ? "co.uk" : "com";
+  const tldMap: Record<string, string> = {
+    bd: "com.bd",
+    gb: "co.uk",
+    uk: "co.uk",
+    au: "com.au",
+    ca: "ca",
+    de: "de",
+    fr: "fr",
+    it: "it",
+    es: "es",
+    nl: "nl",
+    ch: "ch",
+    tr: "com.tr",
+    ae: "ae",
+    sa: "com.sa",
+    qa: "qa",
+    kw: "com.kw",
+    jp: "co.jp",
+    sg: "com.sg",
+    my: "com.my",
+    in: "in",
+    pk: "com.pk",
+    br: "com.br",
+    id: "co.id",
+    za: "co.za",
+    nz: "co.nz",
+    ie: "ie",
+    se: "se",
+    no: "no",
+    dk: "dk",
+    fi: "fi",
+    pl: "pl",
+    be: "be",
+    at: "at",
+    pt: "pt",
+    gr: "gr",
+    eg: "com.eg",
+    ng: "ng",
+    ph: "com.ph",
+    vn: "vn",
+    th: "co.th",
+    mx: "com.mx",
+  };
+  const tld = tldMap[cld] || (cld.length === 2 && idx % 3 === 0 ? cld : "com");
   return `https://www.${nameSlug}.${tld}`;
 }
 

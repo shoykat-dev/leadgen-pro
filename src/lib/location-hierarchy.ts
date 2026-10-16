@@ -1,4 +1,4 @@
-import { State, City } from "country-state-city";
+import { State, City, Country } from "country-state-city";
 
 export interface LocationArea {
   id: string;
@@ -2535,7 +2535,11 @@ const KNOWN_COORDINATES: Record<string, { lat: number; lon: number }> = {
   durban: { lat: -29.8587, lon: 31.0218 },
 };
 
-export function getFallbackCoordinates(cityName: string, areaName?: string): { lat: number; lon: number } | null {
+export function getFallbackCoordinates(
+  cityName: string,
+  areaName?: string,
+  countryCode?: string
+): { lat: number; lon: number } | null {
   if (areaName) {
     const aKey = areaName.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
     for (const [k, coords] of Object.entries(KNOWN_COORDINATES)) {
@@ -2547,6 +2551,31 @@ export function getFallbackCoordinates(cityName: string, areaName?: string): { l
     for (const [k, coords] of Object.entries(KNOWN_COORDINATES)) {
       if (k.replace(/[^a-z0-9]/g, "") === cKey) return coords;
     }
+  }
+  if (countryCode) {
+    const cCode = countryCode.toUpperCase();
+    if (cityName) {
+      try {
+        const cLower = cityName.toLowerCase().trim();
+        const cityList = City.getCitiesOfCountry(cCode);
+        const matched = cityList?.find(
+          (c) => c.name.toLowerCase() === cLower || c.name.toLowerCase().includes(cLower)
+        );
+        if (matched && matched.latitude && matched.longitude) {
+          const lat = parseFloat(matched.latitude);
+          const lon = parseFloat(matched.longitude);
+          if (!isNaN(lat) && !isNaN(lon)) return { lat, lon };
+        }
+      } catch {}
+    }
+    try {
+      const cObj = Country.getCountryByCode(cCode);
+      if (cObj && cObj.latitude && cObj.longitude) {
+        const lat = parseFloat(cObj.latitude);
+        const lon = parseFloat(cObj.longitude);
+        if (!isNaN(lat) && !isNaN(lon)) return { lat, lon };
+      }
+    } catch {}
   }
   return null;
 }
