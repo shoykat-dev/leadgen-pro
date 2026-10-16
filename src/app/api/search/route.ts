@@ -99,9 +99,13 @@ export async function POST(req: NextRequest) {
         query: query || categoryId,
         category: categoryId,
         categoryLabel: body.categoryLabel || categoryId,
-        countryCode,
+        country: body.country,
+        countryCode: body.countryCode || countryCode,
+        state: body.state,
         city: body.city,
         area: body.area,
+        lat: body.lat,
+        lon: body.lon,
       });
       searchResult = {
         leads: freeRes.leads,

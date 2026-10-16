@@ -23,11 +23,24 @@ export async function POST(req: NextRequest) {
     let cached = false;
     let engineSource = "google_places";
 
+    const resolvedCountryCode = (
+      body.countryCode ||
+      (country?.toLowerCase().includes("kingdom") || country?.toLowerCase().includes("uk")
+        ? "GB"
+        : country?.toLowerCase().includes("united states") || country?.toLowerCase().includes("usa")
+        ? "US"
+        : country?.toLowerCase().includes("canada")
+        ? "CA"
+        : country?.toLowerCase().includes("australia")
+        ? "AU"
+        : "BD")
+    ).toUpperCase();
+
     if (apiKey) {
       const googleRes = await searchGooglePlaces({
         query,
         categoryId: category,
-        countryCode: body.countryCode || "BD",
+        countryCode: resolvedCountryCode,
       });
       resultLeads = googleRes.leads;
       callsUsed = googleRes.callsUsed;
@@ -39,7 +52,7 @@ export async function POST(req: NextRequest) {
         category,
         categoryLabel: categoryLabel || category,
         country,
-        countryCode: body.countryCode || "BD",
+        countryCode: resolvedCountryCode,
         state: body.state,
         city,
         area,
