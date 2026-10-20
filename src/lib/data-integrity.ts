@@ -1,16 +1,18 @@
 import { parsePhoneNumberFromString, isValidPhoneNumber } from "libphonenumber-js";
 
 export type LeadSource = "google_places" | "csv_import" | "manual" | "free_directory";
-export type EmailProvenance = "found_on_website" | "csv" | "manual" | "google";
+export type EmailProvenance = "found_on_website" | "csv" | "manual" | "google" | "osm";
 export type WebsiteStatus = "No Website" | "Social Only" | "Has Website";
-export type PhoneStatus = "Valid" | "Phone format unverified" | "Missing";
+export type PhoneStatus = "Valid" | "Format valid" | "Phone format unverified" | "Missing";
 export type EmailStatus =
   | "Found on website"
+  | "OpenStreetMap"
   | "MX ok"
   | "Different domain"
   | "No mail server found"
   | "Invalid format"
   | "Missing";
+
 
 export interface BusinessLead {
   id: string;
@@ -255,7 +257,7 @@ export function validateEmail(
   }
 
   // Domain match check against business website
-  if (websiteUrl) {
+  if (websiteUrl && websiteUrl.trim()) {
     try {
       const siteHostname = new URL(
         websiteUrl.startsWith("http") ? websiteUrl : `https://${websiteUrl}`
@@ -265,12 +267,14 @@ export function validateEmail(
         // Different domain (e.g. uses gmail or generic provider)
         return { email: emailClean, emailStatus: "Different domain" };
       }
+      return { email: emailClean, emailStatus: "Found on website" };
     } catch {
       // Ignore URL parse error
     }
   }
 
-  return { email: emailClean, emailStatus: "Found on website" };
+  // If no website or source is directory/OSM, default to OpenStreetMap
+  return { email: emailClean, emailStatus: "OpenStreetMap" };
 }
 
 /**
@@ -340,7 +344,7 @@ export function calculateLeadScore(lead: Partial<BusinessLead>): {
     score += 30;
   }
 
-  if (lead.phoneStatus === "Valid") {
+  if (lead.phoneStatus === "Valid" || lead.phoneStatus === "Format valid") {
     score += 15;
   }
 

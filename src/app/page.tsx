@@ -27,6 +27,7 @@ import {
   ShieldAlert,
   Info,
   CheckCircle2,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +62,7 @@ export default function DashboardPage() {
     city: "Dhaka",
     area: "Banani",
   });
+  const [radiusMeters, setRadiusMeters] = useState<number>(2000);
   const [categoryLabel, setCategoryLabel] = useState<string>("Restaurant & Fine Dining");
 
   // Modal open states
@@ -85,6 +87,25 @@ export default function DashboardPage() {
     refreshBudget();
   }, []);
 
+  // When dropdown changes (e.g. Country/State/City/Area), reset previous leads and update results heading immediately
+  const handleLocationChange = (loc: {
+    country: string;
+    countryCode: string;
+    state: string;
+    stateCode: string;
+    city: string;
+    area: string;
+  }) => {
+    setSearchLocation({
+      country: loc.country,
+      countryCode: loc.countryCode,
+      state: loc.state,
+      city: loc.city,
+      area: loc.area,
+    });
+    setLeads([]);
+  };
+
   const handleSearchResults = (params: {
     country: string;
     countryCode: string;
@@ -92,6 +113,7 @@ export default function DashboardPage() {
     stateCode: string;
     city: string;
     area: string;
+    radiusMeters?: number;
     category: string;
     categoryLabel: string;
     leads: BusinessLead[];
@@ -103,6 +125,9 @@ export default function DashboardPage() {
       city: params.city,
       area: params.area,
     });
+    if (params.radiusMeters) {
+      setRadiusMeters(params.radiusMeters);
+    }
     setCategoryLabel(params.categoryLabel);
     setLeads(params.leads);
     refreshBudget();
@@ -233,6 +258,7 @@ export default function DashboardPage() {
             {/* 5 Cascading Search Engine with Area Scan & Import buttons */}
             <SearchPanel
               onSearch={handleSearchResults}
+              onLocationChange={handleLocationChange}
               isLoading={isLoading}
               setIsLoading={setIsLoading}
               onOpenAreaScan={(loc) => {
@@ -307,7 +333,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Honest Empty State vs Data Table */}
+            {/* Honest Empty State vs Results Header & Data Table */}
             {leads.length === 0 ? (
               <div className="p-6 sm:p-14 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] text-center space-y-4">
                 <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-xs">
@@ -355,16 +381,40 @@ export default function DashboardPage() {
                 </div>
               </div>
             ) : (
-              <DataTableView
-                leads={leads}
-                searchLocation={searchLocation}
-                categoryLabel={categoryLabel}
-                onLeadStatusChanged={(leadId, status) => {
-                  setLeads((prev) =>
-                    prev.map((l) => (l.id === leadId ? { ...l, crmStatus: status as any } : l))
-                  );
-                }}
-              />
+              <div className="space-y-4">
+                {/* Results Header: "X businesses found within {radius} of {Area}" */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xs">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+                        {leads.length} businesses found within {radiusMeters >= 1000 && radiusMeters % 1000 === 0 ? `${radiusMeters / 1000}km` : `${radiusMeters}m`} of {searchLocation.area}
+                      </h2>
+                      <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 font-semibold">
+                        {categoryLabel}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      OpenStreetMap Overpass radius search with strict Haversine distance post-filtering ({radiusMeters}m limit)
+                    </p>
+                  </div>
+                  <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Target Radius: <strong>{radiusMeters}m</strong></span>
+                  </div>
+                </div>
+
+                <DataTableView
+                  leads={leads}
+                  searchLocation={searchLocation}
+                  categoryLabel={categoryLabel}
+                  radiusMeters={radiusMeters}
+                  onLeadStatusChanged={(leadId, status) => {
+                    setLeads((prev) =>
+                      prev.map((l) => (l.id === leadId ? { ...l, crmStatus: status as any } : l))
+                    );
+                  }}
+                />
+              </div>
             )}
           </AppErrorBoundary>
         )}

@@ -54,6 +54,7 @@ interface DataTableViewProps {
     area?: string;
   };
   categoryLabel: string;
+  radiusMeters?: number;
   onLeadStatusChanged?: (leadId: string, status: string) => void;
   onRefreshLeads?: () => void;
 }
@@ -64,6 +65,7 @@ export function DataTableView({
   leads,
   searchLocation,
   categoryLabel,
+  radiusMeters = 2000,
   onLeadStatusChanged,
   onRefreshLeads,
 }: DataTableViewProps) {
@@ -309,8 +311,6 @@ export function DataTableView({
     const headers = [
       "Company Name",
       "Industry",
-      "Rating",
-      "Reviews",
       "Phone",
       "Phone E164",
       "Phone Status",
@@ -330,6 +330,13 @@ export function DataTableView({
     const rows = targetLeads.map((l) => {
       const activeEmail = localEmails[l.id]?.email || l.email;
       const activeEmailStatus = localEmails[l.id]?.status || l.emailStatus;
+      const emailSource =
+        l.websiteStatus === "No Website"
+          ? "OpenStreetMap"
+          : activeEmailStatus === "Found on website"
+          ? "Found on website"
+          : l.emailProvenance || "OpenStreetMap";
+
       const gMapsUrl =
         l.googleMapsUri ||
         `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -339,14 +346,12 @@ export function DataTableView({
       return [
         `"${l.name.replace(/"/g, '""')}"`,
         `"${l.category.replace(/"/g, '""')}"`,
-        l.rating || "",
-        l.userRatingCount || "",
         `"${(l.phone || "").replace(/"/g, '""')}"`,
         `"${(l.phoneE164 || "").replace(/"/g, '""')}"`,
         `"${l.phoneStatus}"`,
         `"${(activeEmail || "").replace(/"/g, '""')}"`,
         `"${activeEmailStatus}"`,
-        `"${l.emailProvenance || "google"}"`,
+        `"${emailSource}"`,
         `"${(l.website || "").replace(/"/g, '""')}"`,
         `"${l.websiteStatus}"`,
         `"${l.address.replace(/"/g, '""')}"`,
@@ -612,19 +617,6 @@ export function DataTableView({
             </select>
           </div>
 
-          {/* Min Reviews */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-500 text-[11px]">Reviews:</span>
-            <select
-              value={minReviews}
-              onChange={(e) => setMinReviews(parseInt(e.target.value, 10))}
-              className="h-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-[11px] font-semibold text-slate-800 dark:text-slate-200"
-            >
-              <option value={0}>Any</option>
-              <option value={20}>20+ Reviews</option>
-              <option value={50}>50+ Reviews</option>
-            </select>
-          </div>
         </div>
 
         {/* Sort Selector */}
@@ -636,8 +628,6 @@ export function DataTableView({
             className="h-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-[11px] font-semibold text-slate-800 dark:text-slate-200"
           >
             <option value="score">Lead Score (Highest)</option>
-            <option value="reviews">Reviews Count</option>
-            <option value="rating">Rating (Highest)</option>
             <option value="name">Name (A-Z)</option>
           </select>
         </div>
@@ -676,6 +666,7 @@ export function DataTableView({
           {processedLeads.map((lead) => {
             const isSelected = selectedLeadIds.has(lead.id);
             const activeEmail = localEmails[lead.id]?.email || lead.email;
+            const activeEmailStatus = localEmails[lead.id]?.status || lead.emailStatus;
             const phoneHasVal = lead.phone && lead.phoneStatus !== "Missing";
             const cleanPhoneDigits = (lead.phoneE164 || lead.phone || "").replace(/[^0-9]/g, "");
 
@@ -730,24 +721,32 @@ export function DataTableView({
                     </div>
                   </div>
 
-                  {/* Rating and Website Status Row */}
+                  {/* Outbound Google Maps Link & Website Status Row */}
                   <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 text-xs">
-                    <div className="flex items-center gap-1 text-amber-500 dark:text-amber-400 font-semibold text-xs">
-                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                      <span className="text-slate-800 dark:text-slate-200">{lead.rating?.toFixed(1) || "4.5"}</span>
-                      <span className="text-slate-400 text-[11px]">({lead.userRatingCount || 24})</span>
-                    </div>
+                    {lead.googleMapsUri && (
+                      <a
+                        href={lead.googleMapsUri}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                        title="Verify business on Google Maps"
+                      >
+                        <MapPin className="w-3.5 h-3.5 text-rose-500" />
+                        <span>Verify on Google Maps</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    )}
 
                     {/* Website Status Badge */}
                     {lead.websiteStatus === "No Website" ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-100/80 text-red-800 dark:bg-red-950/80 dark:text-red-300 border border-red-200 dark:border-red-900">
                         <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-                        No Website (High Opportunity)
+                        No Website
                       </span>
                     ) : lead.websiteStatus === "Social Only" ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100/80 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200 dark:border-amber-900">
                         <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                        Social Profile Only
+                        Social Only
                       </span>
                     ) : (
                       <div className="flex items-center gap-1.5">
@@ -788,6 +787,10 @@ export function DataTableView({
                           <span className="truncate">{lead.phone}</span>
                         </a>
 
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/50">
+                          Format valid
+                        </span>
+
                         {lead.canWhatsApp && (
                           <a
                             href={`https://wa.me/${cleanPhoneDigits}`}
@@ -802,8 +805,8 @@ export function DataTableView({
                         )}
                       </>
                     ) : (
-                      <div className="text-[11px] text-slate-400 dark:text-slate-500 italic py-0.5">
-                        No verified phone found
+                      <div className="text-[11px] text-slate-400 dark:text-slate-500 py-0.5">
+                        Phone: <span className="font-medium text-slate-400">Not available</span>
                       </div>
                     )}
                   </div>
@@ -820,6 +823,9 @@ export function DataTableView({
                           <Mail className="w-3.5 h-3.5 text-blue-500 shrink-0" />
                           <span className="truncate">{activeEmail}</span>
                         </a>
+                        <span className="text-[9px] bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-slate-500 shrink-0">
+                          {lead.websiteStatus === "No Website" ? "OpenStreetMap" : activeEmailStatus || "OpenStreetMap"}
+                        </span>
                         <button
                           type="button"
                           onClick={() => handleCopy(activeEmail, lead.id + "-email")}
@@ -835,7 +841,7 @@ export function DataTableView({
                       </div>
                     ) : lead.website && lead.websiteStatus === "Has Website" ? (
                       <div className="flex items-center justify-between w-full">
-                        <span className="text-[11px] text-slate-400">Email not indexed</span>
+                        <span className="text-[11px] text-slate-400">Email: <span className="text-slate-400">Not available</span></span>
                         <button
                           type="button"
                           onClick={() => handleFindEmail(lead)}
@@ -853,7 +859,7 @@ export function DataTableView({
                         </button>
                       </div>
                     ) : (
-                      <div className="text-[11px] text-slate-400">No email available</div>
+                      <div className="text-[11px] text-slate-400">Email: <span className="text-slate-400">Not available</span></div>
                     )}
                   </div>
                 </div>
@@ -933,7 +939,6 @@ export function DataTableView({
                 <TableHead className="min-w-[170px] font-semibold py-3 px-3">Phone (E.164)</TableHead>
                 <TableHead className="min-w-[190px] font-semibold py-3 px-3">Email Address</TableHead>
                 <TableHead className="min-w-[140px] font-semibold py-3 px-3">Website Status</TableHead>
-                <TableHead className="min-w-[130px] font-semibold py-3 px-3">Rating / Reviews</TableHead>
                 <TableHead className="min-w-[180px] font-semibold py-3 px-3">Address</TableHead>
                 <TableHead className="min-w-[180px] font-semibold py-3 px-4 text-right">Outreach Actions</TableHead>
               </TableRow>
@@ -942,7 +947,7 @@ export function DataTableView({
             <TableBody>
               {processedLeads.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="py-20 text-center space-y-2">
+                  <TableCell colSpan={8} className="py-20 text-center space-y-2">
                     <AlertCircle className="w-9 h-9 text-slate-300 dark:text-slate-600 mx-auto" />
                     <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
                       No businesses found matching current filters
@@ -1019,10 +1024,8 @@ export function DataTableView({
                               : lead.websiteStatus === "Social Only"
                               ? "+30"
                               : "+0"
-                          })\n• Phone: ${lead.phoneStatus === "Valid" ? "+15" : "+0"}\n• Email: ${
+                          })\n• Phone: ${lead.phoneStatus === "Valid" || lead.phoneStatus === "Format valid" ? "+15" : "+0"}\n• Email: ${
                             lead.email ? "+10" : "+0"
-                          }\n• Rating/Reviews: ${
-                            (lead.rating || 0) >= 4 ? "+10" : "+0"
                           }`}
                         >
                           <span
@@ -1062,19 +1065,19 @@ export function DataTableView({
                               </button>
                             </div>
                             <div className="text-[10px]">
-                              {lead.phoneStatus === "Valid" ? (
+                              {lead.phoneStatus === "Valid" || lead.phoneStatus === "Format valid" ? (
                                 <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                                  ✓ Verified Mobile
+                                  Format valid
                                 </span>
                               ) : (
                                 <span className="text-amber-600 dark:text-amber-400">
-                                  Format Unverified
+                                  Format unverified
                                 </span>
                               )}
                             </div>
                           </div>
                         ) : (
-                          <span className="text-xs text-slate-400">N/A</span>
+                          <span className="text-xs text-slate-400">Not available</span>
                         )}
                       </TableCell>
 
@@ -1099,7 +1102,11 @@ export function DataTableView({
                             </div>
                             <div className="text-[10px] text-slate-500">
                               <span className="bg-slate-100 dark:bg-slate-800 px-1 py-0.2 rounded">
-                                {activeEmailStatus}
+                                {lead.websiteStatus === "No Website" || activeEmailStatus === "OpenStreetMap"
+                                  ? "OpenStreetMap"
+                                  : activeEmailStatus === "Found on website"
+                                  ? "Found on website"
+                                  : activeEmailStatus || "OpenStreetMap"}
                               </span>
                             </div>
                           </div>
@@ -1118,7 +1125,7 @@ export function DataTableView({
                             <span>Find email</span>
                           </button>
                         ) : (
-                          <span className="text-xs text-slate-400">N/A</span>
+                          <span className="text-xs text-slate-400">Not available</span>
                         )}
                       </TableCell>
 
@@ -1161,21 +1168,6 @@ export function DataTableView({
                             </Badge>
                           )}
                         </div>
-                      </TableCell>
-
-                      {/* Rating / Reviews */}
-                      <TableCell className="py-3 px-3 align-middle text-xs">
-                        {lead.rating ? (
-                          <div className="flex items-center gap-1 font-semibold text-slate-800 dark:text-slate-200">
-                            <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                            <span>{lead.rating.toFixed(1)}</span>
-                            <span className="text-[11px] text-slate-400 font-normal">
-                              ({lead.userRatingCount || 0})
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 text-xs">-</span>
-                        )}
                       </TableCell>
 
                       {/* Address */}

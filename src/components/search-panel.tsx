@@ -34,9 +34,18 @@ interface SearchPanelProps {
     stateCode: string;
     city: string;
     area: string;
+    radiusMeters?: number;
     category: string;
     categoryLabel: string;
     leads: BusinessLead[];
+  }) => void;
+  onLocationChange?: (location: {
+    country: string;
+    countryCode: string;
+    state: string;
+    stateCode: string;
+    city: string;
+    area: string;
   }) => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
@@ -47,6 +56,7 @@ interface SearchPanelProps {
 
 export function SearchPanel({
   onSearch,
+  onLocationChange,
   isLoading,
   setIsLoading,
   onOpenAreaScan,
@@ -124,43 +134,90 @@ export function SearchPanel({
     }));
   }, []);
 
-  // Handle Country change
+  // Handle Country change: consistently resets all child dropdowns and results header
   const handleCountryChange = (countryCode: string) => {
     if (searchError) setSearchError(null);
     setSelectedCountryCode(countryCode);
+    const countryObj = countries.find((c) => c.isoCode === countryCode);
+    const countryName = countryObj?.name || countryCode;
+
     const newStates = getStatesForCountry(countryCode);
+    let nextStateCode = "";
+    let nextStateName = "";
+    let nextCityName = "";
+    let nextAreaName = "";
 
     if (newStates.length > 0) {
-      const firstState = newStates[0].code;
-      setSelectedStateCode(firstState);
+      nextStateCode = newStates[0].code;
+      nextStateName = newStates[0].name;
+      setSelectedStateCode(nextStateCode);
 
-      const newCities = getCitiesForState(countryCode, firstState);
+      const newCities = getCitiesForState(countryCode, nextStateCode);
       if (newCities.length > 0) {
-        const firstCity = newCities[0].name;
-        setSelectedCityName(firstCity);
-        const newAreas = getAreasForHierarchyCity(countryCode, firstState, firstCity);
-        setSelectedArea(newAreas[0] || "Downtown");
+        nextCityName = newCities[0].name;
+        setSelectedCityName(nextCityName);
+        const newAreas = getAreasForHierarchyCity(countryCode, nextStateCode, nextCityName);
+        nextAreaName = newAreas[0] || nextCityName;
+        setSelectedArea(nextAreaName);
       } else {
-        setSelectedCityName(newStates[0].name);
-        setSelectedArea("Downtown");
+        nextCityName = nextStateName;
+        nextAreaName = nextCityName;
+        setSelectedCityName(nextCityName);
+        setSelectedArea(nextAreaName);
       }
+    } else {
+      nextStateCode = "ALL";
+      nextStateName = countryName;
+      nextCityName = countryName;
+      nextAreaName = countryName;
+      setSelectedStateCode(nextStateCode);
+      setSelectedCityName(nextCityName);
+      setSelectedArea(nextAreaName);
     }
+
+    onLocationChange?.({
+      country: countryName,
+      countryCode,
+      state: nextStateName,
+      stateCode: nextStateCode,
+      city: nextCityName,
+      area: nextAreaName,
+    });
   };
 
   // Handle State / Division change
   const handleStateChange = (stateCode: string) => {
     if (searchError) setSearchError(null);
     setSelectedStateCode(stateCode);
+    const stateObj = states.find((s) => s.code === stateCode);
+    const stateName = stateObj?.name || stateCode;
+
     const newCities = getCitiesForState(selectedCountryCode, stateCode);
+    let nextCityName = "";
+    let nextAreaName = "";
+
     if (newCities.length > 0) {
-      const firstCity = newCities[0].name;
-      setSelectedCityName(firstCity);
-      const newAreas = getAreasForHierarchyCity(selectedCountryCode, stateCode, firstCity);
-      setSelectedArea(newAreas[0] || "Downtown");
+      nextCityName = newCities[0].name;
+      setSelectedCityName(nextCityName);
+      const newAreas = getAreasForHierarchyCity(selectedCountryCode, stateCode, nextCityName);
+      nextAreaName = newAreas[0] || nextCityName;
+      setSelectedArea(nextAreaName);
     } else {
-      setSelectedCityName("Central");
-      setSelectedArea("Downtown");
+      nextCityName = stateName;
+      nextAreaName = nextCityName;
+      setSelectedCityName(nextCityName);
+      setSelectedArea(nextAreaName);
     }
+
+    const countryObj = countries.find((c) => c.isoCode === selectedCountryCode);
+    onLocationChange?.({
+      country: countryObj?.name || selectedCountryCode,
+      countryCode: selectedCountryCode,
+      state: stateName,
+      stateCode,
+      city: nextCityName,
+      area: nextAreaName,
+    });
   };
 
   // Handle City / District change
@@ -168,7 +225,36 @@ export function SearchPanel({
     if (searchError) setSearchError(null);
     setSelectedCityName(cityName);
     const newAreas = getAreasForHierarchyCity(selectedCountryCode, selectedStateCode, cityName);
-    setSelectedArea(newAreas[0] || "Downtown");
+    const nextAreaName = newAreas[0] || cityName;
+    setSelectedArea(nextAreaName);
+
+    const countryObj = countries.find((c) => c.isoCode === selectedCountryCode);
+    const stateObj = states.find((s) => s.code === selectedStateCode);
+    onLocationChange?.({
+      country: countryObj?.name || selectedCountryCode,
+      countryCode: selectedCountryCode,
+      state: stateObj?.name || selectedStateCode,
+      stateCode: selectedStateCode,
+      city: cityName,
+      area: nextAreaName,
+    });
+  };
+
+  // Handle Area change
+  const handleAreaChange = (areaName: string) => {
+    if (searchError) setSearchError(null);
+    setSelectedArea(areaName);
+
+    const countryObj = countries.find((c) => c.isoCode === selectedCountryCode);
+    const stateObj = states.find((s) => s.code === selectedStateCode);
+    onLocationChange?.({
+      country: countryObj?.name || selectedCountryCode,
+      countryCode: selectedCountryCode,
+      state: stateObj?.name || selectedStateCode,
+      stateCode: selectedStateCode,
+      city: selectedCityName,
+      area: areaName,
+    });
   };
 
   // Run Search
@@ -226,6 +312,7 @@ export function SearchPanel({
         stateCode: selectedStateCode,
         city: selectedCityName || payload.area,
         area: selectedArea.trim(),
+        radiusMeters: data?.areaConfig?.radiusMeters || 2000,
         category: selectedCategory,
         categoryLabel: categoryObj?.label || "Businesses",
         leads: data?.businesses || [],
@@ -314,7 +401,7 @@ export function SearchPanel({
             placeholder="Select or type area..."
             searchPlaceholder="Search or type neighborhood..."
             value={selectedArea}
-            onChange={setSelectedArea}
+            onChange={handleAreaChange}
             options={areaOptions}
             allowCustomInput={true}
             customInputPlaceholder="Type custom area and press Enter"

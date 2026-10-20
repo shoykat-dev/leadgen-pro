@@ -46,6 +46,8 @@ export async function POST(req: NextRequest) {
       resolvedCountryCode = "BD";
     }
 
+    let areaConfig = null;
+
     if (apiKey) {
       const googleRes = await searchGooglePlaces({
         query,
@@ -70,6 +72,7 @@ export async function POST(req: NextRequest) {
         lon: body.lon,
       });
       resultLeads = freeRes.leads;
+      areaConfig = freeRes.areaConfig;
       callsUsed = 0;
       cached = false;
       engineSource = "free_directory";
@@ -85,6 +88,7 @@ export async function POST(req: NextRequest) {
         state: body.state,
         country,
       },
+      areaConfig,
       businesses: resultLeads,
       callsUsed,
       cached,
