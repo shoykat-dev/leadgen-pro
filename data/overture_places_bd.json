@@ -1,0 +1,324 @@
+[
+  {
+    "id": "overture:place:08f2a101b0010001",
+    "name": "The White Canary Cafe",
+    "categories": ["cafe", "coffee_shop", "restaurant"],
+    "lat": 23.7942,
+    "lon": 90.4051,
+    "phones": ["+8801713456789", "+88029881122"],
+    "emails": ["info@whitecanarycafe.com", "hello@whitecanarycafe.com"],
+    "websites": ["https://whitecanarycafe.com"],
+    "socials": [
+      "https://www.facebook.com/whitecanarycafe",
+      "https://www.instagram.com/whitecanarycafe"
+    ],
+    "addresses": [
+      {
+        "freeform": "House 15, Road 11, Block F, Banani, Dhaka 1213",
+        "locality": "Dhaka",
+        "region": "Dhaka Division",
+        "country": "BD"
+      }
+    ],
+    "sources": [
+      { "dataset": "meta", "property": "phones", "update_time": "2024-08-15T10:00:00Z" },
+      { "dataset": "meta", "property": "socials", "update_time": "2024-08-15T10:00:00Z" },
+      { "dataset": "osm", "property": "name", "update_time": "2024-05-10T12:00:00Z" }
+    ],
+    "release_version": "2024-09-18.0",
+    "updated_at": "2024-09-18T00:00:00Z"
+  },
+  {
+    "id": "overture:place:08f2a101b0010002",
+    "name": "North End Coffee Roasters Banani",
+    "categories": ["cafe", "coffee_shop", "bakery"],
+    "lat": 23.7918,
+    "lon": 90.4045,
+    "phones": ["+8801711559988"],
+    "emails": ["banani@northendcoffee.com"],
+    "websites": ["https://northendcoffeeshop.com"],
+    "socials": [
+      "https://www.facebook.com/northendcoffee",
+      "https://instagram.com/northendroasters"
+    ],
+    "addresses": [
+      {
+        "freeform": "Road 11, Block D, Banani, Dhaka 1213",
+        "locality": "Dhaka",
+        "region": "Dhaka Division",
+        "country": "BD"
+      }
+    ],
+    "sources": [
+      { "dataset": "meta", "property": "socials", "update_time": "2024-08-01T09:00:00Z" },
+      { "dataset": "msft", "property": "geometry", "update_time": "2024-04-12T00:00:00Z" }
+    ],
+    "release_version": "2024-09-18.0",
+    "updated_at": "2024-09-18T00:00:00Z"
+  },
+  {
+    "id": "overture:place:08f2a101b0010003",
+    "name": "Nando's Banani",
+    "categories": ["restaurant", "fast_food", "chicken_restaurant"],
+    "lat": 23.7931,
+    "lon": 90.4038,
+    "phones": ["+8801755667788", "+88029883344"],
+    "emails": ["guestservices@nandosbd.com"],
+    "websites": ["https://nandos.com.bd"],
+    "socials": [
+      "https://www.facebook.com/NandosBangladesh",
+      "https://instagram.com/nandosbd"
+    ],
+    "addresses": [
+      {
+        "freeform": "Plot 45, Road 11, Block C, Banani, Dhaka 1213",
+        "locality": "Dhaka",
+        "region": "Dhaka Division",
+        "country": "BD"
+      }
+    ],
+    "sources": [
+      { "dataset": "meta", "property": "websites", "update_time": "2024-07-20T14:30:00Z" },
+      { "dataset": "osm", "property": "name", "update_time": "2024-06-01T11:00:00Z" }
+    ],
+    "release_version": "2024-09-18.0",
+    "updated_at": "2024-09-18T00:00:00Z"
+  },
+  {
+    "id": "overture:place:08f2a101b0010004",
+    "name": "Madchef Banani",
+    "categories": ["restaurant", "fast_food", "burger_restaurant"],
+    "lat": 23.7928,
+    "lon": 90.4062,
+    "phones": ["+8801977623243"],
+    "emails": ["feedback@madchef.com.bd"],
+    "websites": ["https://madchef.com.bd"],
+    "socials": [
+      "https://www.facebook.com/madchefbangladesh"
+    ],
+    "addresses": [
+      {
+        "freeform": "House 54, Road 11, Block D, Banani, Dhaka 1213",
+        "locality": "Dhaka",
+        "region": "Dhaka Division",
+        "country": "BD"
+      }
+    ],
+    "sources": [
+      { "dataset": "meta", "property": "phones", "update_time": "2024-07-15T08:00:00Z" },
+      { "dataset": "osm", "property": "geometry", "update_time": "2024-03-22T00:00:00Z" }
+    ],
+    "release_version": "2024-09-18.0",
+    "updated_at": "2024-09-18T00:00:00Z"
+  },
+  {
+    "id": "overture:place:08f2a101b0010005",
+    "name": "Bistro C Banani",
+    "categories": ["restaurant", "cafe", "continental_restaurant"],
+    "lat": 23.7949,
+    "lon": 90.4035,
+    "phones": ["+8801730088990"],
+    "emails": ["contact@bistroc.com.bd"],
+    "websites": ["https://bistroc.com.bd"],
+    "socials": [
+      "https://www.facebook.com/BistroC.bd"
+    ],
+    "addresses": [
+      {
+        "freeform": "Road 10, Block D, Banani, Dhaka 1213",
+        "locality": "Dhaka",
+        "region": "Dhaka Division",
+        "country": "BD"
+      }
+    ],
+    "sources": [
+      { "dataset": "meta", "property": "socials", "update_time": "2024-06-18T10:00:00Z" }
+    ],
+    "release_version": "2024-09-18.0",
+    "updated_at": "2024-09-18T00:00:00Z"
+  },
+  {
+    "id": "overture:place:08f2a101b0010006",
+    "name": "Star Kabab & Restaurant Banani",
+    "categories": ["restaurant", "asian_restaurant", "biryani_restaurant"],
+    "lat": 23.7905,
+    "lon": 90.4055,
+    "phones": ["+8801819223344", "+88029885566"],
+    "emails": [],
+    "websites": [],
+    "socials": [
+      "https://www.facebook.com/starkababrestaurant"
+    ],
+    "addresses": [
+      {
+        "freeform": "Kamal Ataturk Avenue, Banani, Dhaka 1213",
+        "locality": "Dhaka",
+        "region": "Dhaka Division",
+        "country": "BD"
+      }
+    ],
+    "sources": [
+      { "dataset": "osm", "property": "name", "update_time": "2024-05-15T00:00:00Z" },
+      { "dataset": "meta", "property": "socials", "update_time": "2024-08-10T12:00:00Z" }
+    ],
+    "release_version": "2024-09-18.0",
+    "updated_at": "2024-09-18T00:00:00Z"
+  },
+  {
+    "id": "overture:place:08f2a101b0010007",
+    "name": "Shwapno Superstore Banani",
+    "categories": ["supermarket", "grocery_store", "retail"],
+    "lat": 23.7935,
+    "lon": 90.4048,
+    "phones": ["+8809678000888"],
+    "emails": ["queries@shwapno.net"],
+    "websites": ["https://shwapno.com"],
+    "socials": [
+      "https://www.facebook.com/Shwapno.ACIL"
+    ],
+    "addresses": [
+      {
+        "freeform": "House 42, Road 11, Block C, Banani, Dhaka 1213",
+        "locality": "Dhaka",
+        "region": "Dhaka Division",
+        "country": "BD"
+      }
+    ],
+    "sources": [
+      { "dataset": "meta", "property": "phones", "update_time": "2024-09-01T10:00:00Z" },
+      { "dataset": "msft", "property": "websites", "update_time": "2024-07-11T00:00:00Z" }
+    ],
+    "release_version": "2024-09-18.0",
+    "updated_at": "2024-09-18T00:00:00Z"
+  },
+  {
+    "id": "overture:place:08f2a101b0010008",
+    "name": "Glory Jeans Banani",
+    "categories": ["clothing_store", "fashion_retail", "shop"],
+    "lat": 23.7939,
+    "lon": 90.4041,
+    "phones": ["+8801712001122"],
+    "emails": [],
+    "websites": [],
+    "socials": [
+      "https://www.facebook.com/gloryjeansbd"
+    ],
+    "addresses": [
+      {
+        "freeform": "Road 11, Block D, Banani, Dhaka 1213",
+        "locality": "Dhaka",
+        "region": "Dhaka Division",
+        "country": "BD"
+      }
+    ],
+    "sources": [
+      { "dataset": "meta", "property": "socials", "update_time": "2024-06-25T11:00:00Z" }
+    ],
+    "release_version": "2024-09-18.0",
+    "updated_at": "2024-09-18T00:00:00Z"
+  },
+  {
+    "id": "overture:place:08f2a101b0010009",
+    "name": "Secret Recipe Gulshan",
+    "categories": ["restaurant", "cafe", "bakery"],
+    "lat": 23.7820,
+    "lon": 90.4170,
+    "phones": ["+8801777719922"],
+    "emails": ["info@secretrecipebd.com"],
+    "websites": ["https://secretrecipebd.com"],
+    "socials": [
+      "https://www.facebook.com/SecretRecipeBD"
+    ],
+    "addresses": [
+      {
+        "freeform": "Gulshan Avenue, Gulshan-1, Dhaka 1212",
+        "locality": "Dhaka",
+        "region": "Dhaka Division",
+        "country": "BD"
+      }
+    ],
+    "sources": [
+      { "dataset": "meta", "property": "phones", "update_time": "2024-08-11T12:00:00Z" }
+    ],
+    "release_version": "2024-09-18.0",
+    "updated_at": "2024-09-18T00:00:00Z"
+  },
+  {
+    "id": "overture:place:08f2a101b0010010",
+    "name": "Herfy Bangladesh Gulshan",
+    "categories": ["restaurant", "fast_food", "burger_restaurant"],
+    "lat": 23.7845,
+    "lon": 90.4160,
+    "phones": ["+8801969900900"],
+    "emails": ["support@herfybd.com"],
+    "websites": ["https://herfybd.com"],
+    "socials": [
+      "https://www.facebook.com/HerfyBangladesh"
+    ],
+    "addresses": [
+      {
+        "freeform": "Gulshan 1, Dhaka 1212",
+        "locality": "Dhaka",
+        "region": "Dhaka Division",
+        "country": "BD"
+      }
+    ],
+    "sources": [
+      { "dataset": "meta", "property": "websites", "update_time": "2024-07-29T15:00:00Z" }
+    ],
+    "release_version": "2024-09-18.0",
+    "updated_at": "2024-09-18T00:00:00Z"
+  },
+  {
+    "id": "overture:place:08f2a101b0010011",
+    "name": "Crimson Cup Coffee Banani",
+    "categories": ["cafe", "coffee_shop"],
+    "lat": 23.7936,
+    "lon": 90.4059,
+    "phones": ["+8801730009911"],
+    "emails": ["info@crimsoncupbd.com"],
+    "websites": ["https://crimsoncupbd.com"],
+    "socials": [
+      "https://www.facebook.com/CrimsonCupBD"
+    ],
+    "addresses": [
+      {
+        "freeform": "House 27, Road 11, Block H, Banani, Dhaka 1213",
+        "locality": "Dhaka",
+        "region": "Dhaka Division",
+        "country": "BD"
+      }
+    ],
+    "sources": [
+      { "dataset": "meta", "property": "socials", "update_time": "2024-08-20T10:00:00Z" }
+    ],
+    "release_version": "2024-09-18.0",
+    "updated_at": "2024-09-18T00:00:00Z"
+  },
+  {
+    "id": "overture:place:08f2a101b0010012",
+    "name": "Takeout Banani",
+    "categories": ["restaurant", "fast_food", "burger_restaurant"],
+    "lat": 23.7940,
+    "lon": 90.4049,
+    "phones": ["+8801755660099"],
+    "emails": ["takeoutbd@gmail.com"],
+    "websites": ["https://takeoutbd.com"],
+    "socials": [
+      "https://www.facebook.com/TakeoutBD"
+    ],
+    "addresses": [
+      {
+        "freeform": "Road 11, Block E, Banani, Dhaka 1213",
+        "locality": "Dhaka",
+        "region": "Dhaka Division",
+        "country": "BD"
+      }
+    ],
+    "sources": [
+      { "dataset": "meta", "property": "phones", "update_time": "2024-07-14T11:00:00Z" }
+    ],
+    "release_version": "2024-09-18.0",
+    "updated_at": "2024-09-18T00:00:00Z"
+  }
+]

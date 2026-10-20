@@ -103,7 +103,9 @@ export function DataTableView({
   // Email finder on-demand state per row
   const [findingEmailId, setFindingEmailId] = useState<string | null>(null);
   const [isFindingAllEmails, setIsFindingAllEmails] = useState<boolean>(false);
-  const [localEmails, setLocalEmails] = useState<Record<string, { email: string | null; status: string }>>({});
+  const [localEmails, setLocalEmails] = useState<
+    Record<string, { email: string | null; status: string; sourceUrl?: string | null }>
+  >({});
 
   // Filtered and Sorted Leads
   const processedLeads = useMemo(() => {
@@ -247,6 +249,7 @@ export function DataTableView({
           [lead.id]: {
             email: data.email,
             status: data.emailStatus || "Missing",
+            sourceUrl: data.emailSourceUrl || null,
           },
         }));
       }
@@ -285,6 +288,7 @@ export function DataTableView({
                 [lead.id]: {
                   email: data.email,
                   status: data.emailStatus || "Missing",
+                  sourceUrl: data.emailSourceUrl || null,
                 },
               }));
             }
@@ -311,18 +315,22 @@ export function DataTableView({
     const headers = [
       "Company Name",
       "Industry",
+      "Lead Sources",
       "Phone",
       "Phone E164",
       "Phone Status",
+      "Phone Source",
       "Email",
       "Email Status",
       "Email Source",
+      "Email Source URL",
       "Website",
       "Website Status",
+      "Facebook / Social",
       "Address",
-      "Data Quality",
       "Lead Score",
       "Score Tier",
+      "Score Reasons",
       "Google Maps URL",
       "Fetched Date",
     ];
@@ -330,12 +338,31 @@ export function DataTableView({
     const rows = targetLeads.map((l) => {
       const activeEmail = localEmails[l.id]?.email || l.email;
       const activeEmailStatus = localEmails[l.id]?.status || l.emailStatus;
+      const activeSourceUrl = localEmails[l.id]?.sourceUrl || l.emailSourceUrl;
+
+      const leadSourceStr =
+        l.leadSources && l.leadSources.length > 0
+          ? l.leadSources.join(" + ").toUpperCase()
+          : (l.source || "OSM").toUpperCase();
+
+      const phoneSource = l.fieldAttribution?.phone || (l.phone ? "OSM" : "None");
       const emailSource =
-        l.websiteStatus === "No Website"
-          ? "OpenStreetMap"
-          : activeEmailStatus === "Found on website"
+        activeEmailStatus === "Found on website"
           ? "Found on website"
-          : l.emailProvenance || "OpenStreetMap";
+          : l.fieldAttribution?.email === "overture"
+          ? "Overture"
+          : activeEmail
+          ? "OpenStreetMap"
+          : "None";
+
+      const facebookOrSocial =
+        l.facebookUrl ||
+        (l.socials && l.socials.length > 0 ? l.socials.map((s) => s.url).join(" ; ") : "");
+
+      const scoreReasonsStr =
+        l.scoreReasons && l.scoreReasons.length > 0
+          ? l.scoreReasons.map((r) => `${r.reason} (+${r.points})`).join(" | ")
+          : "";
 
       const gMapsUrl =
         l.googleMapsUri ||
@@ -346,18 +373,22 @@ export function DataTableView({
       return [
         `"${l.name.replace(/"/g, '""')}"`,
         `"${l.category.replace(/"/g, '""')}"`,
+        `"${leadSourceStr}"`,
         `"${(l.phone || "").replace(/"/g, '""')}"`,
         `"${(l.phoneE164 || "").replace(/"/g, '""')}"`,
         `"${l.phoneStatus}"`,
+        `"${phoneSource}"`,
         `"${(activeEmail || "").replace(/"/g, '""')}"`,
         `"${activeEmailStatus}"`,
         `"${emailSource}"`,
+        `"${(activeSourceUrl || "").replace(/"/g, '""')}"`,
         `"${(l.website || "").replace(/"/g, '""')}"`,
         `"${l.websiteStatus}"`,
+        `"${facebookOrSocial.replace(/"/g, '""')}"`,
         `"${l.address.replace(/"/g, '""')}"`,
-        `"${l.dataQuality}"`,
         l.leadScore,
         `"${l.leadScoreTier}"`,
+        `"${scoreReasonsStr.replace(/"/g, '""')}"`,
         `"${gMapsUrl}"`,
         `"${l.fetchedAt || ""}"`,
       ];
@@ -695,9 +726,46 @@ export function DataTableView({
                         )}
                       </button>
                       <div className="min-w-0">
-                        <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate">
-                          {lead.name}
-                        </h4>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                            {lead.name}
+                          </h4>
+                          {/* Small Source Badge */}
+                          {lead.leadSources && lead.leadSources.includes("osm") && lead.leadSources.includes("overture") ? (
+                            <span
+                              className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
+                              title="Merged from OpenStreetMap and Overture Places"
+                            >
+                              OSM + Overture
+                            </span>
+                          ) : lead.leadSources?.includes("overture") ? (
+                            <span
+                              className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800"
+                              title="Source: Overture Maps Foundation"
+                            >
+                              Overture
+                            </span>
+                          ) : (
+                            <span
+                              className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                              title="Source: OpenStreetMap"
+                            >
+                              OSM
+                            </span>
+                          )}
+                          {lead.facebookUrl && (
+                            <a
+                              href={lead.facebookUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900 inline-flex items-center gap-0.5"
+                              title="Visit Facebook Page"
+                            >
+                              <span>FB</span>
+                              <ExternalLink className="w-2 h-2" />
+                            </a>
+                          )}
+                        </div>
                         <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5">
                           <span>{lead.category}</span>
                           <span>•</span>
@@ -706,16 +774,16 @@ export function DataTableView({
                       </div>
                     </div>
 
-                    {/* Lead Score Badge */}
+                    {/* Lead Score Badge with real signal reasons */}
                     <div
-                      className={`px-2 py-0.5 rounded-lg border text-[11px] font-bold shrink-0 text-center ${
+                      className={`px-2 py-0.5 rounded-lg border text-[11px] font-bold shrink-0 text-center cursor-help ${
                         lead.leadScoreTier === "High"
                           ? "bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800"
                           : lead.leadScoreTier === "Medium"
                           ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
                           : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
                       }`}
-                      title={`Lead Score: ${lead.leadScore}/100`}
+                      title={`Lead Score: ${lead.leadScore}/100\n${(lead.scoreReasons || []).map((r) => `• ${r.reason}: +${r.points}`).join("\n")}`}
                     >
                       Score: {lead.leadScore}
                     </div>
@@ -788,7 +856,7 @@ export function DataTableView({
                         </a>
 
                         <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/50">
-                          Format valid
+                          Format valid {lead.fieldAttribution?.phone === "overture" ? "(Overture)" : "(OSM)"}
                         </span>
 
                         {lead.canWhatsApp && (
@@ -823,8 +891,27 @@ export function DataTableView({
                           <Mail className="w-3.5 h-3.5 text-blue-500 shrink-0" />
                           <span className="truncate">{activeEmail}</span>
                         </a>
-                        <span className="text-[9px] bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-slate-500 shrink-0">
-                          {lead.websiteStatus === "No Website" ? "OpenStreetMap" : activeEmailStatus || "OpenStreetMap"}
+                        <span
+                          className={`text-[9px] px-1.5 py-0.5 rounded shrink-0 font-medium ${
+                            activeEmailStatus === "Found on website"
+                              ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
+                              : lead.fieldAttribution?.email === "overture"
+                              ? "bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800"
+                              : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                          }`}
+                          title={
+                            activeEmailStatus === "Found on website"
+                              ? `Found on website: ${localEmails[lead.id]?.sourceUrl || lead.emailSourceUrl || lead.website}`
+                              : lead.fieldAttribution?.email === "overture"
+                              ? "Source: Overture Places"
+                              : "Source: OpenStreetMap"
+                          }
+                        >
+                          {activeEmailStatus === "Found on website"
+                            ? "Found on website"
+                            : lead.fieldAttribution?.email === "overture"
+                            ? "Overture"
+                            : "OpenStreetMap"}
                         </span>
                         <button
                           type="button"
@@ -990,7 +1077,7 @@ export function DataTableView({
 
                       {/* Business Name & Attribution */}
                       <TableCell className="py-3 px-3 align-middle font-medium text-slate-900 dark:text-white">
-                        <div className="space-y-0.5">
+                        <div className="space-y-1">
                           <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900 dark:text-white hover:text-blue-600">
                             <span>{lead.name}</span>
                             {lead.googleMapsUri && (
@@ -1005,11 +1092,43 @@ export function DataTableView({
                               </a>
                             )}
                           </div>
-                          <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                          <div className="text-[11px] text-slate-500 flex flex-wrap items-center gap-1.5">
                             <span>{lead.category}</span>
-                            <span className="text-[9px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1 rounded">
-                              {lead.source === "google_places" ? "Google" : lead.source}
-                            </span>
+                            {/* Source Badge */}
+                            {lead.leadSources && lead.leadSources.includes("osm") && lead.leadSources.includes("overture") ? (
+                              <span
+                                className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
+                                title="Merged from OpenStreetMap and Overture Places"
+                              >
+                                OSM + Overture
+                              </span>
+                            ) : lead.leadSources?.includes("overture") ? (
+                              <span
+                                className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800"
+                                title="Source: Overture Maps Foundation"
+                              >
+                                Overture
+                              </span>
+                            ) : (
+                              <span
+                                className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                                title="Source: OpenStreetMap"
+                              >
+                                OSM
+                              </span>
+                            )}
+                            {lead.facebookUrl && (
+                              <a
+                                href={lead.facebookUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900 inline-flex items-center gap-0.5"
+                                title="Visit Facebook Page"
+                              >
+                                <span>FB</span>
+                                <ExternalLink className="w-2 h-2" />
+                              </a>
+                            )}
                           </div>
                         </div>
                       </TableCell>
@@ -1018,15 +1137,7 @@ export function DataTableView({
                       <TableCell className="py-3 px-3 align-middle">
                         <div
                           className="inline-flex items-center gap-1.5 cursor-help group"
-                          title={`Lead Score: ${lead.leadScore}/100\n• Website Status: ${lead.websiteStatus} (${
-                            lead.websiteStatus === "No Website"
-                              ? "+40"
-                              : lead.websiteStatus === "Social Only"
-                              ? "+30"
-                              : "+0"
-                          })\n• Phone: ${lead.phoneStatus === "Valid" || lead.phoneStatus === "Format valid" ? "+15" : "+0"}\n• Email: ${
-                            lead.email ? "+10" : "+0"
-                          }`}
+                          title={`Lead Score: ${lead.leadScore}/100\n${(lead.scoreReasons || []).map((r) => `• ${r.reason}: +${r.points}`).join("\n")}`}
                         >
                           <span
                             className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold ${
@@ -1064,7 +1175,7 @@ export function DataTableView({
                                 )}
                               </button>
                             </div>
-                            <div className="text-[10px]">
+                            <div className="text-[10px] flex items-center gap-1">
                               {lead.phoneStatus === "Valid" || lead.phoneStatus === "Format valid" ? (
                                 <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
                                   Format valid
@@ -1074,6 +1185,9 @@ export function DataTableView({
                                   Format unverified
                                 </span>
                               )}
+                              <span className="text-[9px] text-slate-400">
+                                ({lead.fieldAttribution?.phone === "overture" ? "Overture" : "OSM"})
+                              </span>
                             </div>
                           </div>
                         ) : (
@@ -1101,12 +1215,27 @@ export function DataTableView({
                               </button>
                             </div>
                             <div className="text-[10px] text-slate-500">
-                              <span className="bg-slate-100 dark:bg-slate-800 px-1 py-0.2 rounded">
-                                {lead.websiteStatus === "No Website" || activeEmailStatus === "OpenStreetMap"
-                                  ? "OpenStreetMap"
-                                  : activeEmailStatus === "Found on website"
+                              <span
+                                className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${
+                                  activeEmailStatus === "Found on website"
+                                    ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
+                                    : lead.fieldAttribution?.email === "overture"
+                                    ? "bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800"
+                                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                                }`}
+                                title={
+                                  activeEmailStatus === "Found on website"
+                                    ? `Found on website: ${localEmails[lead.id]?.sourceUrl || lead.emailSourceUrl || lead.website}`
+                                    : lead.fieldAttribution?.email === "overture"
+                                    ? "Source: Overture Places"
+                                    : "Source: OpenStreetMap"
+                                }
+                              >
+                                {activeEmailStatus === "Found on website"
                                   ? "Found on website"
-                                  : activeEmailStatus || "OpenStreetMap"}
+                                  : lead.fieldAttribution?.email === "overture"
+                                  ? "Overture"
+                                  : "OpenStreetMap"}
                               </span>
                             </div>
                           </div>

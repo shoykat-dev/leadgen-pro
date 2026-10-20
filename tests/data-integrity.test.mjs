@@ -109,18 +109,17 @@ test("Website: Empty or null -> No Website", () => {
   assert.equal(res.website, null);
 });
 
-// 4. Lead Score Formula (Section 8)
-test("Lead Score: No Website (+40) + Valid Phone (+15) + Valid Email (+10) + Rating >= 4 (+10) + Reviews >= 50 (+10) = 85 (High)", () => {
+// 4. Lead Score Formula (Prompt 3 Part C: Only real signals)
+test("Lead Score: No Website (+40) + Valid Phone (+20) + Valid Email (+15) = 75 (High)", () => {
   const res = calculateLeadScore({
     websiteStatus: "No Website",
     phoneStatus: "Valid",
     email: "test@domain.com",
     emailStatus: "Found on website",
-    rating: 4.5,
-    userRatingCount: 65,
   });
-  assert.equal(res.score, 85);
+  assert.equal(res.score, 75);
   assert.equal(res.tier, "High");
+  assert(res.reasons.length >= 3);
 });
 
 test("Lead Score: Has Website (0) + Unverified Phone (0) + No Email (0) = 0 (Low)", () => {

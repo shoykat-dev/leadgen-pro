@@ -148,6 +148,40 @@ function initTables(db: DatabaseSync) {
       value TEXT NOT NULL
     );
   `);
+
+  // 8. Overture Maps Places Table (CDLA/ODbL free dataset)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS overture_places (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      categories TEXT,
+      lat REAL NOT NULL,
+      lon REAL NOT NULL,
+      phones TEXT,
+      emails TEXT,
+      websites TEXT,
+      socials TEXT,
+      addresses TEXT,
+      sources TEXT,
+      release_version TEXT,
+      updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_overture_places_lat_lon ON overture_places(lat, lon);
+  `);
+
+  // 9. Real Website Enrichment Cache (30-day TTL)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS website_enrichment_cache (
+      domain_key TEXT PRIMARY KEY,
+      website_url TEXT NOT NULL,
+      email TEXT,
+      email_source_url TEXT,
+      email_status TEXT,
+      phones_json TEXT,
+      checked_at TEXT NOT NULL,
+      expires_at INTEGER NOT NULL
+    );
+  `);
 }
 
 // ==========================================
@@ -508,4 +542,247 @@ export function setUserSetting(key: string, value: string): void {
     ON CONFLICT(key) DO UPDATE SET value = excluded.value
   `).run(key, value);
 }
+
+// ==========================================
+// 6. OVERTURE MAPS REPOSITORY (CDLA/ODbL)
+// ==========================================
+
+export interface OverturePlaceRecord {
+  id: string;
+  name: string;
+  categories: string[];
+  lat: number;
+  lon: number;
+  phones: string[];
+  emails: string[];
+  websites: string[];
+  socials: string[];
+  addresses: any[];
+  sources: any[];
+  release_version?: string;
+  updated_at?: string;
+}
+
+export function upsertOverturePlace(place: OverturePlaceRecord): void {
+  const db = getDb();
+  const now = place.updated_at || new Date().toISOString();
+
+  const stmt = db.prepare(`
+    INSERT INTO overture_places (
+      id, name, categories, lat, lon, phones, emails, websites, socials, addresses, sources, release_version, updated_at
+    ) VALUES (
+      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    )
+    ON CONFLICT(id) DO UPDATE SET
+      name = excluded.name,
+      categories = excluded.categories,
+      lat = excluded.lat,
+      lon = excluded.lon,
+      phones = excluded.phones,
+      emails = excluded.emails,
+      websites = excluded.websites,
+      socials = excluded.socials,
+      addresses = excluded.addresses,
+      sources = excluded.sources,
+      release_version = excluded.release_version,
+      updated_at = excluded.updated_at
+  `);
+
+  stmt.run(
+    place.id,
+    place.name,
+    JSON.stringify(place.categories || []),
+    place.lat,
+    place.lon,
+    JSON.stringify(place.phones || []),
+    JSON.stringify(place.emails || []),
+    JSON.stringify(place.websites || []),
+    JSON.stringify(place.socials || []),
+    JSON.stringify(place.addresses || []),
+    JSON.stringify(place.sources || []),
+    place.release_version || "latest",
+    now
+  );
+}
+
+export function upsertOverturePlaces(places: OverturePlaceRecord[]): { insertedCount: number } {
+  const db = getDb();
+  const now = new Date().toISOString();
+
+  const stmt = db.prepare(`
+    INSERT INTO overture_places (
+      id, name, categories, lat, lon, phones, emails, websites, socials, addresses, sources, release_version, updated_at
+    ) VALUES (
+      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    )
+    ON CONFLICT(id) DO UPDATE SET
+      name = excluded.name,
+      categories = excluded.categories,
+      lat = excluded.lat,
+      lon = excluded.lon,
+      phones = excluded.phones,
+      emails = excluded.emails,
+      websites = excluded.websites,
+      socials = excluded.socials,
+      addresses = excluded.addresses,
+      sources = excluded.sources,
+      release_version = excluded.release_version,
+      updated_at = excluded.updated_at
+  `);
+
+  for (const place of places) {
+    stmt.run(
+      place.id,
+      place.name,
+      JSON.stringify(place.categories || []),
+      place.lat,
+      place.lon,
+      JSON.stringify(place.phones || []),
+      JSON.stringify(place.emails || []),
+      JSON.stringify(place.websites || []),
+      JSON.stringify(place.socials || []),
+      JSON.stringify(place.addresses || []),
+      JSON.stringify(place.sources || []),
+      place.release_version || "latest",
+      place.updated_at || now
+    );
+  }
+
+  return { insertedCount: places.length };
+}
+
+export function getOverturePlaceCount(): number {
+  const db = getDb();
+  const row = db.prepare("SELECT COUNT(*) as count FROM overture_places").get() as { count: number };
+  return row ? row.count : 0;
+}
+
+export function getOverturePlacesInBBox(
+  minLat: number,
+  maxLat: number,
+  minLon: number,
+  maxLon: number
+): OverturePlaceRecord[] {
+  const db = getDb();
+  const stmt = db.prepare(`
+    SELECT * FROM overture_places
+    WHERE lat BETWEEN ? AND ?
+      AND lon BETWEEN ? AND ?
+  `);
+
+  const rows = stmt.all(minLat, maxLat, minLon, maxLon) as any[];
+
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    categories: r.categories ? JSON.parse(r.categories) : [],
+    lat: r.lat,
+    lon: r.lon,
+    phones: r.phones ? JSON.parse(r.phones) : [],
+    emails: r.emails ? JSON.parse(r.emails) : [],
+    websites: r.websites ? JSON.parse(r.websites) : [],
+    socials: r.socials ? JSON.parse(r.socials) : [],
+    addresses: r.addresses ? JSON.parse(r.addresses) : [],
+    sources: r.sources ? JSON.parse(r.sources) : [],
+    release_version: r.release_version,
+    updated_at: r.updated_at,
+  }));
+}
+
+// ==========================================
+// 7. REAL WEBSITE ENRICHMENT CACHE (30 Days TTL)
+// ==========================================
+
+export interface WebsiteEnrichmentRecord {
+  domainKey: string;
+  websiteUrl: string;
+  email: string | null;
+  emailSourceUrl: string | null;
+  emailStatus: string;
+  phones: string[];
+  checkedAt: string;
+  expiresAt: number;
+}
+
+export function getCachedWebsiteEnrichment(websiteUrl: string): WebsiteEnrichmentRecord | null {
+  try {
+    const db = getDb();
+    const domainKey = new URL(
+      websiteUrl.startsWith("http") ? websiteUrl : `https://${websiteUrl}`
+    ).hostname.replace(/^www\./, "").toLowerCase();
+
+    const now = Date.now();
+    const stmt = db.prepare("SELECT * FROM website_enrichment_cache WHERE domain_key = ?");
+    const row = stmt.get(domainKey) as any;
+
+    if (!row) return null;
+
+    if (row.expires_at < now) {
+      db.prepare("DELETE FROM website_enrichment_cache WHERE domain_key = ?").run(domainKey);
+      return null;
+    }
+
+    return {
+      domainKey: row.domain_key,
+      websiteUrl: row.website_url,
+      email: row.email,
+      emailSourceUrl: row.email_source_url,
+      emailStatus: row.email_status,
+      phones: row.phones_json ? JSON.parse(row.phones_json) : [],
+      checkedAt: row.checked_at,
+      expiresAt: row.expires_at,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function setCachedWebsiteEnrichment(data: {
+  websiteUrl: string;
+  email: string | null;
+  emailSourceUrl: string | null;
+  emailStatus: string;
+  phones?: string[];
+  ttlDays?: number;
+}): void {
+  try {
+    const db = getDb();
+    const domainKey = new URL(
+      data.websiteUrl.startsWith("http") ? data.websiteUrl : `https://${data.websiteUrl}`
+    ).hostname.replace(/^www\./, "").toLowerCase();
+
+    const now = Date.now();
+    const ttlDays = data.ttlDays || 30; // 30-day requirement
+    const expiresAt = now + ttlDays * 24 * 60 * 60 * 1000;
+    const checkedAt = new Date().toISOString();
+
+    const stmt = db.prepare(`
+      INSERT INTO website_enrichment_cache (
+        domain_key, website_url, email, email_source_url, email_status, phones_json, checked_at, expires_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(domain_key) DO UPDATE SET
+        website_url = excluded.website_url,
+        email = excluded.email,
+        email_source_url = excluded.email_source_url,
+        email_status = excluded.email_status,
+        phones_json = excluded.phones_json,
+        checked_at = excluded.checked_at,
+        expires_at = excluded.expires_at
+    `);
+
+    stmt.run(
+      domainKey,
+      data.websiteUrl,
+      data.email,
+      data.emailSourceUrl,
+      data.emailStatus,
+      JSON.stringify(data.phones || []),
+      checkedAt,
+      expiresAt
+    );
+  } catch (err) {
+    console.warn("Failed to set website enrichment cache", err);
+  }
+}
+
 

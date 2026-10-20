@@ -9,6 +9,8 @@
     "lint": "eslint",
     "test": "node --experimental-strip-types tests/data-integrity.test.mjs",
     "qa": "node scripts/qa-check.mjs",
+    "import:overture": "node scripts/import-overture.mjs",
+    "import:overture:py": "python scripts/import_overture.py",
     "deploy": "cmd /c deploy.bat"
   },
   "dependencies": {

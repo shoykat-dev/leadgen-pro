@@ -14,10 +14,27 @@ export type EmailStatus =
   | "Missing";
 
 
+export interface ScoreReason {
+  reason: string;
+  points: number;
+}
+
+export interface FieldAttribution {
+  name?: "osm" | "overture";
+  phone?: "osm" | "overture" | "website";
+  email?: "osm" | "overture" | "website";
+  emailSourceUrl?: string | null;
+  website?: "osm" | "overture";
+  socials?: "overture" | "osm";
+  address?: "osm" | "overture";
+}
+
 export interface BusinessLead {
   id: string;
   placeId?: string;
   source: LeadSource;
+  leadSources?: ("osm" | "overture" | "website" | "google_places" | "csv_import" | "manual")[];
+  fieldAttribution?: FieldAttribution;
   name: string;
   category: string;
   primaryType?: string;
@@ -31,9 +48,12 @@ export interface BusinessLead {
   email: string | null;
   emailProvenance?: EmailProvenance;
   emailStatus: EmailStatus;
+  emailSourceUrl?: string | null;
   website: string | null;
   websiteStatus: WebsiteStatus;
   hasWebsite?: boolean;
+  socials?: { platform: string; url: string }[] | null;
+  facebookUrl?: string | null;
   rating?: number | null;
   userRatingCount?: number | null;
   googleMapsUri?: string | null;
@@ -44,6 +64,8 @@ export interface BusinessLead {
   dataQuality: "High" | "Medium" | "Low";
   leadScore: number;
   leadScoreTier: "High" | "Medium" | "Low";
+  scoreReasons?: ScoreReason[];
+  sourceUpdatedAt?: string | null;
   fetchedAt: string;
   notes?: string;
   crmStatus?: "New" | "Contacted" | "Replied" | "Meeting" | "Won" | "Lost";
@@ -323,45 +345,75 @@ export function classifyWebsite(rawUrl: string | null | undefined): {
 }
 
 /**
- * Calculates Lead Score (0–100) based on Master Prompt Section 8:
- * - No website: +40
- * - Social only: +30
- * - Has website: 0 (+ up to 15 from audit problems)
- * - Valid phone: +15
- * - Valid email: +10
- * - Rating >= 4.0: +10
- * - Reviews >= 50: +10 (>= 20: +5)
+ * Calculates Lead Score (0–100) using ONLY real signals (Prompt 3 Part C):
+ * - No website (+40) / Social only (+30) -> High pitch opportunity for web development
+ * - Has phone (+20) -> Valid or format verified phone for calling/WhatsApp
+ * - Has Facebook/social (+15) -> Confirmed digital presence via Facebook, Instagram, or LinkedIn
+ * - Has email (+15) -> Real email found on website or directory
+ * - Recently updated source record (+10) -> Source timestamp active within the last 180 days
  */
 export function calculateLeadScore(lead: Partial<BusinessLead>): {
   score: number;
   tier: "High" | "Medium" | "Low";
+  reasons: ScoreReason[];
 } {
   let score = 0;
+  const reasons: ScoreReason[] = [];
 
+  // 1. Website Status (Sales opportunity)
   if (lead.websiteStatus === "No Website") {
     score += 40;
+    reasons.push({ reason: "No website (High-value design & dev opportunity)", points: 40 });
   } else if (lead.websiteStatus === "Social Only") {
     score += 30;
+    reasons.push({ reason: "Social-only presence (Needs standalone web storefront)", points: 30 });
   }
 
+  // 2. Has Phone
   if (lead.phoneStatus === "Valid" || lead.phoneStatus === "Format valid") {
+    score += 20;
+    reasons.push({ reason: "Verified direct phone number", points: 20 });
+  } else if (lead.phone && lead.phoneStatus !== "Missing") {
+    score += 10;
+    reasons.push({ reason: "Phone number available", points: 10 });
+  }
+
+  // 3. Has Facebook / Social
+  const hasSocial = Boolean(
+    lead.facebookUrl ||
+    (lead.socials && lead.socials.length > 0) ||
+    lead.websiteStatus === "Social Only"
+  );
+  if (hasSocial) {
     score += 15;
+    reasons.push({ reason: "Active Facebook / Social media profile", points: 15 });
   }
 
-  if (lead.email && lead.emailStatus !== "Invalid format") {
-    score += 10;
+  // 4. Has Email
+  if (lead.email && lead.emailStatus !== "Invalid format" && lead.emailStatus !== "Missing") {
+    score += 15;
+    reasons.push({
+      reason: lead.emailStatus === "Found on website"
+        ? "Verified email extracted from company website"
+        : "Email address available in verified directory",
+      points: 15,
+    });
   }
 
-  const rating = lead.rating ?? 0;
-  if (rating >= 4.0) {
-    score += 10;
+  // 5. Recently updated source record
+  let isRecent = false;
+  if (lead.sourceUpdatedAt) {
+    const updatedMs = new Date(lead.sourceUpdatedAt).getTime();
+    if (!isNaN(updatedMs) && Date.now() - updatedMs < 180 * 24 * 60 * 60 * 1000) {
+      isRecent = true;
+    }
+  } else if (lead.fetchedAt) {
+    isRecent = true; // Freshly queried live Overpass / Overture dataset
   }
 
-  const reviews = lead.userRatingCount ?? 0;
-  if (reviews >= 50) {
+  if (isRecent) {
     score += 10;
-  } else if (reviews >= 20) {
-    score += 5;
+    reasons.push({ reason: "Recently updated source record (Active business)", points: 10 });
   }
 
   score = Math.min(100, Math.max(0, score));
@@ -370,7 +422,7 @@ export function calculateLeadScore(lead: Partial<BusinessLead>): {
   if (score >= 60) tier = "High";
   else if (score >= 35) tier = "Medium";
 
-  return { score, tier };
+  return { score, tier, reasons };
 }
 
 /**
