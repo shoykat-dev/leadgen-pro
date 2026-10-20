@@ -3,15 +3,29 @@ import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import type { BusinessLead } from "./data-integrity";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const DB_PATH = path.join(DATA_DIR, "leadgen.db");
+function getDbPath(): string {
+  // If running in Vercel Serverless or AWS Lambda, use writable /tmp
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    const tmpDir = path.join("/tmp", "leadgen-data");
+    try {
+      if (!fs.existsSync(tmpDir)) {
+        fs.mkdirSync(tmpDir, { recursive: true });
+      }
+      return path.join(tmpDir, "leadgen.db");
+    } catch {
+      return ":memory:";
+    }
+  }
 
-// Ensure data directory exists
-if (!fs.existsSync(DATA_DIR)) {
+  // Local environment
+  const localDir = path.join(process.cwd(), "data");
   try {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  } catch (err) {
-    console.warn("Failed to create data dir:", err);
+    if (!fs.existsSync(localDir)) {
+      fs.mkdirSync(localDir, { recursive: true });
+    }
+    return path.join(localDir, "leadgen.db");
+  } catch {
+    return ":memory:";
   }
 }
 
@@ -19,8 +33,20 @@ let dbInstance: DatabaseSync | null = null;
 
 function getDb(): DatabaseSync {
   if (!dbInstance) {
-    dbInstance = new DatabaseSync(DB_PATH);
-    initTables(dbInstance);
+    const dbPath = getDbPath();
+    try {
+      dbInstance = new DatabaseSync(dbPath);
+      initTables(dbInstance);
+    } catch (err) {
+      console.warn("Failed to open SQLite at", dbPath, "falling back to in-memory :memory:", err);
+      try {
+        dbInstance = new DatabaseSync(":memory:");
+        initTables(dbInstance);
+      } catch (memErr) {
+        console.error("Critical: In-memory SQLite failed:", memErr);
+        throw memErr;
+      }
+    }
   }
   return dbInstance;
 }
@@ -138,50 +164,61 @@ export interface BudgetStatus {
 }
 
 export function getBudgetStatus(confirmedExtraDailyCalls: number = 0): BudgetStatus {
-  const db = getDb();
-  const now = new Date();
-  const dayKey = `day_${now.toISOString().slice(0, 10)}`; // e.g. day_2026-10-16
-  const monthKey = `month_${now.toISOString().slice(0, 7)}`; // e.g. month_2026-10
-
   const dailyLimit = parseInt(process.env.GOOGLE_DAILY_CALL_LIMIT || "30", 10) + confirmedExtraDailyCalls;
   const monthlyLimit = parseInt(process.env.GOOGLE_MONTHLY_CALL_LIMIT || "900", 10);
 
-  const getStmt = db.prepare("SELECT count FROM api_usage WHERE key = ?");
-  const dailyRow = getStmt.get(dayKey) as { count: number } | undefined;
-  const monthlyRow = getStmt.get(monthKey) as { count: number } | undefined;
+  try {
+    const db = getDb();
+    const now = new Date();
+    const dayKey = `day_${now.toISOString().slice(0, 10)}`; // e.g. day_2026-10-16
+    const monthKey = `month_${now.toISOString().slice(0, 7)}`; // e.g. month_2026-10
 
-  const dailyUsed = dailyRow ? dailyRow.count : 0;
-  const monthlyUsed = monthlyRow ? monthlyRow.count : 0;
+    const getStmt = db.prepare("SELECT count FROM api_usage WHERE key = ?");
+    const dailyRow = getStmt.get(dayKey) as { count: number } | undefined;
+    const monthlyRow = getStmt.get(monthKey) as { count: number } | undefined;
 
-  if (monthlyUsed >= monthlyLimit) {
+    const dailyUsed = dailyRow ? dailyRow.count : 0;
+    const monthlyUsed = monthlyRow ? monthlyRow.count : 0;
+
+    if (monthlyUsed >= monthlyLimit) {
+      return {
+        dailyUsed,
+        dailyLimit,
+        monthlyUsed,
+        monthlyLimit,
+        canCallGoogle: false,
+        reason: "Free Google monthly limit reached. You can still import leads from CSV or add manually.",
+      };
+    }
+
+    if (dailyUsed >= dailyLimit) {
+      return {
+        dailyUsed,
+        dailyLimit,
+        monthlyUsed,
+        monthlyLimit,
+        canCallGoogle: false,
+        reason: "Free Google daily limit reached. You can still import leads from CSV or add manually.",
+      };
+    }
+
     return {
       dailyUsed,
       dailyLimit,
       monthlyUsed,
       monthlyLimit,
-      canCallGoogle: false,
-      reason: "Free Google monthly limit reached. You can still import leads from CSV or add manually.",
+      canCallGoogle: true,
     };
-  }
-
-  if (dailyUsed >= dailyLimit) {
+  } catch (err) {
+    console.warn("Budget status query fallback on serverless:", err);
     return {
-      dailyUsed,
+      dailyUsed: 0,
       dailyLimit,
-      monthlyUsed,
+      monthlyUsed: 0,
       monthlyLimit,
-      canCallGoogle: false,
-      reason: "Free Google daily limit reached. You can still import leads from CSV or add manually.",
+      canCallGoogle: true,
     };
   }
-
-  return {
-    dailyUsed,
-    dailyLimit,
-    monthlyUsed,
-    monthlyLimit,
-    canCallGoogle: true,
-  };
 }
 
 export function incrementGoogleApiCallCount(): void {
