@@ -28,6 +28,7 @@ import {
   Info,
   CheckCircle2,
   MapPin,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +65,10 @@ export default function DashboardPage() {
   });
   const [radiusMeters, setRadiusMeters] = useState<number>(2000);
   const [categoryLabel, setCategoryLabel] = useState<string>("Restaurant & Fine Dining");
+  const [searchMeta, setSearchMeta] = useState<{
+    cached?: boolean;
+    lastUpdated?: string;
+  }>({});
 
   // Modal open states
   const [isAreaScanOpen, setIsAreaScanOpen] = useState(false);
@@ -104,6 +109,7 @@ export default function DashboardPage() {
       area: loc.area,
     });
     setLeads([]);
+    setSearchMeta({});
   };
 
   const handleSearchResults = (params: {
@@ -117,6 +123,8 @@ export default function DashboardPage() {
     category: string;
     categoryLabel: string;
     leads: BusinessLead[];
+    cached?: boolean;
+    lastUpdated?: string;
   }) => {
     setSearchLocation({
       country: params.country,
@@ -130,6 +138,10 @@ export default function DashboardPage() {
     }
     setCategoryLabel(params.categoryLabel);
     setLeads(params.leads);
+    setSearchMeta({
+      cached: params.cached,
+      lastUpdated: params.lastUpdated,
+    });
     refreshBudget();
   };
 
@@ -392,14 +404,27 @@ export default function DashboardPage() {
                       <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 font-semibold">
                         {categoryLabel}
                       </Badge>
+                      {searchMeta.lastUpdated && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                          <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span>Last updated: {searchMeta.lastUpdated}</span>
+                          {searchMeta.cached && (
+                            <span className="text-[10px] uppercase font-bold tracking-wider px-1 py-0.5 rounded bg-emerald-200/60 dark:bg-emerald-900/60 ml-0.5">
+                              Cached
+                            </span>
+                          )}
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       OpenStreetMap Overpass radius search with strict Haversine distance post-filtering ({radiusMeters}m limit)
                     </p>
                   </div>
-                  <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0 flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-rose-500" />
-                    <span>Target Radius: <strong>{radiusMeters}m</strong></span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-rose-500" />
+                      <span>Target Radius: <strong>{radiusMeters}m</strong></span>
+                    </div>
                   </div>
                 </div>
 

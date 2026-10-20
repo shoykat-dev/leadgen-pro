@@ -108,12 +108,15 @@ export async function POST(req: NextRequest) {
         area: body.area,
         lat: body.lat,
         lon: body.lon,
+        bypassCache: body.bypassCache,
+        simulateMirror1Failure: body.simulateMirror1Failure,
       });
       searchResult = {
         leads: freeRes.leads,
         nextPageToken: undefined,
         callsUsed: 0,
-        cached: false,
+        cached: freeRes.cached || false,
+        lastUpdated: freeRes.lastUpdated,
         totalFetched: freeRes.leads.length,
       };
     }
@@ -127,6 +130,7 @@ export async function POST(req: NextRequest) {
       nextPageToken: searchResult.nextPageToken,
       callsUsed: searchResult.callsUsed,
       cached: searchResult.cached,
+      lastUpdated: (searchResult as any).lastUpdated,
       budget,
     });
   } catch (error: any) {

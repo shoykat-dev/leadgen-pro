@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
     }
 
     let areaConfig = null;
+    let lastUpdated: string | undefined = undefined;
 
     if (apiKey) {
       const googleRes = await searchGooglePlaces({
@@ -70,11 +71,14 @@ export async function POST(req: NextRequest) {
         area,
         lat: body.lat,
         lon: body.lon,
+        bypassCache: body.bypassCache,
+        simulateMirror1Failure: body.simulateMirror1Failure,
       });
       resultLeads = freeRes.leads;
       areaConfig = freeRes.areaConfig;
       callsUsed = 0;
-      cached = false;
+      cached = freeRes.cached || false;
+      lastUpdated = freeRes.lastUpdated;
       engineSource = "free_directory";
     }
 
@@ -92,20 +96,24 @@ export async function POST(req: NextRequest) {
       businesses: resultLeads,
       callsUsed,
       cached,
+      lastUpdated,
       engineSource,
     });
   } catch (error: any) {
     console.error("[/api/places forwarder error]:", error.message);
+    const isBusy = error.message?.includes("busy") || error.message?.includes("Overpass");
     return NextResponse.json(
       {
         error: {
-          code: "SEARCH_FAILED",
-          message: error.message || "Failed to search places. Please try again.",
+          code: isBusy ? "SOURCE_BUSY" : "SEARCH_FAILED",
+          message: isBusy
+            ? "Data source busy, please try again."
+            : error.message || "Failed to search places. Please try again.",
         },
         businesses: [],
         total: 0,
       },
-      { status: 500 }
+      { status: isBusy ? 503 : 500 }
     );
   }
 }

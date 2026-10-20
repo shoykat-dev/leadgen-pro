@@ -5,11 +5,11 @@ import {
   classifyWebsite,
   calculateLeadScore,
   assessDataQuality,
-  deduplicateLeads,
 } from "./data-integrity";
 import { getAreaConfig, haversineDistanceMeters, type AreaConfig } from "./areas";
 import { getFallbackCoordinates } from "./location-hierarchy";
-import { Country } from "country-state-city";
+import { getCategoryOsmTags, type OsmTagCriteria } from "./category-tags";
+import { getFromCache, saveToCache } from "./server-cache";
 
 export interface FreeSearchOptions {
   query?: string;
@@ -22,13 +22,17 @@ export interface FreeSearchOptions {
   area?: string;
   lat?: number | null;
   lon?: number | null;
+  bypassCache?: boolean;
+  simulateMirror1Failure?: boolean; // For testing failover resilience
 }
 
 export interface FreeSearchResult {
   leads: BusinessLead[];
-  source: "free_live_directory";
+  source: "free_directory";
   total: number;
   areaConfig: AreaConfig;
+  cached?: boolean;
+  lastUpdated?: string;
 }
 
 interface OverpassElement {
@@ -43,121 +47,173 @@ interface OverpassElement {
   tags?: Record<string, string>;
 }
 
-/**
- * Maps application category to standard OpenStreetMap tag criteria for Overpass QL.
- */
-export function getOverpassTagsForCategory(categoryId: string): { key: string; value: string }[] {
-  const map: Record<string, { key: string; value: string }[]> = {
-    // Food & Dining
-    restaurant: [{ key: "amenity", value: "restaurant" }],
-    cafe: [{ key: "amenity", value: "cafe" }],
-    bakery: [{ key: "shop", value: "bakery" }],
-    fast_food: [{ key: "amenity", value: "fast_food" }],
-    bar_pub: [
-      { key: "amenity", value: "pub" },
-      { key: "amenity", value: "bar" },
-    ],
-    catering: [{ key: "craft", value: "caterer" }],
+// Public Overpass API mirrors for rotation & automatic failover
+const OVERPASS_MIRRORS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter",
+  "https://overpass.openstreetmap.fr/api/interpreter",
+];
 
-    // Healthcare & Medical
-    health_clinic: [
-      { key: "amenity", value: "clinic" },
-      { key: "amenity", value: "doctors" },
-    ],
-    dental_clinic: [{ key: "amenity", value: "dentist" }],
-    hospital: [{ key: "amenity", value: "hospital" }],
-    pharmacy: [{ key: "amenity", value: "pharmacy" }],
-    dermatology: [
-      { key: "healthcare", value: "dermatology" },
-      { key: "amenity", value: "clinic" },
-    ],
-    physiotherapy: [{ key: "healthcare", value: "physiotherapist" }],
-    optometry: [{ key: "shop", value: "optician" }],
-    chiropractor: [{ key: "healthcare", value: "alternative" }],
-    veterinary: [{ key: "amenity", value: "veterinary" }],
-    mental_health: [{ key: "healthcare", value: "psychotherapist" }],
-
-    // Beauty & Wellness
-    salon: [
-      { key: "shop", value: "hairdresser" },
-      { key: "shop", value: "beauty" },
-    ],
-    spa: [{ key: "leisure", value: "spa" }],
-    barbershop: [{ key: "shop", value: "hairdresser" }],
-    nail_salon: [{ key: "shop", value: "beauty" }],
-    massage: [{ key: "shop", value: "massage" }],
-    cosmetic_clinic: [{ key: "shop", value: "beauty" }],
-
-    // Fitness & Sports
-    gym: [{ key: "leisure", value: "fitness_centre" }],
-    yoga: [{ key: "leisure", value: "fitness_centre" }],
-    martial_arts: [{ key: "leisure", value: "sports_centre" }],
-    swimming_pool: [{ key: "leisure", value: "swimming_pool" }],
-    personal_trainer: [{ key: "leisure", value: "fitness_centre" }],
-
-    // Real Estate & Construction
-    real_estate: [{ key: "office", value: "estate_agent" }],
-    architecture: [{ key: "office", value: "architect" }],
-    interior_design: [{ key: "office", value: "interior_decorator" }],
-    general_contractor: [{ key: "craft", value: "builder" }],
-    roofing: [{ key: "craft", value: "roofer" }],
-    plumbing: [{ key: "craft", value: "plumber" }],
-    electrical: [{ key: "craft", value: "electrician" }],
-    hvac: [{ key: "craft", value: "hvac" }],
-    landscaping: [{ key: "craft", value: "gardener" }],
-    painting_contractor: [{ key: "craft", value: "painter" }],
-    carpentry: [{ key: "craft", value: "carpenter" }],
-    flooring: [{ key: "craft", value: "floorer" }],
-    solar_installation: [{ key: "craft", value: "electrician" }],
-    pest_control: [{ key: "craft", value: "pest_control" }],
-
-    // Professional & Legal
-    law_firm: [{ key: "office", value: "lawyer" }],
-    accounting: [
-      { key: "office", value: "accountant" },
-      { key: "office", value: "financial" },
-    ],
-    insurance_agency: [{ key: "office", value: "insurance" }],
-    financial_advisor: [{ key: "office", value: "financial_advisor" }],
-    marketing_agency: [{ key: "office", value: "advertising_agency" }],
-    web_design: [
-      { key: "office", value: "it" },
-      { key: "office", value: "graphic_design" },
-    ],
-    software_company: [{ key: "office", value: "it" }],
-    it_support: [{ key: "office", value: "it" }],
-
-    // Automotive
-    car_repair: [{ key: "shop", value: "car_repair" }],
-    auto_body: [{ key: "shop", value: "car_repair" }],
-    car_wash: [{ key: "amenity", value: "car_wash" }],
-    tire_shop: [{ key: "shop", value: "tyres" }],
-    car_dealership: [{ key: "shop", value: "car" }],
-    car_rental: [{ key: "amenity", value: "car_rental" }],
-    towing: [{ key: "emergency", value: "towing" }],
-
-    // Education & Hospitality
-    private_school: [{ key: "amenity", value: "school" }],
-    tutoring_center: [{ key: "amenity", value: "training" }],
-    preschool: [{ key: "amenity", value: "kindergarten" }],
-    language_school: [{ key: "amenity", value: "language_school" }],
-    hotel_motel: [{ key: "tourism", value: "hotel" }],
-  };
-
-  if (map[categoryId]) {
-    return map[categoryId];
-  }
-
-  // Generic fallback: check amenity or shop
-  return [
-    { key: "amenity", value: categoryId.replace(/_/g, " ") },
-    { key: "shop", value: categoryId.replace(/_/g, " ") },
-  ];
+function normalizeBusinessName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]/gu, "")
+    .trim();
 }
 
 /**
- * Searches real local businesses using OpenStreetMap Overpass API with strict radius and Haversine distance post-filtering.
- * HARD DATA HONESTY: Zero simulated or pattern-generated emails, phones, ratings, or websites.
+ * Builds the Overpass QL query string with nwr and (around:radius, lat, lon)
+ */
+function buildOverpassQuery(
+  tags: OsmTagCriteria[],
+  radiusMeters: number,
+  lat: number,
+  lon: number,
+  timeoutSeconds = 120
+): string {
+  const statements = tags
+    .map(
+      (t) =>
+        `nwr["${t.key}"="${t.value}"](around:${radiusMeters}, ${lat}, ${lon});`
+    )
+    .join("\n  ");
+
+  return `[out:json][timeout:${timeoutSeconds}];
+(
+  ${statements}
+);
+out center tags;`;
+}
+
+/**
+ * Executes an Overpass query against a single mirror with a resilient timeout.
+ */
+async function fetchOverpassMirror(
+  mirrorUrl: string,
+  query: string,
+  timeoutMs = 12000
+): Promise<OverpassElement[]> {
+  const res = await fetch(mirrorUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "User-Agent":
+        "LeadGenPro-Directory-Scanner/2.0 (Mozilla/5.0; OpenStreetMap MultiTag Resilience; contact: support@leadgenpro.com)",
+      "Referer": "https://leadgenpro.com",
+    },
+    body: "data=" + encodeURIComponent(query),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Mirror ${mirrorUrl} returned HTTP ${res.status}`);
+  }
+
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.includes("json")) {
+    const text = await res.text();
+    throw new Error(
+      `Mirror ${mirrorUrl} returned non-JSON response: ${text.slice(0, 100)}`
+    );
+  }
+
+  const json = await res.json();
+  if (!Array.isArray(json.elements)) {
+    throw new Error(
+      `Mirror ${mirrorUrl} returned invalid payload structure (no elements array)`
+    );
+  }
+
+  return json.elements;
+}
+
+/**
+ * Robust fetcher with mirror rotation, automatic failover on 429/5xx/timeout, and exponential backoff.
+ */
+async function fetchOverpassWithFailover(
+  tags: OsmTagCriteria[],
+  radiusMeters: number,
+  lat: number,
+  lon: number,
+  simulateMirror1Failure = false
+): Promise<OverpassElement[]> {
+  const query = buildOverpassQuery(tags, radiusMeters, lat, lon, 120);
+  let lastError: Error | null = null;
+
+  for (let i = 0; i < OVERPASS_MIRRORS.length; i++) {
+    const mirrorUrl = OVERPASS_MIRRORS[i];
+
+    // Mirror 1 simulation failure hook for Acceptance Test 2
+    if (i === 0 && simulateMirror1Failure) {
+      console.warn(
+        `[Overpass Failover Simulation] Intentionally failing Mirror 1 (${mirrorUrl}) to verify automatic failover.`
+      );
+      continue;
+    }
+
+    try {
+      console.log(
+        `[Overpass Mirror ${i + 1}/${OVERPASS_MIRRORS.length}] Querying ${mirrorUrl}...`
+      );
+      const elements = await fetchOverpassMirror(mirrorUrl, query, 12000);
+      console.log(
+        `[Overpass Mirror Success] ${mirrorUrl} returned ${elements.length} raw elements.`
+      );
+      return elements;
+    } catch (err: any) {
+      lastError = err;
+      console.warn(
+        `[Overpass Mirror ${i + 1} Failed] ${mirrorUrl}: ${err.message}. Rotating to next mirror...`
+      );
+
+      // Backoff before trying next mirror
+      if (i < OVERPASS_MIRRORS.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 400 * (i + 1)));
+      }
+    }
+  }
+
+  // If combined multi-tag query failed across all mirrors, try query splitting per tag
+  if (tags.length > 1) {
+    console.log(
+      `[Overpass Splitting] Combined query failed. Splitting into ${tags.length} individual tag queries...`
+    );
+    const combinedElements: OverpassElement[] = [];
+
+    for (const singleTag of tags) {
+      const splitQuery = buildOverpassQuery([singleTag], radiusMeters, lat, lon, 60);
+
+      for (const mirrorUrl of OVERPASS_MIRRORS) {
+        try {
+          const elements = await fetchOverpassMirror(mirrorUrl, splitQuery, 45000);
+          combinedElements.push(...elements);
+          break; // Succeeded for this tag, move to next
+        } catch {
+          // Try next mirror for this tag
+        }
+      }
+    }
+
+    if (combinedElements.length > 0) {
+      return combinedElements;
+    }
+  }
+
+  throw (
+    lastError ||
+    new Error("All OpenStreetMap Overpass mirrors are currently busy or unavailable.")
+  );
+}
+
+/**
+ * Searches real local businesses using OpenStreetMap Overpass API:
+ * 1. Multi-tag mapping per category (e.g. amenity=restaurant, amenity=fast_food, amenity=cafe).
+ * 2. High reliability mirror rotation across overpass-api.de, overpass.kumi.systems, overpass.private.coffee.
+ * 3. Two-tier deduplication: by OSM type+id, then by normalized name + coordinates within 50m.
+ * 4. Mandatory Haversine post-filtering <= radiusMeters.
+ * 5. Server-side caching keyed by areaId + categoryId (TTL: 7 days) returning "Last updated" date.
+ * 6. Hard data honesty: 0 fake emails, phones, ratings, or websites.
  */
 export async function searchFreeLiveDirectory(
   options: FreeSearchOptions
@@ -169,11 +225,13 @@ export async function searchFreeLiveDirectory(
     countryCode = "BD",
     city = "Dhaka",
     area = "Banani",
+    bypassCache = false,
+    simulateMirror1Failure = false,
   } = options;
 
   const cCode = (countryCode || "BD").toUpperCase();
 
-  // 1. Resolve exact Area Configuration ({ name, city, centerLat, centerLon, radiusMeters })
+  // 1. Resolve exact Area Configuration
   const fallbackCoords = getFallbackCoordinates(city, area, cCode);
   const areaConfig = getAreaConfig(
     area || city,
@@ -183,109 +241,73 @@ export async function searchFreeLiveDirectory(
   );
 
   const { centerLat, centerLon, radiusMeters } = areaConfig;
+  const areaId = `${cCode}_${areaConfig.city}_${areaConfig.name}`.toLowerCase();
 
-  // 2. Build Overpass query with radius filter around the area center:
-  // e.g. nwr["amenity"="restaurant"](around:2000, 23.7937, 90.4043);
-  const tagSpecs = getOverpassTagsForCategory(category);
-  const tagStatements = tagSpecs
-    .map(
-      (t) =>
-        `nwr["${t.key}"="${t.value}"](around:${radiusMeters}, ${centerLat}, ${centerLon});`
-    )
-    .join("\n  ");
+  // 2. Check Server-Side Cache (Key: areaId + categoryId, TTL: 7 days)
+  if (!bypassCache) {
+    const cachedEntry = getFromCache<BusinessLead[]>(areaId, category);
+    if (cachedEntry) {
+      console.log(
+        `[ServerCache HIT] Key: (${areaId}, ${category}) -> Returned ${cachedEntry.data.length} leads instantly. Last updated: ${cachedEntry.lastUpdated}`
+      );
+      return {
+        leads: cachedEntry.data,
+        source: "free_directory",
+        total: cachedEntry.data.length,
+        areaConfig,
+        cached: true,
+        lastUpdated: cachedEntry.lastUpdated,
+      };
+    }
+  }
 
-  const overpassQuery = `[out:json][timeout:25];
-(
-  ${tagStatements}
-);
-out center tags;`;
+  // 3. Resolve Multi-Tag Criteria for the category
+  const tagSpecs = getCategoryOsmTags(category);
+  console.log(
+    `[Category Multi-Tag] "${category}" mapped to ${tagSpecs.length} OSM tags:`,
+    tagSpecs.map((t) => `${t.key}=${t.value}`).join(", ")
+  );
 
-  // 3. Fetch from reliable public Overpass API mirrors with timeout
-  const mirrors = [
-    "https://overpass.openstreetmap.fr/api/interpreter",
-    "https://overpass-api.de/api/interpreter",
-    "https://overpass.kumi.systems/api/interpreter",
-    "https://overpass.private.coffee/api/interpreter",
-    "https://lz4.overpass-api.de/api/interpreter",
-  ];
-
+  // 4. Fetch from Overpass mirrors with automatic failover
   let rawElements: OverpassElement[] = [];
-  let fetchedSuccessfully = false;
-
-  for (const mirrorUrl of mirrors) {
-    try {
-      const res = await fetch(mirrorUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "LeadGenPro-B2B-Discovery/2.0 (OpenStreetMap Data Honesty Compliant)",
-        },
-        body: "data=" + encodeURIComponent(overpassQuery),
-        signal: AbortSignal.timeout(9000),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data.elements)) {
-          rawElements = data.elements;
-          fetchedSuccessfully = true;
-          break;
-        }
-      }
-    } catch {
-      // Try next mirror
-    }
+  try {
+    rawElements = await fetchOverpassWithFailover(
+      tagSpecs,
+      radiusMeters,
+      centerLat,
+      centerLon,
+      simulateMirror1Failure
+    );
+  } catch (err: any) {
+    console.error("[Overpass Execution Error]:", err.message);
+    throw new Error(
+      "Data source busy, please try again in a few moments."
+    );
   }
 
-  // Fallback to bounded OSM Nominatim query if Overpass mirrors are unavailable or return empty
-  if (!fetchedSuccessfully || rawElements.length === 0) {
-    try {
-      const deltaLat = radiusMeters / 111320;
-      const deltaLon = radiusMeters / (111320 * Math.cos((centerLat * Math.PI) / 180));
-      const viewboxStr = `${centerLon - deltaLon},${centerLat + deltaLat},${centerLon + deltaLon},${centerLat - deltaLat}`;
-
-      const term = categoryLabel.split("&")[0].split("/")[0].trim().toLowerCase();
-      const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-        term
-      )}&countrycodes=${cCode.toLowerCase()}&format=json&addressdetails=1&extratags=1&viewbox=${viewboxStr}&bounded=1&limit=40`;
-
-      const nomRes = await fetch(nominatimUrl, {
-        headers: {
-          "User-Agent": "LeadGenPro-Directory/2.0 (contact: support@leadgenpro.com)",
-          "Accept-Language": "en",
-        },
-        signal: AbortSignal.timeout(6000),
-      });
-
-      if (nomRes.ok) {
-        const nomData = await nomRes.json();
-        if (Array.isArray(nomData)) {
-          rawElements = nomData.map((item: any) => ({
-            type: (item.osm_type || "node") as "node" | "way" | "relation",
-            id: item.osm_id || item.place_id,
-            lat: parseFloat(item.lat),
-            lon: parseFloat(item.lon),
-            tags: {
-              name: item.name || item.display_name?.split(",")[0]?.trim(),
-              amenity: item.type,
-              ...(item.extratags || {}),
-              "addr:full": item.display_name,
-            },
-          }));
-        }
-      }
-    } catch (e) {
-      console.warn("[FreeSearch fallback warning]:", e);
-    }
-  }
-
-  // 4. Mandatory Haversine Post-Filtering & Debug Logging
-  // Acceptance Test 1: Every returned business's coordinates must be <= radiusMeters of centerLat, centerLon.
-  const leads: BusinessLead[] = [];
-  const now = new Date().toISOString();
-  const seenKeys = new Set<string>();
+  // 5. Deduplication Tier 1: Dedupe by OSM type + id
+  const uniqueOsmElements: OverpassElement[] = [];
+  const seenOsmTypeAndId = new Set<string>();
 
   for (const el of rawElements) {
+    const osmKey = `${el.type}/${el.id}`;
+    if (seenOsmTypeAndId.has(osmKey)) {
+      continue;
+    }
+    seenOsmTypeAndId.add(osmKey);
+    uniqueOsmElements.push(el);
+  }
+
+  console.log(
+    `[Dedupe Tier 1] ${rawElements.length} raw elements deduplicated to ${uniqueOsmElements.length} unique OSM records.`
+  );
+
+  // 6. Mandatory Haversine Post-Filtering & Deduplication Tier 2:
+  // Post-filter every lead <= radiusMeters, then dedupe by normalized name + coordinates <= 50m.
+  const leads: BusinessLead[] = [];
+  const now = new Date().toISOString();
+
+  for (const el of uniqueOsmElements) {
     const lat = el.lat ?? el.center?.lat;
     const lon = el.lon ?? el.center?.lon;
 
@@ -293,31 +315,53 @@ out center tags;`;
       continue;
     }
 
-    // Haversine distance calculation in meters
-    const distance = haversineDistanceMeters(centerLat, centerLon, lat, lon);
+    // Calculate Haversine distance in meters from area centroid
+    const distanceToCenter = haversineDistanceMeters(
+      centerLat,
+      centerLon,
+      lat,
+      lon
+    );
 
+    // MANDATORY POST-FILTER: Keep only results within radiusMeters of area center
+    const isWithin = distanceToCenter <= radiusMeters;
     const tags = el.tags || {};
     const rawName = tags.name || tags["name:en"] || tags.brand;
     if (!rawName || rawName.trim().length < 2) continue;
 
     const cleanName = rawName.trim();
-    const dedupKey = `${cleanName.toLowerCase()}_${Math.round(lat * 1000)}_${Math.round(lon * 1000)}`;
-    if (seenKeys.has(dedupKey)) continue;
 
-    // MANDATORY POST-FILTER: Keep only results within radiusMeters of area center
-    if (distance > radiusMeters) {
+    // Acceptance Test 1 Debug Log to prove distance adherence
+    console.log(
+      `[Haversine] ${cleanName}: ${distanceToCenter.toFixed(1)}m from ${areaConfig.name} center (${centerLat}, ${centerLon}) [Within ${radiusMeters}m: ${isWithin ? "PASS" : "FAIL"}]`
+    );
+
+    if (!isWithin) {
       continue;
     }
 
-    seenKeys.add(dedupKey);
+    // Deduplication Tier 2: Check normalized name + coordinates within 50m
+    const normName = normalizeBusinessName(cleanName);
+    const isDuplicate = leads.some((existing) => {
+      if (!existing.lat || !existing.lon) return false;
+      const existingNorm = normalizeBusinessName(existing.name);
+      if (existingNorm === normName) {
+        const distBetween = haversineDistanceMeters(
+          existing.lat,
+          existing.lon,
+          lat,
+          lon
+        );
+        return distBetween <= 50;
+      }
+      return false;
+    });
 
-    // Debug log to prove coordinates and distance adherence (Acceptance Test 1)
-    console.log(
-      `[Haversine] ${cleanName}: ${distance.toFixed(1)}m from ${areaConfig.name} center (${centerLat}, ${centerLon}) [Within ${radiusMeters}m: PASS]`
-    );
+    if (isDuplicate) {
+      continue;
+    }
 
-    // 5. Strict Data Honesty (BUG 2 Fix - Never fabricate or guess)
-    // Extract phone ONLY from real OSM tags
+    // 7. Strict Data Honesty (BUG 2 Fix - Never fabricate or guess)
     const rawPhone =
       tags.phone ||
       tags["contact:phone"] ||
@@ -334,97 +378,89 @@ out center tags;`;
 
     if (rawPhone) {
       const pRes = validatePhone(rawPhone, cCode);
-      if (pRes.phone && pRes.phoneStatus === "Valid") {
+      if (pRes.phoneStatus === "Valid") {
         phone = pRes.phone;
         phoneE164 = pRes.phoneE164;
-        phoneStatus = "Format valid"; // Must be labelled "Format valid" per prompt rule (never "Verified Mobile")
+        phoneStatus = "Format valid"; // Display format verified only (no fabricated 'Verified Mobile')
         canWhatsApp = pRes.canWhatsApp;
-      } else if (pRes.phone) {
-        phone = pRes.phone;
-        phoneStatus = "Phone format unverified";
       }
     }
 
-    // Extract website ONLY from real OSM tags
-    const rawWeb =
+    // Website: Extract ONLY from real OSM tags
+    const rawWebsite =
       tags.website ||
       tags["contact:website"] ||
       tags.url ||
       tags["contact:url"] ||
-      tags.facebook ||
-      tags["contact:facebook"] ||
-      tags.instagram ||
-      tags["contact:instagram"] ||
       null;
 
-    let website: string | null = null;
-    let websiteStatus: "No Website" | "Social Only" | "Has Website" = "No Website";
-    let hasWebsite = false;
+    const webRes = classifyWebsite(rawWebsite);
+    const website = webRes.website;
+    const websiteStatus = webRes.websiteStatus;
 
-    if (rawWeb) {
-      const wRes = classifyWebsite(rawWeb);
-      website = wRes.website;
-      websiteStatus = wRes.websiteStatus;
-      hasWebsite = wRes.websiteStatus === "Has Website";
-    }
+    // Email: Extract ONLY from real OSM tags
+    const rawEmail =
+      tags.email ||
+      tags["contact:email"] ||
+      null;
 
-    // Extract email ONLY from real OSM tags
-    const rawEmail = tags.email || tags["contact:email"] || null;
     let email: string | null = null;
-    let emailStatus: "OpenStreetMap" | "Found on website" | "Missing" | "Different domain" | "Invalid format" =
-      "Missing";
-    let emailProvenance: "osm" | "found_on_website" | undefined = undefined;
+    let emailStatus: "OpenStreetMap" | "Missing" = "Missing";
 
     if (rawEmail) {
       const eRes = validateEmail(rawEmail, website);
-      if (eRes.email && eRes.emailStatus !== "Invalid format") {
+      if (eRes.email) {
         email = eRes.email;
         emailStatus = "OpenStreetMap";
-        emailProvenance = "osm";
       }
     }
 
-    // Hard Rule: OSM has no rating or review counts — store null
-    const rating: number | null = null;
-    const userRatingCount: number | null = null;
+    // Address
+    const street = tags["addr:street"] || "";
+    const housenumber = tags["addr:housenumber"] || "";
+    const streetAddress = [housenumber, street].filter(Boolean).join(" ");
+    const fullAddress =
+      streetAddress ||
+      tags["addr:full"] ||
+      `${areaConfig.name}, ${areaConfig.city}`;
 
-    // Build real Google Maps outbound search link
-    const cleanLocation = area ? `${area}, ${city}` : city;
-    const placeQuery = encodeURIComponent(`${cleanName}, ${cleanLocation}, ${country}`);
-    const googleMapsUri = `https://www.google.com/maps/search/?api=1&query=${placeQuery}`;
+    // Ratings/reviews are null (Data Honesty)
+    const rating = null;
+    const userRatingCount = null;
 
-    // Compute lead score based on honest signals
-    const scoreRes = calculateLeadScore({
-      websiteStatus,
+    // Outbound Google Maps search URL (real, un-scraped link)
+    const encodedSearch = encodeURIComponent(
+      `${cleanName}, ${areaConfig.name}, ${areaConfig.city}`
+    );
+    const googleMapsUri = `https://www.google.com/maps/search/?api=1&query=${encodedSearch}`;
+
+    const scoreResult = calculateLeadScore({
       phoneStatus,
+      email,
       emailStatus,
-      rating: 0,
-      userRatingCount: 0,
+      websiteStatus,
+      rating: null,
+      userRatingCount: null,
     });
 
-    // Compose formatted address from OSM tags or display name
-    const street = tags["addr:street"] || tags.road;
-    const houseNumber = tags["addr:housenumber"];
-    const postcode = tags["addr:postcode"];
-    let displayAddress = tags["addr:full"] || "";
-    if (!displayAddress) {
-      const parts = [
-        houseNumber ? `${houseNumber} ${street || ""}` : street,
-        areaConfig.name,
-        city,
-        postcode,
-      ].filter(Boolean);
-      displayAddress = parts.length > 0 ? parts.join(", ") : `${areaConfig.name}, ${city}`;
-    }
+    const leadScore = scoreResult.score;
+    const leadScoreTier = scoreResult.tier;
+
+    const dataQuality = assessDataQuality({
+      phoneStatus,
+      email,
+      emailStatus,
+      websiteStatus,
+    });
 
     leads.push({
-      id: `osm_${el.type}_${el.id}`,
-      placeId: `osm_${el.id}`,
+      id: `free_${el.type}_${el.id}`,
+      placeId: `osm_${el.type}_${el.id}`,
       source: "free_directory",
       name: cleanName,
       category: categoryLabel,
-      primaryType: tags.amenity || tags.shop || tags.office || category,
-      address: displayAddress,
+      primaryType: tags.amenity || tags.shop || tags.office || tags.craft || tags.leisure || category,
+      address: fullAddress,
       lat,
       lon,
       phone,
@@ -432,38 +468,35 @@ out center tags;`;
       phoneStatus,
       canWhatsApp,
       email,
+      emailProvenance: email ? "osm" : undefined,
       emailStatus,
-      emailProvenance,
       website,
       websiteStatus,
-      hasWebsite,
+      hasWebsite: websiteStatus === "Has Website",
       rating,
       userRatingCount,
       googleMapsUri,
-      googleMapsUrl: googleMapsUri,
-      googleMapsEmbedUrl: `https://maps.google.com/maps?q=${placeQuery}&hl=en&z=16&output=embed`,
-      googleMapsDirectionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${placeQuery}`,
       businessStatus: "OPERATIONAL",
-      leadScore: scoreRes.score,
-      leadScoreTier: scoreRes.tier,
-      dataQuality: assessDataQuality({
-        phoneStatus,
-        websiteStatus,
-        emailStatus,
-        address: displayAddress,
-        lat,
-        lon,
-      }),
+      dataQuality,
+      leadScore,
+      leadScoreTier,
       fetchedAt: now,
     });
   }
 
-  const unique = deduplicateLeads(leads);
+  console.log(
+    `[Dedupe Tier 2 & Haversine] Finished processing. Returning ${leads.length} validated leads for ${areaConfig.name}.`
+  );
+
+  // 8. Save to Server-Side Cache (7-day TTL)
+  const savedCache = saveToCache(areaId, category, leads);
 
   return {
-    leads: unique,
-    source: "free_live_directory",
-    total: unique.length,
+    leads,
+    source: "free_directory",
+    total: leads.length,
     areaConfig,
+    cached: false,
+    lastUpdated: savedCache.lastUpdated,
   };
 }
