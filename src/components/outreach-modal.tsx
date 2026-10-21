@@ -205,7 +205,7 @@ export function OutreachModal({
                 </span>
               ) : (
                 <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200 px-1.5 py-0.5 rounded">
-                  Unverified
+                  Format unverified
                 </span>
               )}
             </button>
@@ -238,9 +238,9 @@ export function OutreachModal({
             <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300 text-xs">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold">Phone number format unverified</p>
+                <p className="font-semibold">Phone format unverified</p>
                 <p className="text-[11px] opacity-90 mt-0.5">
-                  Direct WhatsApp link is disabled because {lead.phone || "the phone"} is not a verified E.164 mobile number. You can call the business or edit the phone number in My Leads.
+                  Direct WhatsApp link is disabled because {lead.phone || "the phone"} is not a valid E.164 mobile number. You can call the business or edit the phone number in My Leads.
                 </p>
               </div>
             </div>

@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "LeadGen Pro | High-Performance B2B Lead Generation Engine",
   description:
-    "Ultra-fast, zero-cost B2B lead discovery engine. Discover local businesses, phone numbers, verified emails, and target businesses without websites for high-conversion web development cold outreach worldwide.",
+    "Ultra-fast, zero-cost B2B lead discovery engine. Discover local businesses, phone numbers, direct emails, and target businesses without websites for high-conversion web development cold outreach worldwide.",
   keywords: [
     "Lead Generation",
     "B2B Leads",

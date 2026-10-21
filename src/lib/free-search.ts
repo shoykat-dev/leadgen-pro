@@ -279,13 +279,25 @@ export async function searchFreeLiveDirectory(
   if (!bypassCache) {
     const cachedEntry = getFromCache<BusinessLead[]>(areaId, category);
     if (cachedEntry) {
+      // Re-verify Haversine distance on cached rows to guarantee zero area leak
+      const strictlyWithinLeads = cachedEntry.data.filter((l) => {
+        if (l.lat === undefined || l.lat === null || l.lon === undefined || l.lon === null || isNaN(l.lat) || isNaN(l.lon)) return false;
+        const d = haversineDistanceMeters(centerLat, centerLon, l.lat, l.lon);
+        return d <= radiusMeters;
+      });
+
       console.log(
-        `[ServerCache HIT] Key: (${areaId}, ${category}) -> Returned ${cachedEntry.data.length} leads instantly. Last updated: ${cachedEntry.lastUpdated}`
+        `[ServerCache HIT] Key: (${areaId}, ${category}) -> Returned ${strictlyWithinLeads.length} leads strictly within ${radiusMeters}m. Last updated: ${cachedEntry.lastUpdated}`
       );
+      for (const l of strictlyWithinLeads) {
+        const d = haversineDistanceMeters(centerLat, centerLon, l.lat!, l.lon!);
+        console.log(`[Haversine Cache Audit] ${l.name.padEnd(38)}: ${d.toFixed(1).padStart(6)}m / ${radiusMeters}m <= ${radiusMeters}m [PASS]`);
+      }
+
       return {
-        leads: cachedEntry.data,
+        leads: strictlyWithinLeads,
         source: "free_directory",
-        total: cachedEntry.data.length,
+        total: strictlyWithinLeads.length,
         areaConfig,
         cached: true,
         lastUpdated: cachedEntry.lastUpdated,
@@ -413,7 +425,7 @@ export async function searchFreeLiveDirectory(
       if (pRes.phoneStatus === "Valid") {
         phone = pRes.phone;
         phoneE164 = pRes.phoneE164;
-        phoneStatus = "Format valid"; // Display format verified only (no fabricated 'Verified Mobile')
+        phoneStatus = "Format valid"; // Phone format is valid (OSM)
         canWhatsApp = pRes.canWhatsApp;
       }
     }
@@ -773,17 +785,40 @@ export async function searchFreeLiveDirectory(
     });
   }
 
+  // 8. FINAL MANDATORY HAVERSINE POST-FILTER ON THE COMPLETED RESULT LIST:
+  // Must run on the FINAL result list on EVERY element type (node, way, relation).
+  // Any result with missing, NaN, or unresolved coordinates is strictly EXCLUDED.
+  const finalFilteredLeads: BusinessLead[] = [];
+  for (const lead of leads) {
+    if (lead.lat === undefined || lead.lat === null || lead.lon === undefined || lead.lon === null || isNaN(lead.lat) || isNaN(lead.lon)) {
+      console.warn(`[Area Radius Audit] EXCLUDED "${lead.name}" (${lead.id}): missing coordinates`);
+      continue;
+    }
+
+    const distMeters = haversineDistanceMeters(centerLat, centerLon, lead.lat, lead.lon);
+    const isWithin = distMeters <= radiusMeters;
+
+    // Auditable debug log: per search, log every returned business with its computed distance in meters from area center
+    console.log(
+      `[Haversine Distance Audit] ${lead.name.padEnd(38)}: ${distMeters.toFixed(1).padStart(6)}m / ${radiusMeters}m <= ${radiusMeters}m [${isWithin ? "PASS" : "EXCLUDED"}]`
+    );
+
+    if (isWithin) {
+      finalFilteredLeads.push(lead);
+    }
+  }
+
   console.log(
-    `[Dedupe Tier 2 & Haversine & Overture] Finished processing. Returning ${leads.length} validated leads for ${areaConfig.name}.`
+    `[Final Post-Filter] ${finalFilteredLeads.length} / ${leads.length} leads strictly confirmed within ${radiusMeters}m of ${areaConfig.name} center (${centerLat}, ${centerLon}).`
   );
 
-  // 8. Save to Server-Side Cache (7-day TTL)
-  const savedCache = saveToCache(areaId, category, leads);
+  // 9. Save to Server-Side Cache (7-day TTL)
+  const savedCache = saveToCache(areaId, category, finalFilteredLeads);
 
   return {
-    leads,
+    leads: finalFilteredLeads,
     source: "free_directory",
-    total: leads.length,
+    total: finalFilteredLeads.length,
     areaConfig,
     cached: false,
     lastUpdated: savedCache.lastUpdated,

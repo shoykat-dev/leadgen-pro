@@ -105,7 +105,7 @@ export function SearchPanel({
     }));
   }, [countries]);
 
-  // States/Divisions list based on country using our authoritative verified hierarchy
+  // States/Divisions list based on country using our authoritative curated hierarchy
   const states = useMemo(() => {
     if (!selectedCountryCode) return [];
     return getStatesForCountry(selectedCountryCode);
@@ -162,11 +162,11 @@ export function SearchPanel({
     const countryObj = countries.find((c) => c.isoCode === countryCode);
     const countryName = countryObj?.name || countryCode;
 
+    // Reset child dropdowns: State, City, and Area become empty (no silent auto-pick)
     const newStates = getStatesForCountry(countryCode);
     let nextStateCode = "";
     let nextStateName = "";
     let nextCityName = "";
-    let nextAreaName = "";
 
     if (newStates.length > 0) {
       nextStateCode = newStates[0].code;
@@ -177,24 +177,16 @@ export function SearchPanel({
       if (newCities.length > 0) {
         nextCityName = newCities[0].name;
         setSelectedCityName(nextCityName);
-        const newAreas = getAreasForHierarchyCity(countryCode, nextStateCode, nextCityName);
-        nextAreaName = newAreas[0] || nextCityName;
-        setSelectedArea(nextAreaName);
       } else {
-        nextCityName = nextStateName;
-        nextAreaName = nextCityName;
-        setSelectedCityName(nextCityName);
-        setSelectedArea(nextAreaName);
+        setSelectedCityName("");
       }
     } else {
-      nextStateCode = "ALL";
-      nextStateName = countryName;
-      nextCityName = countryName;
-      nextAreaName = countryName;
-      setSelectedStateCode(nextStateCode);
-      setSelectedCityName(nextCityName);
-      setSelectedArea(nextAreaName);
+      setSelectedStateCode("");
+      setSelectedCityName("");
     }
+
+    // MANDATORY BUG 2 FIX: Area must be empty with placeholder "Select area"
+    setSelectedArea("");
 
     onLocationChange?.({
       country: countryName,
@@ -202,7 +194,7 @@ export function SearchPanel({
       state: nextStateName,
       stateCode: nextStateCode,
       city: nextCityName,
-      area: nextAreaName,
+      area: "",
     });
   };
 
@@ -215,20 +207,15 @@ export function SearchPanel({
 
     const newCities = getCitiesForState(selectedCountryCode, stateCode);
     let nextCityName = "";
-    let nextAreaName = "";
-
     if (newCities.length > 0) {
       nextCityName = newCities[0].name;
       setSelectedCityName(nextCityName);
-      const newAreas = getAreasForHierarchyCity(selectedCountryCode, stateCode, nextCityName);
-      nextAreaName = newAreas[0] || nextCityName;
-      setSelectedArea(nextAreaName);
     } else {
-      nextCityName = stateName;
-      nextAreaName = nextCityName;
-      setSelectedCityName(nextCityName);
-      setSelectedArea(nextAreaName);
+      setSelectedCityName("");
     }
+
+    // MANDATORY BUG 2 FIX: Area must be empty on State change
+    setSelectedArea("");
 
     const countryObj = countries.find((c) => c.isoCode === selectedCountryCode);
     onLocationChange?.({
@@ -237,7 +224,7 @@ export function SearchPanel({
       state: stateName,
       stateCode,
       city: nextCityName,
-      area: nextAreaName,
+      area: "",
     });
   };
 
@@ -245,9 +232,9 @@ export function SearchPanel({
   const handleCityChange = (cityName: string) => {
     if (searchError) setSearchError(null);
     setSelectedCityName(cityName);
-    const newAreas = getAreasForHierarchyCity(selectedCountryCode, selectedStateCode, cityName);
-    const nextAreaName = newAreas[0] || cityName;
-    setSelectedArea(nextAreaName);
+
+    // MANDATORY BUG 2 FIX: Area must be empty on City change
+    setSelectedArea("");
 
     const countryObj = countries.find((c) => c.isoCode === selectedCountryCode);
     const stateObj = states.find((s) => s.code === selectedStateCode);
@@ -257,7 +244,7 @@ export function SearchPanel({
       state: stateObj?.name || selectedStateCode,
       stateCode: selectedStateCode,
       city: cityName,
-      area: nextAreaName,
+      area: "",
     });
   };
 
@@ -282,6 +269,11 @@ export function SearchPanel({
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (isLoading) return;
+
+    if (!selectedArea || !selectedArea.trim()) {
+      setSearchError("Please select an area before searching.");
+      return;
+    }
 
     if (searchError) setSearchError(null);
     setIsLoading(true);
@@ -421,7 +413,7 @@ export function SearchPanel({
                 {areaList.length} Areas
               </span>
             }
-            placeholder="Select or type area..."
+            placeholder="Select area"
             searchPlaceholder="Search or type neighborhood..."
             value={selectedArea}
             onChange={handleAreaChange}
@@ -563,7 +555,7 @@ export function SearchPanel({
 
           <Button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || !selectedArea.trim()}
             size="lg"
             className="w-full sm:w-auto min-w-[200px] flex items-center justify-center gap-2 rounded-xl h-11 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
           >

@@ -83,7 +83,7 @@ export default function SignInPage() {
               LeadGen <span className="text-blue-600 dark:text-blue-400">Pro</span>
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Sign in to access global business leads & verified contacts
+              Sign in to access global business leads & direct contacts
             </p>
           </div>
 

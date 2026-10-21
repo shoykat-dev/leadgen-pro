@@ -154,7 +154,7 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
             className="w-full h-full"
           />
 
-          {/* Floating Verified Business Information Card on top of Map */}
+          {/* Floating Business Information Card on top of Map */}
           <div className="absolute top-3 left-3 z-10 max-w-[280px] sm:max-w-xs rounded-xl bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-md p-3 shadow-xl border border-slate-200/90 dark:border-slate-700 pointer-events-auto">
             <div className="flex items-start justify-between gap-1.5 mb-1.5">
               <div>

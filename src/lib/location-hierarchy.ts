@@ -2173,7 +2173,7 @@ const CURATED_HIERARCHIES: Record<string, LocationState[]> = {
 
 /**
  * Universal resolver for States/Regions of ANY country:
- * If the country is in our verified curated list, it returns the 100% verified hierarchical structure.
+ * If the country is in our curated list, it returns the 100% curated hierarchical structure.
  * Otherwise, it queries `country-state-city` and cleans duplicate/corrupted entries.
  */
 export function getStatesForCountry(countryCode: string): LocationState[] {

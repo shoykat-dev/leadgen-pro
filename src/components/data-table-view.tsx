@@ -83,15 +83,24 @@ export function DataTableView({
   const [websiteFilter, setWebsiteFilter] = useState<WebsiteFilterType>("all");
   const [phoneFilter, setPhoneFilter] = useState<boolean>(false);
   const [emailFilter, setEmailFilter] = useState<boolean>(false);
-  const [minRating, setMinRating] = useState<number>(0);
-  const [minReviews, setMinReviews] = useState<number>(0);
   const [scoreTierFilter, setScoreTierFilter] = useState<string>("all");
   const [hideContacted, setHideContacted] = useState<boolean>(false);
   const [tableSearch, setTableSearch] = useState<string>("");
-  const [sortBy, setSortBy] = useState<"score" | "rating" | "reviews" | "name">("score");
+  const [sortBy, setSortBy] = useState<"score" | "name">("score");
 
   // Selection state
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
+
+  // BUG 3 FIX: Reset all quick filters to default on every new search / parameter change
+  useEffect(() => {
+    setWebsiteFilter("all");
+    setPhoneFilter(false);
+    setEmailFilter(false);
+    setScoreTierFilter("all");
+    setHideContacted(false);
+    setTableSearch("");
+    setSelectedLeadIds(new Set());
+  }, [leads, categoryLabel, searchLocation.area, searchLocation.city]);
 
   // Modal states
   const [outreachLead, setOutreachLead] = useState<BusinessLead | null>(null);
@@ -122,19 +131,13 @@ export function DataTableView({
       const activeEmail = localEmails[lead.id]?.email || lead.email;
       if (emailFilter && (!activeEmail || lead.emailStatus === "Missing")) return false;
 
-      // 4. Min Rating
-      if (minRating > 0 && (lead.rating || 0) < minRating) return false;
-
-      // 5. Min Reviews
-      if (minReviews > 0 && (lead.userRatingCount || 0) < minReviews) return false;
-
-      // 6. Score Tier
+      // 4. Score Tier
       if (scoreTierFilter !== "all" && lead.leadScoreTier !== scoreTierFilter) return false;
 
-      // 7. Hide Contacted
+      // 5. Hide Contacted
       if (hideContacted && lead.crmStatus === "Contacted") return false;
 
-      // 8. Search query
+      // 6. Search query
       if (tableSearch.trim()) {
         const q = tableSearch.toLowerCase();
         const matchesName = lead.name.toLowerCase().includes(q);
@@ -151,8 +154,6 @@ export function DataTableView({
     // Sort
     list.sort((a, b) => {
       if (sortBy === "score") return b.leadScore - a.leadScore;
-      if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
-      if (sortBy === "reviews") return (b.userRatingCount || 0) - (a.userRatingCount || 0);
       if (sortBy === "name") return a.name.localeCompare(b.name);
       return 0;
     });
@@ -163,8 +164,6 @@ export function DataTableView({
     websiteFilter,
     phoneFilter,
     emailFilter,
-    minRating,
-    minReviews,
     scoreTierFilter,
     hideContacted,
     tableSearch,
@@ -407,6 +406,10 @@ export function DataTableView({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    // Show on-screen confirmation toast
+    setSavedSuccessMsg(`CSV downloaded: ${targetLeads.length} leads`);
+    setTimeout(() => setSavedSuccessMsg(null), 3000);
   };
 
   const handleCopy = (text: string, id: string) => {
@@ -589,7 +592,7 @@ export function DataTableView({
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="w-3.5 h-3.5 text-blue-600" />
             <span>Filters & Sort</span>
-            {(phoneFilter || emailFilter || hideContacted || minReviews > 0 || scoreTierFilter !== "all") && (
+            {(phoneFilter || emailFilter || hideContacted || scoreTierFilter !== "all") && (
               <span className="h-2 w-2 rounded-full bg-blue-600" />
             )}
           </div>
@@ -683,7 +686,6 @@ export function DataTableView({
               setPhoneFilter(false);
               setEmailFilter(false);
               setScoreTierFilter("all");
-              setMinReviews(0);
               setTableSearch("");
             }}
             className="text-xs rounded-xl"
@@ -891,28 +893,36 @@ export function DataTableView({
                           <Mail className="w-3.5 h-3.5 text-blue-500 shrink-0" />
                           <span className="truncate">{activeEmail}</span>
                         </a>
-                        <span
-                          className={`text-[9px] px-1.5 py-0.5 rounded shrink-0 font-medium ${
-                            activeEmailStatus === "Found on website"
-                              ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
-                              : lead.fieldAttribution?.email === "overture"
-                              ? "bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800"
-                              : "bg-slate-100 dark:bg-slate-800 text-slate-500"
-                          }`}
-                          title={
-                            activeEmailStatus === "Found on website"
-                              ? `Found on website: ${localEmails[lead.id]?.sourceUrl || lead.emailSourceUrl || lead.website}`
-                              : lead.fieldAttribution?.email === "overture"
-                              ? "Source: Overture Places"
-                              : "Source: OpenStreetMap"
-                          }
-                        >
-                          {activeEmailStatus === "Found on website"
-                            ? "Found on website"
-                            : lead.fieldAttribution?.email === "overture"
-                            ? "Overture"
-                            : "OpenStreetMap"}
-                        </span>
+                        {(() => {
+                          const isFoundOnWebsite =
+                            activeEmailStatus === "Found on website" &&
+                            lead.websiteStatus !== "No Website" &&
+                            Boolean(lead.website);
+                          return (
+                            <span
+                              className={`text-[9px] px-1.5 py-0.5 rounded shrink-0 font-medium ${
+                                isFoundOnWebsite
+                                  ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
+                                  : lead.fieldAttribution?.email === "overture"
+                                  ? "bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                              }`}
+                              title={
+                                isFoundOnWebsite
+                                  ? `Found on website: ${localEmails[lead.id]?.sourceUrl || lead.emailSourceUrl || lead.website}`
+                                  : lead.fieldAttribution?.email === "overture"
+                                  ? "Source: Overture Places"
+                                  : "Source: OpenStreetMap"
+                              }
+                            >
+                              {isFoundOnWebsite
+                                ? "Found on website"
+                                : lead.fieldAttribution?.email === "overture"
+                                ? "Overture"
+                                : "OpenStreetMap"}
+                            </span>
+                          );
+                        })()}
                         <button
                           type="button"
                           onClick={() => handleCopy(activeEmail, lead.id + "-email")}
@@ -1215,28 +1225,36 @@ export function DataTableView({
                               </button>
                             </div>
                             <div className="text-[10px] text-slate-500">
-                              <span
-                                className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${
-                                  activeEmailStatus === "Found on website"
-                                    ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
-                                    : lead.fieldAttribution?.email === "overture"
-                                    ? "bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800"
-                                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                                }`}
-                                title={
-                                  activeEmailStatus === "Found on website"
-                                    ? `Found on website: ${localEmails[lead.id]?.sourceUrl || lead.emailSourceUrl || lead.website}`
-                                    : lead.fieldAttribution?.email === "overture"
-                                    ? "Source: Overture Places"
-                                    : "Source: OpenStreetMap"
-                                }
-                              >
-                                {activeEmailStatus === "Found on website"
-                                  ? "Found on website"
-                                  : lead.fieldAttribution?.email === "overture"
-                                  ? "Overture"
-                                  : "OpenStreetMap"}
-                              </span>
+                              {(() => {
+                                const isFoundOnWebsite =
+                                  activeEmailStatus === "Found on website" &&
+                                  lead.websiteStatus !== "No Website" &&
+                                  Boolean(lead.website);
+                                return (
+                                  <span
+                                    className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${
+                                      isFoundOnWebsite
+                                        ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
+                                        : lead.fieldAttribution?.email === "overture"
+                                        ? "bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800"
+                                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                                    }`}
+                                    title={
+                                      isFoundOnWebsite
+                                        ? `Found on website: ${localEmails[lead.id]?.sourceUrl || lead.emailSourceUrl || lead.website}`
+                                        : lead.fieldAttribution?.email === "overture"
+                                        ? "Source: Overture Places"
+                                        : "Source: OpenStreetMap"
+                                    }
+                                  >
+                                    {isFoundOnWebsite
+                                      ? "Found on website"
+                                      : lead.fieldAttribution?.email === "overture"
+                                      ? "Overture"
+                                      : "OpenStreetMap"}
+                                  </span>
+                                );
+                              })()}
                             </div>
                           </div>
                         ) : lead.websiteStatus === "Has Website" ? (

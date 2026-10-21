@@ -33,6 +33,8 @@ function getCacheDir(): string {
   return dir;
 }
 
+export const CACHE_VERSION = "v4_prompt4";
+
 function sanitizeKey(key: string): string {
   return key.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
 }
@@ -40,7 +42,22 @@ function sanitizeKey(key: string): string {
 export function buildCacheKey(areaId: string, categoryId: string): string {
   const cleanArea = sanitizeKey(areaId);
   const cleanCat = sanitizeKey(categoryId);
-  return `${cleanArea}__${cleanCat}`;
+  return `${CACHE_VERSION}__${cleanArea}__${cleanCat}`;
+}
+
+export function clearAllCache(): void {
+  memoryCache.clear();
+  try {
+    const dir = getCacheDir();
+    if (fs.existsSync(dir)) {
+      const files = fs.readdirSync(dir);
+      for (const f of files) {
+        fs.unlinkSync(path.join(dir, f));
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to clear disk cache", err);
+  }
 }
 
 export function formatLastUpdated(dateStr: string): string {

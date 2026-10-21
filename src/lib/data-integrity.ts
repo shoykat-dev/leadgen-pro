@@ -347,7 +347,7 @@ export function classifyWebsite(rawUrl: string | null | undefined): {
 /**
  * Calculates Lead Score (0–100) using ONLY real signals (Prompt 3 Part C):
  * - No website (+40) / Social only (+30) -> High pitch opportunity for web development
- * - Has phone (+20) -> Valid or format verified phone for calling/WhatsApp
+ * - Has phone (+20) -> Valid format phone for calling/WhatsApp
  * - Has Facebook/social (+15) -> Confirmed digital presence via Facebook, Instagram, or LinkedIn
  * - Has email (+15) -> Real email found on website or directory
  * - Recently updated source record (+10) -> Source timestamp active within the last 180 days
@@ -372,7 +372,7 @@ export function calculateLeadScore(lead: Partial<BusinessLead>): {
   // 2. Has Phone
   if (lead.phoneStatus === "Valid" || lead.phoneStatus === "Format valid") {
     score += 20;
-    reasons.push({ reason: "Verified direct phone number", points: 20 });
+    reasons.push({ reason: "Phone present in OSM record", points: 20 });
   } else if (lead.phone && lead.phoneStatus !== "Missing") {
     score += 10;
     reasons.push({ reason: "Phone number available", points: 10 });
@@ -394,8 +394,8 @@ export function calculateLeadScore(lead: Partial<BusinessLead>): {
     score += 15;
     reasons.push({
       reason: lead.emailStatus === "Found on website"
-        ? "Verified email extracted from company website"
-        : "Email address available in verified directory",
+        ? "Email extracted from company website"
+        : "Email address available in directory record",
       points: 15,
     });
   }
@@ -429,7 +429,7 @@ export function calculateLeadScore(lead: Partial<BusinessLead>): {
  * Computes overall data quality badge:
  * - High: Valid phone + Valid email or Website
  * - Medium: Valid phone or Valid Website
- * - Low: Unverified phone and No website
+ * - Low: Invalid/missing phone and No website
  */
 export function assessDataQuality(lead: Partial<BusinessLead>): "High" | "Medium" | "Low" {
   const hasValidPhone = lead.phoneStatus === "Valid";

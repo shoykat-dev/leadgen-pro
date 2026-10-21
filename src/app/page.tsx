@@ -354,10 +354,14 @@ export default function DashboardPage() {
 
                 <div className="space-y-1">
                   <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white px-2">
-                    Ready to discover verified businesses in {searchLocation.area}, {searchLocation.city}
+                    {searchLocation.area
+                      ? `Ready to discover local businesses in ${searchLocation.area}, ${searchLocation.city}`
+                      : searchLocation.city
+                      ? `Select an area to discover local businesses in ${searchLocation.city}`
+                      : "Select a location to discover local businesses"}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto px-2">
-                    Choose an action below to start building your outreach pipeline. All data is verified with zero mock records.
+                    Choose an action below to start building your outreach pipeline. Pure genuine source data with zero mock records.
                   </p>
                 </div>
 
