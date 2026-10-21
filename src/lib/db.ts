@@ -153,7 +153,9 @@ function initTables(db: DatabaseSync) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS overture_places (
       id TEXT PRIMARY KEY,
+      gers_id TEXT,
       name TEXT NOT NULL,
+      category TEXT,
       categories TEXT,
       lat REAL NOT NULL,
       lon REAL NOT NULL,
@@ -161,13 +163,30 @@ function initTables(db: DatabaseSync) {
       emails TEXT,
       websites TEXT,
       socials TEXT,
-      addresses TEXT,
+      facebook_url TEXT,
+      address_freeform TEXT,
+      locality TEXT,
+      region TEXT,
+      postcode TEXT,
+      country TEXT,
+      operating_status TEXT,
+      confidence REAL,
       sources TEXT,
+      sources_json TEXT,
       release_version TEXT,
+      release_tag TEXT,
+      imported_at TEXT,
+      last_seen_release TEXT,
       updated_at TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_overture_places_lat_lon ON overture_places(lat, lon);
   `);
+  const extraCols = ["gers_id", "category", "facebook_url", "address_freeform", "locality", "region", "postcode", "country", "operating_status", "confidence", "sources_json", "release_tag", "imported_at", "last_seen_release"];
+  for (const col of extraCols) {
+    try {
+      db.exec(`ALTER TABLE overture_places ADD COLUMN ${col} TEXT;`);
+    } catch {}
+  }
 
   // 9. Real Website Enrichment Cache (30-day TTL)
   db.exec(`
@@ -566,15 +585,28 @@ export interface OverturePlaceRecord {
 export function upsertOverturePlace(place: OverturePlaceRecord): void {
   const db = getDb();
   const now = place.updated_at || new Date().toISOString();
+  const fb = (place.socials || []).find((s: string) => s.toLowerCase().includes("facebook.com") || s.toLowerCase().includes("fb.com")) || null;
+  const freeform = place.addresses?.[0]?.freeform || null;
+  const locality = place.addresses?.[0]?.locality || null;
+  const region = place.addresses?.[0]?.region || null;
+  const postcode = place.addresses?.[0]?.postcode || null;
+  const country = place.addresses?.[0]?.country || "BD";
+  const primaryCat = place.categories?.[0] || null;
 
   const stmt = db.prepare(`
     INSERT INTO overture_places (
-      id, name, categories, lat, lon, phones, emails, websites, socials, addresses, sources, release_version, updated_at
+      id, gers_id, name, category, categories, lat, lon, phones, emails, websites, socials, facebook_url,
+      address_freeform, locality, region, postcode, country, operating_status, confidence,
+      sources, sources_json, release_version, release_tag, imported_at, updated_at
     ) VALUES (
-      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?, ?
     )
     ON CONFLICT(id) DO UPDATE SET
+      gers_id = excluded.gers_id,
       name = excluded.name,
+      category = excluded.category,
       categories = excluded.categories,
       lat = excluded.lat,
       lon = excluded.lon,
@@ -582,15 +614,27 @@ export function upsertOverturePlace(place: OverturePlaceRecord): void {
       emails = excluded.emails,
       websites = excluded.websites,
       socials = excluded.socials,
-      addresses = excluded.addresses,
+      facebook_url = excluded.facebook_url,
+      address_freeform = excluded.address_freeform,
+      locality = excluded.locality,
+      region = excluded.region,
+      postcode = excluded.postcode,
+      country = excluded.country,
+      operating_status = excluded.operating_status,
+      confidence = excluded.confidence,
       sources = excluded.sources,
+      sources_json = excluded.sources_json,
       release_version = excluded.release_version,
+      release_tag = excluded.release_tag,
+      imported_at = excluded.imported_at,
       updated_at = excluded.updated_at
   `);
 
   stmt.run(
     place.id,
+    place.id,
     place.name,
+    primaryCat,
     JSON.stringify(place.categories || []),
     place.lat,
     place.lon,
@@ -598,56 +642,27 @@ export function upsertOverturePlace(place: OverturePlaceRecord): void {
     JSON.stringify(place.emails || []),
     JSON.stringify(place.websites || []),
     JSON.stringify(place.socials || []),
-    JSON.stringify(place.addresses || []),
+    fb,
+    freeform,
+    locality,
+    region,
+    postcode,
+    country,
+    "open",
+    1.0,
+    JSON.stringify(place.sources || []),
     JSON.stringify(place.sources || []),
     place.release_version || "latest",
+    place.release_version || "latest",
+    now,
     now
   );
 }
 
 export function upsertOverturePlaces(places: OverturePlaceRecord[]): { insertedCount: number } {
-  const db = getDb();
-  const now = new Date().toISOString();
-
-  const stmt = db.prepare(`
-    INSERT INTO overture_places (
-      id, name, categories, lat, lon, phones, emails, websites, socials, addresses, sources, release_version, updated_at
-    ) VALUES (
-      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-    )
-    ON CONFLICT(id) DO UPDATE SET
-      name = excluded.name,
-      categories = excluded.categories,
-      lat = excluded.lat,
-      lon = excluded.lon,
-      phones = excluded.phones,
-      emails = excluded.emails,
-      websites = excluded.websites,
-      socials = excluded.socials,
-      addresses = excluded.addresses,
-      sources = excluded.sources,
-      release_version = excluded.release_version,
-      updated_at = excluded.updated_at
-  `);
-
   for (const place of places) {
-    stmt.run(
-      place.id,
-      place.name,
-      JSON.stringify(place.categories || []),
-      place.lat,
-      place.lon,
-      JSON.stringify(place.phones || []),
-      JSON.stringify(place.emails || []),
-      JSON.stringify(place.websites || []),
-      JSON.stringify(place.socials || []),
-      JSON.stringify(place.addresses || []),
-      JSON.stringify(place.sources || []),
-      place.release_version || "latest",
-      place.updated_at || now
-    );
+    upsertOverturePlace(place);
   }
-
   return { insertedCount: places.length };
 }
 
