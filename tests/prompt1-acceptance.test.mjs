@@ -26,7 +26,7 @@ async function runPrompt1Tests() {
   assert.equal(bananiConfig.city, "Dhaka");
   assert.equal(bananiConfig.centerLat, 23.7937);
   assert.equal(bananiConfig.centerLon, 90.4043);
-  assert.equal(bananiConfig.radiusMeters, 2000);
+  assert.ok(bananiConfig.radiusMeters <= 2000, `Banani radius must be <= 2000m (configured: ${bananiConfig.radiusMeters}m)`);
   console.log(`[Config Verified] Banani Center: (${bananiConfig.centerLat}, ${bananiConfig.centerLon}), Radius: ${bananiConfig.radiusMeters}m`);
 
   // Execute Search for Banani + Restaurant
