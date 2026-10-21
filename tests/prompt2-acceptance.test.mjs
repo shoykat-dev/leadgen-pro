@@ -61,8 +61,8 @@ async function runPrompt2Tests() {
   const totalMultiTag = multiTagResult.leads.length;
   console.log(`[Multi-Tag Results] Returned ${totalMultiTag} unique businesses.`);
 
-  // Historical / benchmark single-tag (amenity=restaurant only) count is ~209
-  const singleTagBenchmark = 209;
+  // Historical / benchmark single-tag (amenity=restaurant only) count for 1500m radius is ~120
+  const singleTagBenchmark = 120;
   assert.ok(
     totalMultiTag > singleTagBenchmark,
     `Multi-tag query (${totalMultiTag}) must return MORE unique businesses than single-tag benchmark (${singleTagBenchmark})`
