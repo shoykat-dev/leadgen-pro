@@ -151,9 +151,15 @@ export function DataTableView({
       return true;
     });
 
-    // Sort
+    // Sort (Prompt 5 Bug 4: within same lead score, leads WITH full street address come before placeholder ones)
     list.sort((a, b) => {
-      if (sortBy === "score") return b.leadScore - a.leadScore;
+      if (sortBy === "score") {
+        if (b.leadScore !== a.leadScore) return b.leadScore - a.leadScore;
+        const aHas = a.hasStreetAddress !== false ? 1 : 0;
+        const bHas = b.hasStreetAddress !== false ? 1 : 0;
+        if (bHas !== aHas) return bHas - aHas;
+        return (a.distanceMeters || 0) - (b.distanceMeters || 0);
+      }
       if (sortBy === "name") return a.name.localeCompare(b.name);
       return 0;
     });
@@ -327,6 +333,9 @@ export function DataTableView({
       "Website Status",
       "Facebook / Social",
       "Address",
+      "Address Type",
+      "Contact Warning",
+      "Email Warning",
       "Lead Score",
       "Score Tier",
       "Score Reasons",
@@ -385,6 +394,9 @@ export function DataTableView({
         `"${l.websiteStatus}"`,
         `"${facebookOrSocial.replace(/"/g, '""')}"`,
         `"${l.address.replace(/"/g, '""')}"`,
+        `"${l.hasStreetAddress ? "Full Street Address" : "No street address"}"`,
+        `"${(l.contactWarning || "").replace(/"/g, '""')}"`,
+        `"${(l.emailWarning || "").replace(/"/g, '""')}"`,
         l.leadScore,
         `"${l.leadScoreTier}"`,
         `"${scoreReasonsStr.replace(/"/g, '""')}"`,
@@ -768,10 +780,15 @@ export function DataTableView({
                             </a>
                           )}
                         </div>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5">
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5 flex-wrap">
                           <span>{lead.category}</span>
                           <span>•</span>
                           <span className="truncate">{lead.address}</span>
+                          {lead.hasStreetAddress === false && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-semibold border border-slate-200 dark:border-slate-700">
+                              No street address
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -959,6 +976,18 @@ export function DataTableView({
                       <div className="text-[11px] text-slate-400">Email: <span className="text-slate-400">Not available</span></div>
                     )}
                   </div>
+
+                  {/* Contact & Email Warnings (Prompt 5 Bug 5) */}
+                  {lead.contactWarning && (
+                    <div className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-2 py-1 rounded border border-amber-200 dark:border-amber-800">
+                      ⚠ {lead.contactWarning}
+                    </div>
+                  )}
+                  {lead.emailWarning && (
+                    <div className="text-[10px] font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 px-2 py-1 rounded border border-rose-200 dark:border-rose-800">
+                      ⚠ {lead.emailWarning}
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Buttons Footer */}
@@ -1199,6 +1228,13 @@ export function DataTableView({
                                 ({lead.fieldAttribution?.phone === "overture" ? "Overture" : "OSM"})
                               </span>
                             </div>
+                            {lead.contactWarning && (
+                              <div className="pt-0.5">
+                                <span className="inline-flex text-[9px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                                  {lead.contactWarning}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <span className="text-xs text-slate-400">Not available</span>
@@ -1256,6 +1292,20 @@ export function DataTableView({
                                 );
                               })()}
                             </div>
+                            {lead.emailWarning && (
+                              <div className="pt-0.5">
+                                <span className="inline-flex text-[9px] font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-800">
+                                  {lead.emailWarning}
+                                </span>
+                              </div>
+                            )}
+                            {lead.contactWarning && !lead.emailWarning && (
+                              <div className="pt-0.5">
+                                <span className="inline-flex text-[9px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                                  {lead.contactWarning}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         ) : lead.websiteStatus === "Has Website" ? (
                           <button
@@ -1319,9 +1369,30 @@ export function DataTableView({
 
                       {/* Address */}
                       <TableCell className="py-3 px-3 align-middle text-xs text-slate-600 dark:text-slate-400">
-                        <span className="block truncate max-w-[200px]" title={lead.address}>
-                          {lead.address}
-                        </span>
+                        <div className="space-y-1">
+                          <span
+                            className={`block truncate max-w-[220px] ${
+                              lead.hasStreetAddress === false
+                                ? "italic text-slate-400 dark:text-slate-500"
+                                : ""
+                            }`}
+                            title={lead.address}
+                          >
+                            {lead.address}
+                          </span>
+                          {lead.hasStreetAddress === false && (
+                            <div className="flex flex-wrap items-center gap-1">
+                              <span className="inline-flex text-[9px] font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                                No street address
+                              </span>
+                              {lead.secondaryLocation && (
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate max-w-[130px]" title={lead.secondaryLocation}>
+                                  {lead.secondaryLocation}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
 
                       {/* Outreach & CRM Actions */}

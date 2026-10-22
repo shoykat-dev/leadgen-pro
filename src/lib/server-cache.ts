@@ -33,16 +33,21 @@ function getCacheDir(): string {
   return dir;
 }
 
-export const CACHE_VERSION = "v4_prompt4";
+export const CACHE_VERSION = "v5_worldwide";
 
 function sanitizeKey(key: string): string {
   return key.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
 }
 
-export function buildCacheKey(areaId: string, categoryId: string): string {
+export function buildCacheKey(
+  areaId: string,
+  categoryId: string,
+  radiusMeters?: number
+): string {
   const cleanArea = sanitizeKey(areaId);
   const cleanCat = sanitizeKey(categoryId);
-  return `${CACHE_VERSION}__${cleanArea}__${cleanCat}`;
+  const radiusPart = radiusMeters ? `__r${radiusMeters}` : "";
+  return `${CACHE_VERSION}__${cleanArea}__${cleanCat}${radiusPart}`;
 }
 
 export function clearAllCache(): void {
@@ -78,9 +83,10 @@ export function formatLastUpdated(dateStr: string): string {
  */
 export function getFromCache<T>(
   areaId: string,
-  categoryId: string
+  categoryId: string,
+  radiusMeters?: number
 ): CachedDirectoryResult<T> | null {
-  const key = buildCacheKey(areaId, categoryId);
+  const key = buildCacheKey(areaId, categoryId, radiusMeters);
   const now = Date.now();
 
   // 1. Check in-memory cache first
@@ -127,9 +133,10 @@ export function getFromCache<T>(
 export function saveToCache<T>(
   areaId: string,
   categoryId: string,
-  data: T
+  data: T,
+  radiusMeters?: number
 ): CachedDirectoryResult<T> {
-  const key = buildCacheKey(areaId, categoryId);
+  const key = buildCacheKey(areaId, categoryId, radiusMeters);
   const now = new Date();
   const cachedAt = now.toISOString();
   const lastUpdated = formatLastUpdated(cachedAt);

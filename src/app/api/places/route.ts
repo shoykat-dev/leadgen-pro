@@ -80,6 +80,7 @@ export async function POST(req: NextRequest) {
       cached = freeRes.cached || false;
       lastUpdated = freeRes.lastUpdated;
       engineSource = "free_directory";
+      var resultHeaderNote = freeRes.resultHeaderNote;
     }
 
     return NextResponse.json({
@@ -98,22 +99,26 @@ export async function POST(req: NextRequest) {
       cached,
       lastUpdated,
       engineSource,
+      resultHeaderNote,
     });
   } catch (error: any) {
     console.error("[/api/places forwarder error]:", error.message);
+    const isCouldNotLocate = error.message?.includes("Could not locate");
     const isBusy = error.message?.includes("busy") || error.message?.includes("Overpass");
     return NextResponse.json(
       {
         error: {
-          code: isBusy ? "SOURCE_BUSY" : "SEARCH_FAILED",
-          message: isBusy
+          code: isCouldNotLocate ? "AREA_NOT_FOUND" : isBusy ? "SOURCE_BUSY" : "SEARCH_FAILED",
+          message: isCouldNotLocate
+            ? error.message
+            : isBusy
             ? "Data source busy, please try again."
             : error.message || "Failed to search places. Please try again.",
         },
         businesses: [],
         total: 0,
       },
-      { status: isBusy ? 503 : 500 }
+      { status: isCouldNotLocate ? 400 : isBusy ? 503 : 500 }
     );
   }
 }

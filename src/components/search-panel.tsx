@@ -40,6 +40,7 @@ interface SearchPanelProps {
     leads: BusinessLead[];
     cached?: boolean;
     lastUpdated?: string;
+    resultHeaderNote?: string;
   }) => void;
   onLocationChange?: (location: {
     country: string;
@@ -132,10 +133,51 @@ export function SearchPanel({
     }));
   }, [cities]);
 
-  // Areas/Thanas/Upazilas list based on selected city
-  const areaList = useMemo(() => {
-    return getAreasForHierarchyCity(selectedCountryCode, selectedStateCode, selectedCityName);
+  // Dynamic areas state for non-curated worldwide cities (Prompt 5 Worldwide Coverage)
+  const [dynamicAreas, setDynamicAreas] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (!selectedCountryCode || !selectedCityName) {
+      setDynamicAreas(null);
+      return;
+    }
+
+    const curated = getAreasForHierarchyCity(selectedCountryCode, selectedStateCode, selectedCityName);
+    const isCurated =
+      curated.length > 0 && !curated.some((a) => a.includes("Central Business District (CBD)"));
+
+    if (isCurated) {
+      setDynamicAreas(null);
+      return;
+    }
+
+    // Dynamic fetch for non-curated city via /api/areas
+    fetch(
+      `/api/areas?countryCode=${selectedCountryCode}&city=${encodeURIComponent(
+        selectedCityName
+      )}&stateCode=${selectedStateCode}`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (active && data?.areas && Array.isArray(data.areas) && data.areas.length > 0) {
+          setDynamicAreas(data.areas);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
   }, [selectedCountryCode, selectedStateCode, selectedCityName]);
+
+  // Areas/Thanas/Upazilas list based on selected city (curated first, dynamic Overpass fallback)
+  const areaList = useMemo(() => {
+    if (dynamicAreas && dynamicAreas.length > 0) {
+      return dynamicAreas;
+    }
+    return getAreasForHierarchyCity(selectedCountryCode, selectedStateCode, selectedCityName);
+  }, [dynamicAreas, selectedCountryCode, selectedStateCode, selectedCityName]);
 
   const areaOptions: SelectOption[] = useMemo(() => {
     return areaList.map((a) => ({
@@ -331,6 +373,7 @@ export function SearchPanel({
         leads: data?.businesses || [],
         cached: data?.cached,
         lastUpdated: data?.lastUpdated,
+        resultHeaderNote: data?.resultHeaderNote,
       });
     } catch (err: unknown) {
       console.error("Search failed:", err);

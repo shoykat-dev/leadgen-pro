@@ -68,6 +68,7 @@ export default function DashboardPage() {
   const [searchMeta, setSearchMeta] = useState<{
     cached?: boolean;
     lastUpdated?: string;
+    resultHeaderNote?: string;
   }>({});
 
   // Modal open states
@@ -125,6 +126,7 @@ export default function DashboardPage() {
     leads: BusinessLead[];
     cached?: boolean;
     lastUpdated?: string;
+    resultHeaderNote?: string;
   }) => {
     setSearchLocation({
       country: params.country,
@@ -141,6 +143,7 @@ export default function DashboardPage() {
     setSearchMeta({
       cached: params.cached,
       lastUpdated: params.lastUpdated,
+      resultHeaderNote: params.resultHeaderNote,
     });
     refreshBudget();
   };
@@ -403,7 +406,27 @@ export default function DashboardPage() {
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-                        {leads.length} businesses found within {radiusMeters >= 1000 && radiusMeters % 1000 === 0 ? `${radiusMeters / 1000}km` : `${radiusMeters}m`} of {searchLocation.area}
+                        {searchMeta.resultHeaderNote
+                          ? `${searchMeta.resultHeaderNote} within ${
+                              radiusMeters >= 1000 && radiusMeters % 1000 === 0
+                                ? `${radiusMeters / 1000}km`
+                                : `${radiusMeters}m`
+                            } of ${
+                              searchLocation.area.toLowerCase().includes("city centre") ||
+                              searchLocation.area.toLowerCase() === "city centre"
+                                ? `${searchLocation.city} centre`
+                                : searchLocation.area
+                            }`
+                          : `${leads.length} businesses found within ${
+                              radiusMeters >= 1000 && radiusMeters % 1000 === 0
+                                ? `${radiusMeters / 1000}km`
+                                : `${radiusMeters}m`
+                            } of ${
+                              searchLocation.area.toLowerCase().includes("city centre") ||
+                              searchLocation.area.toLowerCase() === "city centre"
+                                ? `${searchLocation.city} centre`
+                                : searchLocation.area
+                            }`}
                       </h2>
                       <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 font-semibold">
                         {categoryLabel}

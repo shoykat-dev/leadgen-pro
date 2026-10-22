@@ -118,6 +118,7 @@ export async function POST(req: NextRequest) {
         cached: freeRes.cached || false,
         lastUpdated: freeRes.lastUpdated,
         totalFetched: freeRes.leads.length,
+        resultHeaderNote: freeRes.resultHeaderNote,
       };
     }
 
@@ -131,6 +132,7 @@ export async function POST(req: NextRequest) {
       callsUsed: searchResult.callsUsed,
       cached: searchResult.cached,
       lastUpdated: (searchResult as any).lastUpdated,
+      resultHeaderNote: (searchResult as any).resultHeaderNote,
       budget,
     });
   } catch (error: any) {
@@ -139,7 +141,9 @@ export async function POST(req: NextRequest) {
     const message = error.message || "Failed to fetch leads from Google Places.";
     let statusCode = 500;
 
-    if (message.includes("not configured")) {
+    if (message.includes("Could not locate")) {
+      statusCode = 400;
+    } else if (message.includes("not configured")) {
       statusCode = 503;
     } else if (message.includes("quota") || message.includes("limit reached")) {
       statusCode = 429;

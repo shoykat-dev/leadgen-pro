@@ -459,7 +459,7 @@
     "city": "Dubai",
     "centerLat": 25.1972,
     "centerLon": 55.2744,
-    "radiusMeters": 2500
+    "radiusMeters": 2000
   },
   "dubaimarina": {
     "name": "Dubai Marina",
@@ -8848,18 +8848,18 @@
     "radiusMeters": 2500
   },
   "newyorkcitymanhattanmidtown": {
-    "name": "Manhattan - Midtown",
-    "city": "New York City",
-    "centerLat": 40.7128,
-    "centerLon": -74.006,
-    "radiusMeters": 3500
+    "name": "Midtown",
+    "city": "New York",
+    "centerLat": 40.7549,
+    "centerLon": -73.984,
+    "radiusMeters": 1800
   },
   "manhattanmidtown": {
-    "name": "Manhattan - Midtown",
-    "city": "New York City",
-    "centerLat": 40.7128,
-    "centerLon": -74.006,
-    "radiusMeters": 3500
+    "name": "Midtown",
+    "city": "New York",
+    "centerLat": 40.7549,
+    "centerLon": -73.984,
+    "radiusMeters": 1800
   },
   "newyorkcitymanhattanfinancialdistrict": {
     "name": "Manhattan - Financial District",
@@ -11356,9 +11356,9 @@
   "dubaidowntowndubai": {
     "name": "Downtown Dubai",
     "city": "Dubai",
-    "centerLat": 25.2048,
-    "centerLon": 55.2708,
-    "radiusMeters": 3500
+    "centerLat": 25.1972,
+    "centerLon": 55.2744,
+    "radiusMeters": 2000
   },
   "dubaidubaimarina": {
     "name": "Dubai Marina",
@@ -12492,14 +12492,14 @@
     "city": "Sydney",
     "centerLat": -33.8688,
     "centerLon": 151.2093,
-    "radiusMeters": 3500
+    "radiusMeters": 2000
   },
   "sydneycbd": {
     "name": "Sydney CBD",
     "city": "Sydney",
     "centerLat": -33.8688,
     "centerLon": 151.2093,
-    "radiusMeters": 3500
+    "radiusMeters": 2000
   },
   "sydneysurryhills": {
     "name": "Surry Hills",
@@ -12903,16 +12903,16 @@
   "mumbaibandrawest": {
     "name": "Bandra West",
     "city": "Mumbai",
-    "centerLat": 19.076,
-    "centerLon": 72.8777,
-    "radiusMeters": 3500
+    "centerLat": 19.0596,
+    "centerLon": 72.8295,
+    "radiusMeters": 2000
   },
   "bandrawest": {
     "name": "Bandra West",
     "city": "Mumbai",
-    "centerLat": 19.076,
-    "centerLon": 72.8777,
-    "radiusMeters": 3500
+    "centerLat": 19.0596,
+    "centerLon": 72.8295,
+    "radiusMeters": 2000
   },
   "mumbaiandheriwest": {
     "name": "Andheri West",
@@ -14282,16 +14282,16 @@
   "berlinmitte": {
     "name": "Mitte",
     "city": "Berlin",
-    "centerLat": 52.42659,
-    "centerLon": 9.60383,
-    "radiusMeters": 2500
+    "centerLat": 52.52,
+    "centerLon": 13.405,
+    "radiusMeters": 2000
   },
   "mitte": {
     "name": "Mitte",
     "city": "Berlin",
-    "centerLat": 52.42659,
-    "centerLon": 9.60383,
-    "radiusMeters": 2500
+    "centerLat": 52.52,
+    "centerLon": 13.405,
+    "radiusMeters": 2000
   },
   "berlinkreuzberg": {
     "name": "Kreuzberg",
@@ -15001,11 +15001,11 @@
     "radiusMeters": 2500
   },
   "paris1stlouvrepalaisroyal": {
-    "name": "1st - Louvre / Palais-Royal",
+    "name": "1st (Louvre / Palais-Royal)",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "centerLat": 48.8606,
+    "centerLon": 2.3376,
+    "radiusMeters": 1500
   },
   "1stlouvrepalaisroyal": {
     "name": "1st - Louvre / Palais-Royal",
@@ -17033,16 +17033,16 @@
   "madridsalamanca": {
     "name": "Salamanca",
     "city": "Madrid",
-    "centerLat": 40.95978,
-    "centerLon": -5.74349,
-    "radiusMeters": 2500
+    "centerLat": 40.4285,
+    "centerLon": -3.68,
+    "radiusMeters": 1800
   },
   "salamanca": {
     "name": "Salamanca",
     "city": "Madrid",
-    "centerLat": 40.95978,
-    "centerLon": -5.74349,
-    "radiusMeters": 2500
+    "centerLat": 40.4285,
+    "centerLon": -3.68,
+    "radiusMeters": 1800
   },
   "madridchamberi": {
     "name": "Chamberi",
@@ -19430,5 +19430,47 @@
     "centerLat": 47.5596,
     "centerLon": 7.5886,
     "radiusMeters": 3500
+  },
+  "dubaidowntown": {
+    "name": "Downtown Dubai",
+    "city": "Dubai",
+    "centerLat": 25.1972,
+    "centerLon": 55.2744,
+    "radiusMeters": 2000
+  },
+  "newyorkmidtown": {
+    "name": "Midtown",
+    "city": "New York",
+    "centerLat": 40.7549,
+    "centerLon": -73.984,
+    "radiusMeters": 1800
+  },
+  "newyorkcitymidtown": {
+    "name": "Midtown",
+    "city": "New York",
+    "centerLat": 40.7549,
+    "centerLon": -73.984,
+    "radiusMeters": 1800
+  },
+  "paris1st": {
+    "name": "1st Arrondissement",
+    "city": "Paris",
+    "centerLat": 48.8606,
+    "centerLon": 2.3376,
+    "radiusMeters": 1500
+  },
+  "paris1starrondissement": {
+    "name": "1st Arrondissement",
+    "city": "Paris",
+    "centerLat": 48.8606,
+    "centerLon": 2.3376,
+    "radiusMeters": 1500
+  },
+  "paris1erarrondissement": {
+    "name": "1st Arrondissement",
+    "city": "Paris",
+    "centerLat": 48.8606,
+    "centerLon": 2.3376,
+    "radiusMeters": 1500
   }
 }

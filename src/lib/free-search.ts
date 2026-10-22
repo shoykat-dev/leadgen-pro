@@ -34,6 +34,7 @@ export interface FreeSearchResult {
   areaConfig: AreaConfig;
   cached?: boolean;
   lastUpdated?: string;
+  resultHeaderNote?: string;
 }
 
 interface OverpassElement {
@@ -102,7 +103,7 @@ function buildOverpassQuery(
   radiusMeters: number,
   lat: number,
   lon: number,
-  timeoutSeconds = 120
+  timeoutSeconds = 60
 ): string {
   const statements = tags
     .map(
@@ -120,11 +121,12 @@ out center tags;`;
 
 /**
  * Executes an Overpass query against a single mirror with a resilient timeout.
+ * Per Prompt 5 Bug 2: Timeout per mirror max 25s (configured to 22s).
  */
 async function fetchOverpassMirror(
   mirrorUrl: string,
   query: string,
-  timeoutMs = 12000
+  timeoutMs = 22000
 ): Promise<OverpassElement[]> {
   const res = await fetch(mirrorUrl, {
     method: "POST",
@@ -162,6 +164,7 @@ async function fetchOverpassMirror(
 
 /**
  * Robust fetcher with mirror rotation, automatic failover on 429/5xx/timeout, and exponential backoff.
+ * Per Prompt 5 Bug 2: Never spin longer than 60s total; max 25s per mirror.
  */
 async function fetchOverpassWithFailover(
   tags: OsmTagCriteria[],
@@ -170,10 +173,17 @@ async function fetchOverpassWithFailover(
   lon: number,
   simulateMirror1Failure = false
 ): Promise<OverpassElement[]> {
-  const query = buildOverpassQuery(tags, radiusMeters, lat, lon, 120);
+  const query = buildOverpassQuery(tags, radiusMeters, lat, lon, 60);
   let lastError: Error | null = null;
+  const startTime = Date.now();
 
   for (let i = 0; i < OVERPASS_MIRRORS.length; i++) {
+    // 52s global timeout guard to ensure total request never exceeds 60s
+    if (Date.now() - startTime > 52000) {
+      console.warn("[Overpass Failover] Global 52s limit approached. Aborting mirror attempts.");
+      break;
+    }
+
     const mirrorUrl = OVERPASS_MIRRORS[i];
 
     // Mirror 1 simulation failure hook for Acceptance Test 2
@@ -188,7 +198,9 @@ async function fetchOverpassWithFailover(
       console.log(
         `[Overpass Mirror ${i + 1}/${OVERPASS_MIRRORS.length}] Querying ${mirrorUrl}...`
       );
-      const elements = await fetchOverpassMirror(mirrorUrl, query, 12000);
+      const remainingTime = Math.max(5000, 55000 - (Date.now() - startTime));
+      const mirrorTimeout = Math.min(22000, remainingTime);
+      const elements = await fetchOverpassMirror(mirrorUrl, query, mirrorTimeout);
       console.log(
         `[Overpass Mirror Success] ${mirrorUrl} returned ${elements.length} raw elements.`
       );
@@ -201,7 +213,7 @@ async function fetchOverpassWithFailover(
 
       // Backoff before trying next mirror
       if (i < OVERPASS_MIRRORS.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 400 * (i + 1)));
+        await new Promise((resolve) => setTimeout(resolve, 300 * (i + 1)));
       }
     }
   }
@@ -275,9 +287,9 @@ export async function searchFreeLiveDirectory(
   const { centerLat, centerLon, radiusMeters } = areaConfig;
   const areaId = `${cCode}_${areaConfig.city}_${areaConfig.name}`.toLowerCase();
 
-  // 2. Check Server-Side Cache (Key: areaId + categoryId, TTL: 7 days)
+  // 2. Check Server-Side Cache (Key: areaId + categoryId + radius, TTL: 7 days)
   if (!bypassCache) {
-    const cachedEntry = getFromCache<BusinessLead[]>(areaId, category);
+    const cachedEntry = getFromCache<BusinessLead[]>(areaId, category, radiusMeters);
     if (cachedEntry) {
       // Re-verify Haversine distance on cached rows to guarantee zero area leak
       const strictlyWithinLeads = cachedEntry.data.filter((l) => {
@@ -287,7 +299,7 @@ export async function searchFreeLiveDirectory(
       });
 
       console.log(
-        `[ServerCache HIT] Key: (${areaId}, ${category}) -> Returned ${strictlyWithinLeads.length} leads strictly within ${radiusMeters}m. Last updated: ${cachedEntry.lastUpdated}`
+        `[ServerCache HIT] Key: (${areaId}, ${category}, ${radiusMeters}m) -> Returned ${strictlyWithinLeads.length} leads strictly within ${radiusMeters}m. Last updated: ${cachedEntry.lastUpdated}`
       );
       for (const l of strictlyWithinLeads) {
         const d = haversineDistanceMeters(centerLat, centerLon, l.lat!, l.lon!);
@@ -367,13 +379,43 @@ export async function searchFreeLiveDirectory(
       lon
     );
 
-    // MANDATORY POST-FILTER: Keep only results within radiusMeters of area center
-    const isWithin = distanceToCenter <= radiusMeters;
+    // BUG 6 Fix: A lead is included ONLY if the element's OWN primary tag matches the category tag mapping
     const tags = el.tags || {};
+    const matchesCategoryTag = tagSpecs.some((ts) => tags[ts.key] === ts.value);
+    if (!matchesCategoryTag) {
+      continue;
+    }
+
+    // Explicitly exclude non-matching establishments that might sit in commercial spaces (Bug 6)
+    const isFoodCategory = tagSpecs.some(
+      (ts) => ts.key === "amenity" && ["restaurant", "cafe", "fast_food", "food_court", "bar", "pub"].includes(ts.value)
+    );
+    if (isFoodCategory) {
+      if (tags.office && !tags.amenity) continue;
+      if (tags.craft && !tags.amenity) continue;
+      if (
+        tags.shop &&
+        !["bakery", "pastry", "coffee", "tea", "deli", "ice_cream", "confectionery"].includes(tags.shop) &&
+        !tags.amenity
+      ) {
+        continue;
+      }
+      const rawNameLower = (tags.name || "").toLowerCase();
+      if (
+        rawNameLower.includes("interiors") ||
+        rawNameLower.includes("interior design") ||
+        rawNameLower.includes("coffee machine supplier") ||
+        rawNameLower.includes("documents clearing")
+      ) {
+        continue;
+      }
+    }
+
     const rawName = tags.name || tags["name:en"] || tags.brand;
     if (!rawName || rawName.trim().length < 2) continue;
 
     const cleanName = rawName.trim();
+    const isWithin = distanceToCenter <= radiusMeters;
 
     // Acceptance Test 1 Debug Log to prove distance adherence
     console.log(
@@ -381,27 +423,6 @@ export async function searchFreeLiveDirectory(
     );
 
     if (!isWithin) {
-      continue;
-    }
-
-    // Deduplication Tier 2: Check normalized name + coordinates within 50m
-    const normName = normalizeBusinessName(cleanName);
-    const isDuplicate = leads.some((existing) => {
-      if (!existing.lat || !existing.lon) return false;
-      const existingNorm = normalizeBusinessName(existing.name);
-      if (existingNorm === normName) {
-        const distBetween = haversineDistanceMeters(
-          existing.lat,
-          existing.lon,
-          lat,
-          lon
-        );
-        return distBetween <= 50;
-      }
-      return false;
-    });
-
-    if (isDuplicate) {
       continue;
     }
 
@@ -428,6 +449,29 @@ export async function searchFreeLiveDirectory(
         phoneStatus = "Format valid"; // Phone format is valid (OSM)
         canWhatsApp = pRes.canWhatsApp;
       }
+    }
+
+    // Deduplication Tier 2: Check normalized name + (same phone OR coordinates within 50m)
+    const normName = normalizeBusinessName(cleanName);
+    const isDuplicate = leads.some((existing) => {
+      const existingNorm = normalizeBusinessName(existing.name);
+      if (existingNorm === normName) {
+        if (existing.phone && phone && existing.phone === phone) return true;
+        if (existing.lat && existing.lon) {
+          const distBetween = haversineDistanceMeters(
+            existing.lat,
+            existing.lon,
+            lat,
+            lon
+          );
+          if (distBetween <= 50) return true;
+        }
+      }
+      return false;
+    });
+
+    if (isDuplicate) {
+      continue;
     }
 
     // Website: Extract ONLY from real OSM tags
@@ -459,14 +503,24 @@ export async function searchFreeLiveDirectory(
       }
     }
 
-    // Address
-    const street = tags["addr:street"] || "";
-    const housenumber = tags["addr:housenumber"] || "";
+    // Address (Prompt 5 Bug 4: Street address detection)
+    const street = tags["addr:street"] || tags.street || "";
+    const housenumber = tags["addr:housenumber"] || tags.housenumber || "";
     const streetAddress = [housenumber, street].filter(Boolean).join(" ");
-    const fullAddress =
-      streetAddress ||
-      tags["addr:full"] ||
-      `${areaConfig.name}, ${areaConfig.city}`;
+    const hasFullStreet = Boolean(streetAddress || tags["addr:full"]);
+
+    let address: string;
+    let secondaryLocation: string | undefined = undefined;
+    let hasStreetAddress: boolean;
+
+    if (hasFullStreet) {
+      address = streetAddress || tags["addr:full"];
+      hasStreetAddress = true;
+    } else {
+      address = "Street address not available in OSM record";
+      secondaryLocation = `${areaConfig.name}, ${areaConfig.city}`;
+      hasStreetAddress = false;
+    }
 
     // Ratings/reviews are null (Data Honesty)
     const rating = null;
@@ -512,7 +566,10 @@ export async function searchFreeLiveDirectory(
       name: cleanName,
       category: categoryLabel,
       primaryType: tags.amenity || tags.shop || tags.office || tags.craft || tags.leisure || category,
-      address: fullAddress,
+      address,
+      secondaryLocation,
+      hasStreetAddress,
+      distanceMeters: distanceToCenter,
       lat,
       lon,
       phone,
@@ -788,7 +845,7 @@ export async function searchFreeLiveDirectory(
   // 8. FINAL MANDATORY HAVERSINE POST-FILTER ON THE COMPLETED RESULT LIST:
   // Must run on the FINAL result list on EVERY element type (node, way, relation).
   // Any result with missing, NaN, or unresolved coordinates is strictly EXCLUDED.
-  const finalFilteredLeads: BusinessLead[] = [];
+  let finalFilteredLeads: BusinessLead[] = [];
   for (const lead of leads) {
     if (lead.lat === undefined || lead.lat === null || lead.lon === undefined || lead.lon === null || isNaN(lead.lat) || isNaN(lead.lon)) {
       console.warn(`[Area Radius Audit] EXCLUDED "${lead.name}" (${lead.id}): missing coordinates`);
@@ -804,6 +861,7 @@ export async function searchFreeLiveDirectory(
     );
 
     if (isWithin) {
+      lead.distanceMeters = distMeters;
       finalFilteredLeads.push(lead);
     }
   }
@@ -812,8 +870,123 @@ export async function searchFreeLiveDirectory(
     `[Final Post-Filter] ${finalFilteredLeads.length} / ${leads.length} leads strictly confirmed within ${radiusMeters}m of ${areaConfig.name} center (${centerLat}, ${centerLon}).`
   );
 
-  // 9. Save to Server-Side Cache (7-day TTL)
-  const savedCache = saveToCache(areaId, category, finalFilteredLeads);
+  // BUG 7 Sanity Check: If major city + major category returns < 10 leads, log warning with query
+  const majorCities = ["madrid", "berlin", "paris", "london", "newyork", "newyorkcity", "sydney", "dubai", "mumbai", "dhaka", "barcelona"];
+  const cityKey = (areaConfig.city || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const isMajorCity = majorCities.includes(cityKey);
+  const isMajorFoodCategory = ["restaurant", "cafe", "fast_food"].includes(category.toLowerCase());
+
+  if (isMajorCity && isMajorFoodCategory && finalFilteredLeads.length < 10) {
+    const checkQuery = buildOverpassQuery(tagSpecs, radiusMeters, centerLat, centerLon, 60);
+    console.warn(`[Sanity Check Warning: Low Count in ${areaConfig.city} / ${areaConfig.name}]`, {
+      city: areaConfig.city,
+      area: areaConfig.name,
+      category,
+      count: finalFilteredLeads.length,
+      query: checkQuery,
+    });
+  }
+
+  // BUG 5 Fix: Shared contact and unverified generic email detection
+  const phoneToNames = new Map<string, Set<string>>();
+  const emailToNames = new Map<string, Set<string>>();
+
+  for (const lead of finalFilteredLeads) {
+    const normName = normalizeBusinessName(lead.name);
+    if (lead.phone) {
+      const pKey = lead.phoneE164 || lead.phone.replace(/[^0-9]/g, "");
+      if (!phoneToNames.has(pKey)) phoneToNames.set(pKey, new Set());
+      phoneToNames.get(pKey)!.add(normName);
+    }
+    if (lead.email) {
+      const eKey = lead.email.toLowerCase().trim();
+      if (!emailToNames.has(eKey)) emailToNames.set(eKey, new Set());
+      emailToNames.get(eKey)!.add(normName);
+    }
+  }
+
+  const GENERIC_EMAIL_DOMAINS = new Set([
+    "gmail.com",
+    "yahoo.com",
+    "ymail.com",
+    "hotmail.com",
+    "outlook.com",
+    "live.com",
+    "icloud.com",
+    "aol.com",
+    "zoho.com",
+    "protonmail.com",
+    "proton.me",
+    "mail.com",
+  ]);
+
+  for (const lead of finalFilteredLeads) {
+    let isShared = false;
+    if (lead.phone) {
+      const pKey = lead.phoneE164 || lead.phone.replace(/[^0-9]/g, "");
+      if ((phoneToNames.get(pKey)?.size || 0) >= 3) {
+        isShared = true;
+      }
+    }
+    if (lead.email) {
+      const eKey = lead.email.toLowerCase().trim();
+      if ((emailToNames.get(eKey)?.size || 0) >= 3) {
+        isShared = true;
+      }
+    }
+
+    if (isShared) {
+      lead.contactWarning = "Shared contact — verify before use";
+    }
+
+    if (lead.email) {
+      const parts = lead.email.toLowerCase().split("@");
+      if (parts.length === 2 && GENERIC_EMAIL_DOMAINS.has(parts[1])) {
+        const localPart = parts[0].replace(/[^a-z0-9]/g, "");
+        const normBiz = normalizeBusinessName(lead.name);
+        const bizTokens = lead.name
+          .toLowerCase()
+          .split(/[^a-z0-9]+/)
+          .filter(
+            (t) =>
+              t.length >= 3 &&
+              !["the", "and", "ltd", "llc", "inc", "co", "cafe", "restaurant", "food", "bar", "kitchen", "grill", "bistro", "house", "shop"].includes(t)
+          );
+
+        const hasTextualRelation =
+          normBiz.length >= 3 &&
+          (localPart.includes(normBiz) ||
+            normBiz.includes(localPart) ||
+            bizTokens.some((tok) => localPart.includes(tok)));
+
+        if (!hasTextualRelation) {
+          lead.emailWarning = "Unverified email — check before use";
+        }
+      }
+    }
+  }
+
+  // BUG 4 Sorting: Within the same lead score, leads WITH a full street address come before placeholder ones
+  finalFilteredLeads.sort((a, b) => {
+    if (b.leadScore !== a.leadScore) return b.leadScore - a.leadScore;
+    const aHas = a.hasStreetAddress ? 1 : 0;
+    const bHas = b.hasStreetAddress ? 1 : 0;
+    if (bHas !== aHas) return bHas - aHas;
+    return (a.distanceMeters || 0) - (b.distanceMeters || 0);
+  });
+
+  // BUG 2 Hard Processing Cap: If match > 3000 businesses, keep 3000 closest by distance
+  let resultHeaderNote: string | undefined = undefined;
+  if (finalFilteredLeads.length > 3000) {
+    const totalMatched = finalFilteredLeads.length;
+    finalFilteredLeads.sort((a, b) => (a.distanceMeters || 0) - (b.distanceMeters || 0));
+    finalFilteredLeads = finalFilteredLeads.slice(0, 3000);
+    resultHeaderNote = `Showing the 3,000 closest of ~${totalMatched.toLocaleString()} mapped businesses`;
+    console.log(`[Hard Processing Cap Applied]: ${resultHeaderNote}`);
+  }
+
+  // 9. Save to Server-Side Cache (7-day TTL with radius included in key)
+  const savedCache = saveToCache(areaId, category, finalFilteredLeads, radiusMeters);
 
   return {
     leads: finalFilteredLeads,
@@ -822,5 +995,6 @@ export async function searchFreeLiveDirectory(
     areaConfig,
     cached: false,
     lastUpdated: savedCache.lastUpdated,
+    resultHeaderNote,
   };
 }

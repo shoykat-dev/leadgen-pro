@@ -12,6 +12,7 @@
     "test:prompt2": "node --loader ./scripts/test-loader.mjs tests/prompt2-acceptance.test.mjs",
     "test:prompt3": "node --loader ./scripts/test-loader.mjs tests/prompt3-acceptance.test.mjs",
     "test:prompt4": "node --loader ./scripts/test-loader.mjs tests/prompt4-acceptance.test.mjs",
+    "test:prompt5": "node --loader ./scripts/test-loader.mjs tests/prompt5-acceptance.test.mjs",
     "qa": "node scripts/qa-check.mjs",
     "import:overture": "node scripts/import-overture.mjs",
     "import:overture:py": "python scripts/import_overture.py",

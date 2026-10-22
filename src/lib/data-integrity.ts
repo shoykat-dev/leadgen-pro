@@ -71,6 +71,12 @@ export interface BusinessLead {
   crmStatus?: "New" | "Contacted" | "Replied" | "Meeting" | "Won" | "Lost";
   lastContactedAt?: string | null;
   nextFollowUpDate?: string | null;
+  // Prompt 5 Worldwide Correctness fields
+  hasStreetAddress?: boolean;
+  secondaryLocation?: string;
+  contactWarning?: string | null;
+  emailWarning?: string | null;
+  distanceMeters?: number | null;
 }
 
 // Common junk/placeholder phone patterns to reject unconditionally
