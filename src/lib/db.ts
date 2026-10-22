@@ -11,7 +11,14 @@ function getDbPath(): string {
       if (!fs.existsSync(tmpDir)) {
         fs.mkdirSync(tmpDir, { recursive: true });
       }
-      return path.join(tmpDir, "leadgen.db");
+      const tmpDbPath = path.join(tmpDir, "leadgen.db");
+      const bundledDb = path.join(process.cwd(), "data", "leadgen.db");
+      if (!fs.existsSync(tmpDbPath) && fs.existsSync(bundledDb)) {
+        try {
+          fs.copyFileSync(bundledDb, tmpDbPath);
+        } catch {}
+      }
+      return tmpDbPath;
     } catch {
       return ":memory:";
     }
@@ -201,6 +208,65 @@ function initTables(db: DatabaseSync) {
       expires_at INTEGER NOT NULL
     );
   `);
+
+  // 10. Auto-seed Overture Places if empty (essential for Vercel /tmp DB & fresh clones)
+  try {
+    const row = db.prepare("SELECT COUNT(*) as count FROM overture_places").get() as { count: number } | undefined;
+    if (!row || row.count === 0) {
+      const seedFile = path.join(process.cwd(), "data", "overture_places_bd.json");
+      if (fs.existsSync(seedFile)) {
+        const rawJson = fs.readFileSync(seedFile, "utf-8");
+        const places = JSON.parse(rawJson);
+        const insertStmt = db.prepare(`
+          INSERT INTO overture_places (
+            id, gers_id, name, category, categories, lat, lon, phones, emails, websites, socials, facebook_url,
+            address_freeform, locality, region, postcode, country, operating_status, confidence,
+            sources, sources_json, release_version, release_tag, imported_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO NOTHING
+        `);
+
+        for (const p of places) {
+          const gersId = p.gers_id || p.id;
+          const socials = p.socials || [];
+          const fb = p.facebook_url || socials.find((s: string) => s.toLowerCase().includes("facebook.com") || s.toLowerCase().includes("fb.com")) || null;
+          const categories = p.categories || (p.category ? [p.category] : []);
+          const primaryCat = p.category || (categories.length > 0 ? categories[0] : null);
+          const addr = (p.addresses && p.addresses.length > 0) ? p.addresses[0] : {};
+
+          insertStmt.run(
+            p.id,
+            gersId,
+            p.name,
+            primaryCat,
+            JSON.stringify(categories),
+            p.lat,
+            p.lon,
+            JSON.stringify(p.phones || []),
+            JSON.stringify(p.emails || []),
+            JSON.stringify(p.websites || []),
+            JSON.stringify(socials),
+            fb,
+            addr.freeform || p.address_freeform || null,
+            addr.locality || p.locality || null,
+            addr.region || p.region || null,
+            addr.postcode || p.postcode || null,
+            addr.country || p.country || "BD",
+            p.operating_status || "open",
+            p.confidence || 0.85,
+            JSON.stringify(p.sources || []),
+            p.sources_json || JSON.stringify(p.sources || []),
+            p.release_version || "2024-09-18.0",
+            p.release_tag || p.release_version || "2024-09-18.0",
+            p.imported_at || new Date().toISOString(),
+            p.updated_at || new Date().toISOString()
+          );
+        }
+      }
+    }
+  } catch (seedErr) {
+    console.warn("[Overture DB Auto-Seed Warning]:", seedErr);
+  }
 }
 
 // ==========================================
