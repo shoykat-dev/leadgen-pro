@@ -204,10 +204,19 @@ function initTables(db: DatabaseSync) {
       email_source_url TEXT,
       email_status TEXT,
       phones_json TEXT,
+      whatsapp_number TEXT,
+      whatsapp_source_url TEXT,
       checked_at TEXT NOT NULL,
       expires_at INTEGER NOT NULL
     );
   `);
+
+  try {
+    db.exec(`ALTER TABLE website_enrichment_cache ADD COLUMN whatsapp_number TEXT;`);
+  } catch {}
+  try {
+    db.exec(`ALTER TABLE website_enrichment_cache ADD COLUMN whatsapp_source_url TEXT;`);
+  } catch {}
 
   // 10. Auto-seed Overture Places if empty (essential for Vercel /tmp DB & fresh clones)
   try {
@@ -781,6 +790,8 @@ export interface WebsiteEnrichmentRecord {
   emailSourceUrl: string | null;
   emailStatus: string;
   phones: string[];
+  whatsappNumber?: string | null;
+  whatsappSourceUrl?: string | null;
   checkedAt: string;
   expiresAt: number;
 }
@@ -810,6 +821,8 @@ export function getCachedWebsiteEnrichment(websiteUrl: string): WebsiteEnrichmen
       emailSourceUrl: row.email_source_url,
       emailStatus: row.email_status,
       phones: row.phones_json ? JSON.parse(row.phones_json) : [],
+      whatsappNumber: row.whatsapp_number || null,
+      whatsappSourceUrl: row.whatsapp_source_url || null,
       checkedAt: row.checked_at,
       expiresAt: row.expires_at,
     };
@@ -824,6 +837,8 @@ export function setCachedWebsiteEnrichment(data: {
   emailSourceUrl: string | null;
   emailStatus: string;
   phones?: string[];
+  whatsappNumber?: string | null;
+  whatsappSourceUrl?: string | null;
   ttlDays?: number;
 }): void {
   try {
@@ -839,14 +854,16 @@ export function setCachedWebsiteEnrichment(data: {
 
     const stmt = db.prepare(`
       INSERT INTO website_enrichment_cache (
-        domain_key, website_url, email, email_source_url, email_status, phones_json, checked_at, expires_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        domain_key, website_url, email, email_source_url, email_status, phones_json, whatsapp_number, whatsapp_source_url, checked_at, expires_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(domain_key) DO UPDATE SET
         website_url = excluded.website_url,
         email = excluded.email,
         email_source_url = excluded.email_source_url,
         email_status = excluded.email_status,
         phones_json = excluded.phones_json,
+        whatsapp_number = excluded.whatsapp_number,
+        whatsapp_source_url = excluded.whatsapp_source_url,
         checked_at = excluded.checked_at,
         expires_at = excluded.expires_at
     `);
@@ -858,6 +875,8 @@ export function setCachedWebsiteEnrichment(data: {
       data.emailSourceUrl,
       data.emailStatus,
       JSON.stringify(data.phones || []),
+      data.whatsappNumber || null,
+      data.whatsappSourceUrl || null,
       checkedAt,
       expiresAt
     );

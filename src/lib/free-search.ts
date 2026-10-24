@@ -5,6 +5,7 @@ import {
   classifyWebsite,
   calculateLeadScore,
   assessDataQuality,
+  computeLeadContactability,
 } from "./data-integrity";
 import { getAreaConfig, haversineDistanceMeters, type AreaConfig } from "./areas";
 import { getFallbackCoordinates } from "./location-hierarchy";
@@ -51,10 +52,10 @@ interface OverpassElement {
 
 // Public Overpass API mirrors for rotation & automatic failover
 const OVERPASS_MIRRORS = [
+  "https://overpass.openstreetmap.fr/api/interpreter",
   "https://overpass-api.de/api/interpreter",
   "https://overpass.kumi.systems/api/interpreter",
   "https://overpass.private.coffee/api/interpreter",
-  "https://overpass.openstreetmap.fr/api/interpreter",
 ];
 
 function normalizeBusinessName(name: string): string {
@@ -199,7 +200,7 @@ async function fetchOverpassWithFailover(
         `[Overpass Mirror ${i + 1}/${OVERPASS_MIRRORS.length}] Querying ${mirrorUrl}...`
       );
       const remainingTime = Math.max(5000, 55000 - (Date.now() - startTime));
-      const mirrorTimeout = Math.min(22000, remainingTime);
+      const mirrorTimeout = Math.min(15000, remainingTime);
       const elements = await fetchOverpassMirror(mirrorUrl, query, mirrorTimeout);
       console.log(
         `[Overpass Mirror Success] ${mirrorUrl} returned ${elements.length} raw elements.`
@@ -281,7 +282,8 @@ export async function searchFreeLiveDirectory(
     area || city,
     city,
     options.lat || fallbackCoords?.lat,
-    options.lon || fallbackCoords?.lon
+    options.lon || fallbackCoords?.lon,
+    cCode
   );
 
   const { centerLat, centerLon, radiusMeters } = areaConfig;
@@ -296,6 +298,9 @@ export async function searchFreeLiveDirectory(
         if (l.lat === undefined || l.lat === null || l.lon === undefined || l.lon === null || isNaN(l.lat) || isNaN(l.lon)) return false;
         const d = haversineDistanceMeters(centerLat, centerLon, l.lat, l.lon);
         return d <= radiusMeters;
+      }).map((l) => {
+        computeLeadContactability(l);
+        return l;
       });
 
       console.log(
@@ -426,15 +431,19 @@ export async function searchFreeLiveDirectory(
       continue;
     }
 
-    // 7. Strict Data Honesty (BUG 2 Fix - Never fabricate or guess)
-    const rawPhone =
-      tags.phone ||
-      tags["contact:phone"] ||
-      tags.mobile ||
-      tags["contact:mobile"] ||
-      tags.telephone ||
-      tags["contact:telephone"] ||
-      null;
+    // 7. Strict Data Honesty (BUG 2 Fix - Never fabricate or guess) & Prompt 6 Step 1 (Read ALL OSM contact tags)
+    const contactTagSource: Record<string, string> = {};
+
+    // 1. Phone extraction
+    let rawPhone: string | null = null;
+    const phoneKeys = ["phone", "contact:phone", "mobile", "contact:mobile", "telephone", "contact:telephone"];
+    for (const pk of phoneKeys) {
+      if (tags[pk]) {
+        rawPhone = tags[pk];
+        contactTagSource.phone = pk;
+        break;
+      }
+    }
 
     let phone: string | null = null;
     let phoneE164: string | null = null;
@@ -449,6 +458,43 @@ export async function searchFreeLiveDirectory(
         phoneStatus = "Format valid"; // Phone format is valid (OSM)
         canWhatsApp = pRes.canWhatsApp;
       }
+    }
+
+    // 2. WhatsApp extraction (HARD RULE: ONLY from contact:whatsapp or whatsapp tag)
+    let rawWhatsapp: string | null = null;
+    let whatsappTag = "";
+    if (tags["contact:whatsapp"]) {
+      rawWhatsapp = tags["contact:whatsapp"];
+      whatsappTag = "contact:whatsapp";
+      contactTagSource.whatsapp = "contact:whatsapp";
+    } else if (tags["whatsapp"]) {
+      rawWhatsapp = tags["whatsapp"];
+      whatsappTag = "whatsapp";
+      contactTagSource.whatsapp = "whatsapp";
+    }
+
+    let whatsapp: string | null = null;
+    let whatsappNumber: string | null = null;
+    let whatsappLink: string | null = null;
+    let whatsappConfirmed = false;
+    let whatsappStatus: "WhatsApp (business-listed)" | "Mobile number — WhatsApp not confirmed" | "None" = "None";
+    let whatsappSource: string | undefined = undefined;
+
+    if (rawWhatsapp) {
+      const pWaRes = validatePhone(rawWhatsapp, cCode);
+      const digits = (pWaRes.phoneE164 || rawWhatsapp).replace(/[^0-9]/g, "");
+      if (digits.length >= 8) {
+        whatsapp = pWaRes.phone || (rawWhatsapp.startsWith("+") ? rawWhatsapp : `+${digits}`);
+        whatsappNumber = digits;
+        whatsappLink = `https://wa.me/${digits}`;
+        whatsappConfirmed = true;
+        whatsappStatus = "WhatsApp (business-listed)";
+        whatsappSource = `OSM (${whatsappTag})`;
+      }
+    } else if (phone && phoneStatus === "Format valid" && canWhatsApp) {
+      // Mobile-format number without WhatsApp evidence: NEVER label as WhatsApp or build wa.me link
+      whatsappStatus = "Mobile number — WhatsApp not confirmed";
+      whatsappConfirmed = false;
     }
 
     // Deduplication Tier 2: Check normalized name + (same phone OR coordinates within 50m)
@@ -474,23 +520,30 @@ export async function searchFreeLiveDirectory(
       continue;
     }
 
-    // Website: Extract ONLY from real OSM tags
-    const rawWebsite =
-      tags.website ||
-      tags["contact:website"] ||
-      tags.url ||
-      tags["contact:url"] ||
-      null;
+    // 3. Website: Extract ONLY from real OSM tags
+    let rawWebsite: string | null = null;
+    const websiteKeys = ["website", "contact:website", "url", "contact:url"];
+    for (const wk of websiteKeys) {
+      if (tags[wk]) {
+        rawWebsite = tags[wk];
+        contactTagSource.website = wk;
+        break;
+      }
+    }
 
     const webRes = classifyWebsite(rawWebsite);
     const website = webRes.website;
     const websiteStatus = webRes.websiteStatus;
 
-    // Email: Extract ONLY from real OSM tags
-    const rawEmail =
-      tags.email ||
-      tags["contact:email"] ||
-      null;
+    // 4. Email: Extract ONLY from real OSM tags
+    let rawEmail: string | null = null;
+    if (tags["email"]) {
+      rawEmail = tags["email"];
+      contactTagSource.email = "email";
+    } else if (tags["contact:email"]) {
+      rawEmail = tags["contact:email"];
+      contactTagSource.email = "contact:email";
+    }
 
     let email: string | null = null;
     let emailStatus: "OpenStreetMap" | "Missing" = "Missing";
@@ -501,6 +554,27 @@ export async function searchFreeLiveDirectory(
         email = eRes.email;
         emailStatus = "OpenStreetMap";
       }
+    }
+
+    // 5. Facebook & Instagram extraction (Prompt 6 Step 1 & 2)
+    let rawFacebook = tags["contact:facebook"] || tags["facebook"] || null;
+    if (tags["contact:facebook"]) contactTagSource.facebook = "contact:facebook";
+    else if (tags["facebook"]) contactTagSource.facebook = "facebook";
+
+    let facebookUrl: string | null = null;
+    if (rawFacebook) {
+      const cleanFb = rawFacebook.trim();
+      facebookUrl = cleanFb.startsWith("http") ? cleanFb : `https://www.facebook.com/${cleanFb.replace(/^@/, "")}`;
+    }
+
+    let rawInstagram = tags["contact:instagram"] || tags["instagram"] || null;
+    if (tags["contact:instagram"]) contactTagSource.instagram = "contact:instagram";
+    else if (tags["instagram"]) contactTagSource.instagram = "instagram";
+
+    let instagramUrl: string | null = null;
+    if (rawInstagram) {
+      const cleanInsta = rawInstagram.trim();
+      instagramUrl = cleanInsta.startsWith("http") ? cleanInsta : `https://www.instagram.com/${cleanInsta.replace(/^@/, "")}`;
     }
 
     // Address (Prompt 5 Bug 4: Street address detection)
@@ -551,6 +625,20 @@ export async function searchFreeLiveDirectory(
       websiteStatus,
     });
 
+    // Compute any-channel contactability & best channel (Prompt 6 Step 6)
+    const contactInfo = computeLeadContactability({
+      whatsappConfirmed,
+      whatsapp,
+      whatsappNumber,
+      whatsappLink,
+      email,
+      emailStatus,
+      facebookUrl,
+      instagramUrl,
+      phone,
+      phoneStatus,
+    });
+
     leads.push({
       id: `free_${el.type}_${el.id}`,
       placeId: `osm_${el.type}_${el.id}`,
@@ -562,6 +650,7 @@ export async function searchFreeLiveDirectory(
         email: email ? "osm" : undefined,
         website: website ? "osm" : undefined,
         address: "osm",
+        socials: facebookUrl || instagramUrl ? "osm" : undefined,
       },
       name: cleanName,
       category: categoryLabel,
@@ -576,15 +665,31 @@ export async function searchFreeLiveDirectory(
       phoneE164,
       phoneStatus,
       canWhatsApp,
+      whatsapp,
+      whatsappNumber,
+      whatsappLink,
+      whatsappConfirmed,
+      whatsappStatus,
+      whatsappSource,
       email,
       emailProvenance: email ? "osm" : undefined,
       emailStatus,
       website,
       websiteStatus,
       hasWebsite: websiteStatus === "Has Website",
+      facebookUrl,
+      facebookSource: facebookUrl ? "osm" : undefined,
+      instagramUrl,
+      instagramSource: instagramUrl ? "osm" : undefined,
+      isContactable: contactInfo.isContactable,
+      bestChannel: contactInfo.bestChannel,
+      bestChannelValue: contactInfo.bestChannelValue,
+      bestChannelLabel: contactInfo.bestChannelLabel,
+      contactTagSource,
       rating,
       userRatingCount,
       googleMapsUri,
+      googleMapsUrl: googleMapsUri,
       businessStatus: "OPERATIONAL",
       dataQuality,
       leadScore,
@@ -678,7 +783,7 @@ export async function searchFreeLiveDirectory(
         attr.email = "osm";
       }
 
-      // 4. Socials & Facebook: keep the Facebook URL from Overture
+      // 4. Socials & Facebook: keep the Facebook URL and Instagram URL from Overture (Prompt 6 Step 2)
       if (matchedOv.socials && matchedOv.socials.length > 0) {
         const socialObjs = matchedOv.socials.map((s: string) => {
           let platform = "social";
@@ -692,8 +797,21 @@ export async function searchFreeLiveDirectory(
 
         lead.socials = socialObjs;
         const fb = socialObjs.find((s: any) => s.platform === "Facebook");
-        if (fb) lead.facebookUrl = fb.url;
+        if (fb && !lead.facebookUrl) {
+          lead.facebookUrl = fb.url;
+          lead.facebookSource = "overture";
+        }
+        const insta = socialObjs.find((s: any) => s.platform === "Instagram");
+        if (insta && !lead.instagramUrl) {
+          lead.instagramUrl = insta.url;
+          lead.instagramSource = "overture";
+        }
         attr.socials = "overture";
+      }
+
+      if (matchedOv.facebook_url && !lead.facebookUrl) {
+        lead.facebookUrl = matchedOv.facebook_url;
+        lead.facebookSource = "overture";
       }
 
       lead.fieldAttribution = attr;
@@ -714,6 +832,13 @@ export async function searchFreeLiveDirectory(
       lead.leadScore = reScore.score;
       lead.leadScoreTier = reScore.tier;
       lead.scoreReasons = reScore.reasons;
+
+      // Recompute any-channel contactability & best channel (Prompt 6 Step 6)
+      const reContact = computeLeadContactability(lead);
+      lead.isContactable = reContact.isContactable;
+      lead.bestChannel = reContact.bestChannel;
+      lead.bestChannelValue = reContact.bestChannelValue;
+      lead.bestChannelLabel = reContact.bestChannelLabel;
 
       console.log(
         `[Merged Lead] "${lead.name}" successfully merged with Overture record "${matchedOv.name}" (ID: ${matchedOv.id}). Attribution:`,
@@ -777,6 +902,7 @@ export async function searchFreeLiveDirectory(
       return { platform, url: s };
     });
     const facebookUrl = socialObjs.find((s: any) => s.platform === "Facebook")?.url || null;
+    const instagramUrl = socialObjs.find((s: any) => s.platform === "Instagram")?.url || null;
 
     const fullAddress =
       ov.addresses?.[0]?.freeform ||
@@ -798,7 +924,7 @@ export async function searchFreeLiveDirectory(
       `${cleanName}, ${areaConfig.name}, ${areaConfig.city}`
     )}`;
 
-    leads.push({
+    const ovLead: BusinessLead = {
       id: `ov_${ov.id.replace(/[^a-zA-Z0-9]/g, "_")}`,
       placeId: `ov_${ov.id}`,
       source: "free_directory",
@@ -821,6 +947,12 @@ export async function searchFreeLiveDirectory(
       phoneE164,
       phoneStatus,
       canWhatsApp,
+      whatsapp: null,
+      whatsappNumber: null,
+      whatsappLink: null,
+      whatsappConfirmed: false,
+      whatsappStatus: canWhatsApp ? "Mobile number — WhatsApp not confirmed" : "Not listed as WhatsApp",
+      whatsappSource: null,
       email,
       emailProvenance: email ? "osm" : undefined,
       emailStatus,
@@ -829,9 +961,13 @@ export async function searchFreeLiveDirectory(
       hasWebsite: webRes.websiteStatus === "Has Website",
       socials: socialObjs,
       facebookUrl,
+      facebookSource: facebookUrl ? "overture" : null,
+      instagramUrl,
+      instagramSource: instagramUrl ? "overture" : null,
       rating: null,
       userRatingCount: null,
       googleMapsUri,
+      googleMapsUrl: googleMapsUri,
       businessStatus: "OPERATIONAL",
       dataQuality: assessDataQuality({ phoneStatus, email, emailStatus, websiteStatus: webRes.websiteStatus }),
       leadScore: scoreResult.score,
@@ -839,7 +975,11 @@ export async function searchFreeLiveDirectory(
       scoreReasons: scoreResult.reasons,
       sourceUpdatedAt: ov.updated_at,
       fetchedAt: now,
-    });
+      contactTagSource: {},
+    };
+
+    computeLeadContactability(ovLead);
+    leads.push(ovLead);
   }
 
   // 8. FINAL MANDATORY HAVERSINE POST-FILTER ON THE COMPLETED RESULT LIST:

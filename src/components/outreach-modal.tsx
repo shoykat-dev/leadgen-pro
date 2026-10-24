@@ -113,7 +113,9 @@ export function OutreachModal({
 
   if (!isOpen || !lead) return null;
 
-  const phoneValidForWhatsApp = lead.canWhatsApp && lead.phoneE164;
+  const phoneValidForWhatsApp = Boolean(
+    lead.whatsappConfirmed && (lead.whatsappLink || lead.whatsappNumber || lead.phoneE164)
+  );
   const hasEmail = Boolean(lead.email && lead.emailStatus !== "Invalid format");
 
   // Handle outreach launch
@@ -135,10 +137,13 @@ export function OutreachModal({
     }
 
     // 2. Open external protocol
-    if (channel === "whatsapp" && phoneValidForWhatsApp) {
-      const cleanE164 = lead.phoneE164!.replace(/[^0-9]/g, "");
-      const waUrl = `https://wa.me/${cleanE164}?text=${encodeURIComponent(customBody)}`;
-      window.open(waUrl, "_blank");
+    if (channel === "whatsapp" && phoneValidForWhatsApp && lead.whatsappConfirmed) {
+      const waNum = (lead.whatsappNumber || "").replace(/[^0-9]/g, "");
+      const waLink = lead.whatsappLink || (waNum ? `https://wa.me/${waNum}` : null);
+      if (waLink) {
+        const waUrl = `${waLink}${waLink.includes("?") ? "&" : "?"}text=${encodeURIComponent(customBody)}`;
+        window.open(waUrl, "_blank");
+      }
     } else if (channel === "email" && lead.email) {
       const mailtoUrl = `mailto:${lead.email}?subject=${encodeURIComponent(
         customSubject || `Web development proposal for ${lead.name}`
@@ -199,13 +204,17 @@ export function OutreachModal({
             >
               <MessageSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-300" />
               <span>WhatsApp Pitch</span>
-              {phoneValidForWhatsApp ? (
-                <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 px-1.5 py-0.5 rounded font-mono">
-                  {lead.phoneE164}
+              {lead.whatsappConfirmed ? (
+                <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 px-1.5 py-0.5 rounded font-mono font-bold">
+                  {lead.whatsappNumber || lead.phoneE164}
+                </span>
+              ) : lead.phone ? (
+                <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200 px-1.5 py-0.5 rounded">
+                  Not confirmed
                 </span>
               ) : (
-                <span className="text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200 px-1.5 py-0.5 rounded">
-                  Format unverified
+                <span className="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded">
+                  No WhatsApp
                 </span>
               )}
             </button>
@@ -238,9 +247,11 @@ export function OutreachModal({
             <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300 text-xs">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold">Phone format unverified</p>
+                <p className="font-semibold">
+                  {lead.phone ? "Mobile number — WhatsApp not confirmed" : "No WhatsApp on file"}
+                </p>
                 <p className="text-[11px] opacity-90 mt-0.5">
-                  Direct WhatsApp link is disabled because {lead.phone || "the phone"} is not a valid E.164 mobile number. You can call the business or edit the phone number in My Leads.
+                  Direct WhatsApp link is disabled per Prompt 6 Hard Rule because this business has not explicitly listed this number as WhatsApp. You can call the business directly via phone or pitch via Email.
                 </p>
               </div>
             </div>

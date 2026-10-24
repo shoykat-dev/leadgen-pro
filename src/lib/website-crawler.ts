@@ -8,6 +8,11 @@ export interface WebsiteEnrichmentResult {
   phones: string[];
   phone: string | null;
   phoneStatus: string;
+  whatsapp: string | null;
+  whatsappNumber: string | null;
+  whatsappLink: string | null;
+  whatsappConfirmed: boolean;
+  whatsappSource: string | null;
   searchedUrls: string[];
   cached?: boolean;
 }
@@ -132,9 +137,10 @@ function findContactLink(homepageHtml: string, baseOrigin: string): string {
 /**
  * Extracts emails and phones from HTML page content.
  */
-function extractContactsFromHtml(html: string, pageUrl: string, websiteUrl: string) {
+export function extractContactsFromHtml(html: string, pageUrl: string, websiteUrl?: string) {
   const emails: { email: string; sourceUrl: string }[] = [];
   const phones: string[] = [];
+  const whatsapps: { number: string; link: string; source: string; sourceUrl: string }[] = [];
 
   // 1. mailto: links
   const mailtoMatches = html.matchAll(/href=["']mailto:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}[^"']*)["']/gi);
@@ -156,7 +162,22 @@ function extractContactsFromHtml(html: string, pageUrl: string, websiteUrl: stri
     if (cleanTel.length >= 7) phones.push(cleanTel);
   }
 
-  return { emails, phones };
+  // 4. wa.me & api.whatsapp.com links (Prompt 6 Step 3: real WhatsApp extraction from business's own website)
+  const waMatches = html.matchAll(/(?:href=["'](?:https?:\/\/)?(?:wa\.me\/|api\.whatsapp\.com\/send\/?\?phone=|whatsapp:\/\/send\/?\?phone=)|wa\.me\/)([+0-9]{8,16})/gi);
+  for (const m of waMatches) {
+    const cleanNum = m[1].replace(/[^0-9]/g, "");
+    if (cleanNum.length >= 8 && cleanNum.length <= 15) {
+      const isApi = m[0].includes("api.whatsapp.com");
+      whatsapps.push({
+        number: cleanNum,
+        link: `https://wa.me/${cleanNum}`,
+        source: isApi ? "Website (api.whatsapp.com)" : "Website (wa.me link)",
+        sourceUrl: pageUrl,
+      });
+    }
+  }
+
+  return { emails, phones, whatsapps };
 }
 
 /**
@@ -180,6 +201,11 @@ export async function enrichLeadFromWebsite(rawWebsiteUrl: string | null | undef
       phones: [],
       phone: null,
       phoneStatus: "Missing",
+      whatsapp: null,
+      whatsappNumber: null,
+      whatsappLink: null,
+      whatsappConfirmed: false,
+      whatsappSource: null,
       searchedUrls: [],
     };
   }
@@ -192,7 +218,7 @@ export async function enrichLeadFromWebsite(rawWebsiteUrl: string | null | undef
   // 1. Check 30-day SQLite cache
   const cached = getCachedWebsiteEnrichment(formattedUrl);
   if (cached) {
-    console.log(`[WebsiteEnrichment Cache HIT] ${formattedUrl} -> ${cached.email || "No email"}`);
+    console.log(`[WebsiteEnrichment Cache HIT] ${formattedUrl} -> Email: ${cached.email || "No email"}, WhatsApp: ${cached.whatsappNumber || "No WhatsApp"}`);
     return {
       email: cached.email,
       emailStatus: (cached.email ? "Found on website" : "Missing") as any,
@@ -200,6 +226,11 @@ export async function enrichLeadFromWebsite(rawWebsiteUrl: string | null | undef
       phones: cached.phones,
       phone: cached.phones[0] || null,
       phoneStatus: cached.phones[0] ? "Format valid" : "Missing",
+      whatsapp: cached.whatsappNumber ? `+${cached.whatsappNumber}` : null,
+      whatsappNumber: cached.whatsappNumber || null,
+      whatsappLink: cached.whatsappNumber ? `https://wa.me/${cached.whatsappNumber}` : null,
+      whatsappConfirmed: Boolean(cached.whatsappNumber),
+      whatsappSource: cached.whatsappSourceUrl ? "Website (wa.me link)" : null,
       searchedUrls: [formattedUrl],
       cached: true,
     };
@@ -217,6 +248,11 @@ export async function enrichLeadFromWebsite(rawWebsiteUrl: string | null | undef
       phone: null,
       phoneStatus: "Missing",
       searchedUrls: [],
+      whatsapp: null,
+      whatsappNumber: null,
+      whatsappLink: null,
+      whatsappConfirmed: false,
+      whatsappSource: null,
     };
   }
 
@@ -229,6 +265,7 @@ export async function enrichLeadFromWebsite(rawWebsiteUrl: string | null | undef
   // 3. Page 1: Homepage (max 2 pages per business rule)
   const candidateEmails: { email: string; sourceUrl: string }[] = [];
   const candidatePhones: string[] = [];
+  const candidateWhatsapps: { number: string; link: string; source: string; sourceUrl: string }[] = [];
   let contactUrl = `${baseOrigin}/contact`;
 
   if (!isDisallowedByRobots(robotsTxt, parsed.pathname || "/")) {
@@ -238,6 +275,7 @@ export async function enrichLeadFromWebsite(rawWebsiteUrl: string | null | undef
       const extracted = extractContactsFromHtml(homeRes.html, homeRes.finalUrl, formattedUrl);
       candidateEmails.push(...extracted.emails);
       candidatePhones.push(...extracted.phones);
+      candidateWhatsapps.push(...extracted.whatsapps);
       contactUrl = findContactLink(homeRes.html, baseOrigin);
     }
   }
@@ -253,6 +291,7 @@ export async function enrichLeadFromWebsite(rawWebsiteUrl: string | null | undef
           const extracted = extractContactsFromHtml(contactRes.html, contactRes.finalUrl, formattedUrl);
           candidateEmails.push(...extracted.emails);
           candidatePhones.push(...extracted.phones);
+          candidateWhatsapps.push(...extracted.whatsapps);
         }
       }
     } catch {
@@ -285,6 +324,9 @@ export async function enrichLeadFromWebsite(rawWebsiteUrl: string | null | undef
     }
   }
 
+  // WhatsApp extraction per Prompt 6 Step 3:
+  const validWhatsapp = candidateWhatsapps.length > 0 ? candidateWhatsapps[0] : null;
+
   const finalEmailStatus = validEmail ? "Found on website" : "Missing";
 
   // 6. Save in SQLite cache for 30 days
@@ -294,11 +336,13 @@ export async function enrichLeadFromWebsite(rawWebsiteUrl: string | null | undef
     emailSourceUrl,
     emailStatus: finalEmailStatus,
     phones: validPhones,
+    whatsappNumber: validWhatsapp ? validWhatsapp.number : null,
+    whatsappSourceUrl: validWhatsapp ? validWhatsapp.sourceUrl : null,
     ttlDays: 30, // 30-day cache requirement
   });
 
   console.log(
-    `[WebsiteEnrichment Done] ${formattedUrl} -> Email: ${validEmail || "Not available"} (Source URL: ${emailSourceUrl || "N/A"})`
+    `[WebsiteEnrichment Done] ${formattedUrl} -> Email: ${validEmail || "Not available"} (Source URL: ${emailSourceUrl || "N/A"}), WhatsApp: ${validWhatsapp?.number || "None"}`
   );
 
   return {
@@ -308,6 +352,11 @@ export async function enrichLeadFromWebsite(rawWebsiteUrl: string | null | undef
     phones: validPhones,
     phone: validPhones[0] || null,
     phoneStatus: validPhones[0] ? "Format valid" : "Missing",
+    whatsapp: validWhatsapp ? `+${validWhatsapp.number}` : null,
+    whatsappNumber: validWhatsapp ? validWhatsapp.number : null,
+    whatsappLink: validWhatsapp ? validWhatsapp.link : null,
+    whatsappConfirmed: Boolean(validWhatsapp),
+    whatsappSource: validWhatsapp ? validWhatsapp.source : null,
     searchedUrls,
     cached: false,
   };

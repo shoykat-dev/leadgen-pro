@@ -154,13 +154,22 @@ export default function DashboardPage() {
   const socialOnlyLeads = leads.filter((l) => l.websiteStatus === "Social Only").length;
   const hasWebsiteLeads = leads.filter((l) => l.websiteStatus === "Has Website").length;
 
-  const withPhoneLeads = leads.filter((l) => l.phone && l.phoneStatus !== "Missing").length;
-  const withEmailLeads = leads.filter((l) => l.email && l.emailStatus !== "Missing").length;
+  const confirmedWhatsappLeads = leads.filter((l) => l.whatsappConfirmed === true).length;
+  const withEmailLeads = leads.filter((l) => !!l.email && l.emailStatus !== "Missing").length;
+  const withPhoneLeads = leads.filter((l) => !!l.phone && l.phoneStatus !== "Missing").length;
+  const withFacebookLeads = leads.filter((l) => !!l.facebookUrl).length;
 
-  // FIX Contactable per Section 7: unique businesses with at least one contact method (never add together)
-  const contactableLeads = leads.filter(
-    (l) => (l.phone && l.phoneStatus !== "Missing") || (l.email && l.emailStatus !== "Missing")
-  ).length;
+  // Prompt 6 Step 4 & 6: Contactable = unique businesses with at least one verified channel
+  const contactableLeads = leads.filter((l) => {
+    if (l.isContactable !== undefined) return l.isContactable;
+    return (
+      l.whatsappConfirmed === true ||
+      (!!l.email && l.emailStatus !== "Missing") ||
+      !!l.facebookUrl ||
+      !!l.instagramUrl ||
+      (!!l.phone && l.phoneStatus !== "Missing")
+    );
+  }).length;
 
   if (!mounted) {
     return (
@@ -333,7 +342,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Card 4: Contactable Leads (Unique Count - Section 7) */}
+              {/* Card 4: Contactable Leads (Prompt 6 Step 4 & 6) */}
               <div className="p-3 sm:p-4 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/60 dark:bg-blue-950/30 shadow-xs space-y-0.5 sm:space-y-1 transition-colors duration-200">
                 <div className="flex items-center justify-between text-[11px] sm:text-xs text-blue-700 dark:text-blue-300 font-semibold">
                   <span className="truncate">Contactable</span>
@@ -342,8 +351,8 @@ export default function DashboardPage() {
                 <div className="text-xl sm:text-2xl font-bold text-blue-800 dark:text-blue-300 tracking-tight">
                   {contactableLeads}
                 </div>
-                <div className="text-[10px] sm:text-[11px] text-blue-700/80 dark:text-blue-400/80 truncate">
-                  {withPhoneLeads} phone, {withEmailLeads} email
+                <div className="text-[10px] sm:text-[11px] text-blue-700/80 dark:text-blue-400/80 leading-tight">
+                  WhatsApp confirmed {confirmedWhatsappLeads} · Email {withEmailLeads} · Phone {withPhoneLeads} · Facebook {withFacebookLeads}
                 </div>
               </div>
             </div>

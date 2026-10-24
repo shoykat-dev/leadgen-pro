@@ -77,6 +77,91 @@ export interface BusinessLead {
   contactWarning?: string | null;
   emailWarning?: string | null;
   distanceMeters?: number | null;
+  // Prompt 6 Contact Enrichment fields (WhatsApp + Email + Best Channel)
+  whatsapp?: string | null;
+  whatsappNumber?: string | null;
+  whatsappLink?: string | null;
+  whatsappConfirmed?: boolean;
+  whatsappStatus?: "WhatsApp (business-listed)" | "Mobile number — WhatsApp not confirmed" | "Not listed as WhatsApp" | "None";
+  whatsappSource?: string | null;
+  facebookSource?: string | null;
+  instagramUrl?: string | null;
+  instagramSource?: string | null;
+  bestChannel?: "whatsapp" | "email" | "facebook" | "instagram" | "phone" | "none";
+  bestChannelValue?: string | null;
+  bestChannelLabel?: string | null;
+  isContactable?: boolean;
+  contactTagSource?: Record<string, string>;
+}
+
+/**
+ * Computes lead contactability and best outreach channel per Prompt 6 Step 6.
+ * Priority: WhatsApp (confirmed only) > Email > Facebook > Instagram > Phone
+ */
+export function computeLeadContactability(lead: Partial<BusinessLead>): {
+  isContactable: boolean;
+  bestChannel: "whatsapp" | "email" | "facebook" | "instagram" | "phone" | "none";
+  bestChannelValue: string | null;
+  bestChannelLabel: string;
+} {
+  const hasWhatsapp = Boolean(lead.whatsappConfirmed && (lead.whatsappNumber || lead.whatsapp));
+  const hasEmail = Boolean(lead.email && lead.emailStatus !== "Missing");
+  const hasFacebook = Boolean(lead.facebookUrl && lead.facebookUrl.trim().length > 0);
+  const hasInstagram = Boolean(lead.instagramUrl && lead.instagramUrl.trim().length > 0);
+  const hasPhone = Boolean(lead.phone && lead.phoneStatus !== "Missing");
+
+  const isContactable = hasWhatsapp || hasEmail || hasFacebook || hasInstagram || hasPhone;
+
+  let bestChannel: "whatsapp" | "email" | "facebook" | "instagram" | "phone" | "none" = "none";
+  let bestChannelValue: string | null = null;
+  let bestChannelLabel = "None";
+
+  if (hasWhatsapp) {
+    bestChannel = "whatsapp";
+    bestChannelValue = lead.whatsappLink || (lead.whatsappNumber ? `https://wa.me/${lead.whatsappNumber}` : lead.whatsapp || null);
+    bestChannelLabel = "WhatsApp";
+  } else if (hasEmail) {
+    bestChannel = "email";
+    bestChannelValue = lead.email || null;
+    bestChannelLabel = "Email";
+  } else if (hasFacebook) {
+    bestChannel = "facebook";
+    bestChannelValue = lead.facebookUrl || null;
+    bestChannelLabel = "Facebook";
+  } else if (hasInstagram) {
+    bestChannel = "instagram";
+    bestChannelValue = lead.instagramUrl || null;
+    bestChannelLabel = "Instagram";
+  } else if (hasPhone) {
+    bestChannel = "phone";
+    bestChannelValue = lead.phone || null;
+    bestChannelLabel = "Phone";
+  }
+
+  // Mutate lead object so properties are directly attached
+  lead.isContactable = isContactable;
+  lead.bestChannel = bestChannel;
+  lead.bestChannelValue = bestChannelValue;
+  lead.bestChannelLabel = bestChannelLabel;
+
+  if (!lead.whatsappConfirmed) {
+    lead.whatsappConfirmed = false;
+    lead.whatsappLink = null;
+    lead.whatsappNumber = null;
+    lead.whatsappSource = null;
+    if (!lead.whatsappStatus || lead.whatsappStatus === "None") {
+      lead.whatsappStatus = lead.canWhatsApp
+        ? "Mobile number — WhatsApp not confirmed"
+        : "None";
+    }
+  }
+
+  return {
+    isContactable,
+    bestChannel,
+    bestChannelValue,
+    bestChannelLabel,
+  };
 }
 
 // Common junk/placeholder phone patterns to reject unconditionally

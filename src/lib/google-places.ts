@@ -6,6 +6,7 @@ import {
   calculateLeadScore,
   assessDataQuality,
   deduplicateLeads,
+  computeLeadContactability,
 } from "./data-integrity";
 import {
   getBudgetStatus,
@@ -326,8 +327,21 @@ export async function searchGooglePlaces(
       leadScoreTier: scoreRes.tier,
       fetchedAt,
       crmStatus: "New",
+      whatsapp: null,
+      whatsappNumber: null,
+      whatsappLink: null,
+      whatsappConfirmed: false,
+      whatsappStatus: phoneRes.canWhatsApp
+        ? "Mobile number — WhatsApp not confirmed"
+        : "Not listed as WhatsApp",
+      whatsappSource: null,
+      facebookUrl: null,
+      facebookSource: null,
+      instagramUrl: null,
+      instagramSource: null,
     };
 
+    computeLeadContactability(lead);
     leads.push(lead);
   }
 

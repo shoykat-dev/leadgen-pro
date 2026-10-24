@@ -59,7 +59,127 @@ interface DataTableViewProps {
   onRefreshLeads?: () => void;
 }
 
-type WebsiteFilterType = "all" | "no_website" | "social_only" | "has_website";
+type WebsiteFilterType =
+  | "all"
+  | "contactable"
+  | "has_whatsapp"
+  | "has_email"
+  | "has_facebook"
+  | "no_website"
+  | "social_only"
+  | "has_website";
+
+type SortByType = "most_contactable" | "score" | "name";
+
+export function getLeadWhatsappInfo(
+  lead: BusinessLead,
+  local?: {
+    whatsapp?: string | null;
+    whatsappNumber?: string | null;
+    whatsappLink?: string | null;
+    whatsappConfirmed?: boolean;
+    whatsappSource?: string | null;
+  }
+) {
+  if (local?.whatsappConfirmed !== undefined) {
+    return {
+      confirmed: Boolean(local.whatsappConfirmed),
+      number: local.whatsappNumber || null,
+      link: local.whatsappLink || null,
+      source: local.whatsappSource || null,
+      status: local.whatsappConfirmed
+        ? "WhatsApp (business-listed)"
+        : lead.canWhatsApp
+        ? "Mobile number — WhatsApp not confirmed"
+        : "Not listed as WhatsApp",
+    };
+  }
+  return {
+    confirmed: lead.whatsappConfirmed === true,
+    number: lead.whatsappNumber || null,
+    link: lead.whatsappLink || null,
+    source:
+      lead.whatsappSource ||
+      (lead.contactTagSource?.whatsapp ? `OSM (${lead.contactTagSource.whatsapp})` : null),
+    status:
+      lead.whatsappStatus ||
+      (lead.whatsappConfirmed
+        ? "WhatsApp (business-listed)"
+        : lead.canWhatsApp
+        ? "Mobile number — WhatsApp not confirmed"
+        : "Not listed as WhatsApp"),
+  };
+}
+
+export function isLeadContactable(
+  lead: BusinessLead,
+  activeEmail: string | null,
+  activeEmailStatus: string,
+  waInfo: ReturnType<typeof getLeadWhatsappInfo>
+) {
+  return Boolean(
+    waInfo.confirmed ||
+      (activeEmail && activeEmailStatus !== "Missing") ||
+      lead.facebookUrl ||
+      lead.instagramUrl ||
+      (lead.phone && lead.phoneStatus !== "Missing")
+  );
+}
+
+export function getLeadBestChannel(
+  lead: BusinessLead,
+  activeEmail: string | null,
+  activeEmailStatus: string,
+  waInfo: ReturnType<typeof getLeadWhatsappInfo>
+) {
+  // Priority per Prompt 6: WhatsApp > Email > Facebook > Instagram > Phone
+  if (waInfo.confirmed && (waInfo.link || waInfo.number)) {
+    return {
+      channel: "whatsapp" as const,
+      label: "WhatsApp",
+      value: waInfo.link || `https://wa.me/${waInfo.number}`,
+      badgeColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    };
+  }
+  if (activeEmail && activeEmailStatus !== "Missing") {
+    return {
+      channel: "email" as const,
+      label: "Email",
+      value: `mailto:${activeEmail}`,
+      badgeColor: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+    };
+  }
+  if (lead.facebookUrl) {
+    return {
+      channel: "facebook" as const,
+      label: "Facebook",
+      value: lead.facebookUrl,
+      badgeColor: "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+    };
+  }
+  if (lead.instagramUrl) {
+    return {
+      channel: "instagram" as const,
+      label: "Instagram",
+      value: lead.instagramUrl,
+      badgeColor: "bg-pink-50 dark:bg-pink-950/60 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-800",
+    };
+  }
+  if (lead.phone && lead.phoneStatus !== "Missing") {
+    return {
+      channel: "phone" as const,
+      label: "Phone",
+      value: `tel:${lead.phoneE164 || lead.phone}`,
+      badgeColor: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700",
+    };
+  }
+  return {
+    channel: "none" as const,
+    label: "None",
+    value: null,
+    badgeColor: "bg-slate-50 dark:bg-slate-900 text-slate-400 border-slate-200 dark:border-slate-800",
+  };
+}
 
 export function DataTableView({
   leads,
@@ -86,7 +206,7 @@ export function DataTableView({
   const [scoreTierFilter, setScoreTierFilter] = useState<string>("all");
   const [hideContacted, setHideContacted] = useState<boolean>(false);
   const [tableSearch, setTableSearch] = useState<string>("");
-  const [sortBy, setSortBy] = useState<"score" | "name">("score");
+  const [sortBy, setSortBy] = useState<SortByType>("most_contactable");
 
   // Selection state
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
@@ -109,17 +229,38 @@ export function DataTableView({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [savedSuccessMsg, setSavedSuccessMsg] = useState<string | null>(null);
 
-  // Email finder on-demand state per row
+  // Email & WhatsApp enrichment on-demand state per row
   const [findingEmailId, setFindingEmailId] = useState<string | null>(null);
   const [isFindingAllEmails, setIsFindingAllEmails] = useState<boolean>(false);
-  const [localEmails, setLocalEmails] = useState<
-    Record<string, { email: string | null; status: string; sourceUrl?: string | null }>
+  const [localEnrichment, setLocalEnrichment] = useState<
+    Record<
+      string,
+      {
+        email: string | null;
+        status: string;
+        sourceUrl?: string | null;
+        whatsapp?: string | null;
+        whatsappNumber?: string | null;
+        whatsappLink?: string | null;
+        whatsappConfirmed?: boolean;
+        whatsappSource?: string | null;
+      }
+    >
   >({});
 
   // Filtered and Sorted Leads
   const processedLeads = useMemo(() => {
     let list = leads.filter((lead) => {
-      // 1. Website Status filter
+      const waInfo = getLeadWhatsappInfo(lead, localEnrichment[lead.id]);
+      const activeEmail = localEnrichment[lead.id]?.email || lead.email;
+      const activeEmailStatus = localEnrichment[lead.id]?.status || lead.emailStatus;
+      const contactable = isLeadContactable(lead, activeEmail, activeEmailStatus, waInfo);
+
+      // 1. Primary Filter Tabs
+      if (websiteFilter === "contactable" && !contactable) return false;
+      if (websiteFilter === "has_whatsapp" && !waInfo.confirmed) return false;
+      if (websiteFilter === "has_email" && (!activeEmail || activeEmailStatus === "Missing")) return false;
+      if (websiteFilter === "has_facebook" && !lead.facebookUrl) return false;
       if (websiteFilter === "no_website" && lead.websiteStatus !== "No Website") return false;
       if (websiteFilter === "social_only" && lead.websiteStatus !== "Social Only") return false;
       if (websiteFilter === "has_website" && lead.websiteStatus !== "Has Website") return false;
@@ -128,8 +269,7 @@ export function DataTableView({
       if (phoneFilter && (!lead.phone || lead.phoneStatus === "Missing")) return false;
 
       // 3. Email Filter
-      const activeEmail = localEmails[lead.id]?.email || lead.email;
-      if (emailFilter && (!activeEmail || lead.emailStatus === "Missing")) return false;
+      if (emailFilter && (!activeEmail || activeEmailStatus === "Missing")) return false;
 
       // 4. Score Tier
       if (scoreTierFilter !== "all" && lead.leadScoreTier !== scoreTierFilter) return false;
@@ -151,8 +291,29 @@ export function DataTableView({
       return true;
     });
 
-    // Sort (Prompt 5 Bug 4: within same lead score, leads WITH full street address come before placeholder ones)
+    // Sort: Prompt 6 Step 5 "Most contactable" (confirmed WhatsApp > email > Facebook > phone)
     list.sort((a, b) => {
+      if (sortBy === "most_contactable") {
+        const getRank = (l: BusinessLead) => {
+          const lWa = getLeadWhatsappInfo(l, localEnrichment[l.id]);
+          const lEm = localEnrichment[l.id]?.email || l.email;
+          const lEmStat = localEnrichment[l.id]?.status || l.emailStatus;
+          if (lWa.confirmed) return 1;
+          if (lEm && lEmStat !== "Missing") return 2;
+          if (l.facebookUrl) return 3;
+          if (l.instagramUrl) return 4;
+          if (l.phone && l.phoneStatus !== "Missing") return 5;
+          return 6;
+        };
+        const rankA = getRank(a);
+        const rankB = getRank(b);
+        if (rankA !== rankB) return rankA - rankB;
+        if (b.leadScore !== a.leadScore) return b.leadScore - a.leadScore;
+        const aHas = a.hasStreetAddress !== false ? 1 : 0;
+        const bHas = b.hasStreetAddress !== false ? 1 : 0;
+        if (bHas !== aHas) return bHas - aHas;
+        return (a.distanceMeters || 0) - (b.distanceMeters || 0);
+      }
       if (sortBy === "score") {
         if (b.leadScore !== a.leadScore) return b.leadScore - a.leadScore;
         const aHas = a.hasStreetAddress !== false ? 1 : 0;
@@ -174,14 +335,52 @@ export function DataTableView({
     hideContacted,
     tableSearch,
     sortBy,
-    localEmails,
+    localEnrichment,
   ]);
 
-  // Derived counts for filter badges
+  // Derived counts for filter badges (Prompt 6 Step 4 & 6)
   const totalCount = leads.length;
-  const noWebsiteCount = useMemo(() => leads.filter((l) => l.websiteStatus === "No Website").length, [leads]);
-  const socialOnlyCount = useMemo(() => leads.filter((l) => l.websiteStatus === "Social Only").length, [leads]);
-  const hasWebsiteCount = useMemo(() => leads.filter((l) => l.websiteStatus === "Has Website").length, [leads]);
+
+  const contactableCount = useMemo(() => {
+    return leads.filter((l) => {
+      const wa = getLeadWhatsappInfo(l, localEnrichment[l.id]);
+      const em = localEnrichment[l.id]?.email || l.email;
+      const emS = localEnrichment[l.id]?.status || l.emailStatus;
+      return isLeadContactable(l, em, emS, wa);
+    }).length;
+  }, [leads, localEnrichment]);
+
+  const whatsappCount = useMemo(() => {
+    return leads.filter((l) => {
+      const wa = getLeadWhatsappInfo(l, localEnrichment[l.id]);
+      return wa.confirmed;
+    }).length;
+  }, [leads, localEnrichment]);
+
+  const emailCount = useMemo(() => {
+    return leads.filter((l) => {
+      const em = localEnrichment[l.id]?.email || l.email;
+      const emS = localEnrichment[l.id]?.status || l.emailStatus;
+      return Boolean(em) && emS !== "Missing";
+    }).length;
+  }, [leads, localEnrichment]);
+
+  const facebookCount = useMemo(() => {
+    return leads.filter((l) => Boolean(l.facebookUrl)).length;
+  }, [leads]);
+
+  const noWebsiteCount = useMemo(
+    () => leads.filter((l) => l.websiteStatus === "No Website").length,
+    [leads]
+  );
+  const socialOnlyCount = useMemo(
+    () => leads.filter((l) => l.websiteStatus === "Social Only").length,
+    [leads]
+  );
+  const hasWebsiteCount = useMemo(
+    () => leads.filter((l) => l.websiteStatus === "Has Website").length,
+    [leads]
+  );
 
   // Selection handlers
   const handleToggleSelectAll = () => {
@@ -236,7 +435,7 @@ export function DataTableView({
     }
   };
 
-  // On-demand Email Finder
+  // On-demand Email & WhatsApp Finder
   const handleFindEmail = async (lead: BusinessLead) => {
     if (!lead.website) return;
     setFindingEmailId(lead.id);
@@ -249,12 +448,17 @@ export function DataTableView({
       });
       const data = await res.json();
       if (data?.success) {
-        setLocalEmails((prev) => ({
+        setLocalEnrichment((prev) => ({
           ...prev,
           [lead.id]: {
             email: data.email,
             status: data.emailStatus || "Missing",
             sourceUrl: data.emailSourceUrl || null,
+            whatsapp: data.whatsapp || null,
+            whatsappNumber: data.whatsappNumber || null,
+            whatsappLink: data.whatsappLink || null,
+            whatsappConfirmed: data.whatsappConfirmed || false,
+            whatsappSource: data.whatsappSource || null,
           },
         }));
       }
@@ -265,10 +469,10 @@ export function DataTableView({
     }
   };
 
-  // Find all emails for leads with websites in parallel batches
+  // Find all emails & WhatsApp for leads with websites in parallel batches
   const handleFindAllEmails = async () => {
     const targets = processedLeads.filter(
-      (l) => l.website && !localEmails[l.id]?.email && l.websiteStatus === "Has Website"
+      (l) => l.website && !localEnrichment[l.id]?.email && l.websiteStatus === "Has Website"
     );
     if (targets.length === 0 || isFindingAllEmails) return;
 
@@ -288,12 +492,17 @@ export function DataTableView({
             });
             const data = await res.json();
             if (data?.success) {
-              setLocalEmails((prev) => ({
+              setLocalEnrichment((prev) => ({
                 ...prev,
                 [lead.id]: {
                   email: data.email,
                   status: data.emailStatus || "Missing",
                   sourceUrl: data.emailSourceUrl || null,
+                  whatsapp: data.whatsapp || null,
+                  whatsappNumber: data.whatsappNumber || null,
+                  whatsappLink: data.whatsappLink || null,
+                  whatsappConfirmed: data.whatsappConfirmed || false,
+                  whatsappSource: data.whatsappSource || null,
                 },
               }));
             }
@@ -308,7 +517,7 @@ export function DataTableView({
     setIsFindingAllEmails(false);
   };
 
-  // Export CSV
+  // Export CSV (Prompt 6 Step 5 & 6)
   const handleExportCSV = (mode: "all" | "selected" = "all") => {
     const targetLeads =
       mode === "selected" && selectedLeadIds.size > 0
@@ -321,6 +530,13 @@ export function DataTableView({
       "Company Name",
       "Industry",
       "Lead Sources",
+      "Best Channel",
+      "Best Channel Value",
+      "WhatsApp Number",
+      "WhatsApp Status",
+      "WhatsApp Source",
+      "Facebook URL",
+      "Instagram URL",
       "Phone",
       "Phone E164",
       "Phone Status",
@@ -344,9 +560,11 @@ export function DataTableView({
     ];
 
     const rows = targetLeads.map((l) => {
-      const activeEmail = localEmails[l.id]?.email || l.email;
-      const activeEmailStatus = localEmails[l.id]?.status || l.emailStatus;
-      const activeSourceUrl = localEmails[l.id]?.sourceUrl || l.emailSourceUrl;
+      const activeEmail = localEnrichment[l.id]?.email || l.email;
+      const activeEmailStatus = localEnrichment[l.id]?.status || l.emailStatus;
+      const activeSourceUrl = localEnrichment[l.id]?.sourceUrl || l.emailSourceUrl;
+      const waInfo = getLeadWhatsappInfo(l, localEnrichment[l.id]);
+      const best = getLeadBestChannel(l, activeEmail, activeEmailStatus, waInfo);
 
       const leadSourceStr =
         l.leadSources && l.leadSources.length > 0
@@ -382,6 +600,13 @@ export function DataTableView({
         `"${l.name.replace(/"/g, '""')}"`,
         `"${l.category.replace(/"/g, '""')}"`,
         `"${leadSourceStr}"`,
+        `"${best.label}"`,
+        `"${(best.value || "").replace(/"/g, '""')}"`,
+        `"${(waInfo.number || "").replace(/"/g, '""')}"`,
+        `"${waInfo.status.replace(/"/g, '""')}"`,
+        `"${(waInfo.source || "").replace(/"/g, '""')}"`,
+        `"${(l.facebookUrl || "").replace(/"/g, '""')}"`,
+        `"${(l.instagramUrl || "").replace(/"/g, '""')}"`,
         `"${(l.phone || "").replace(/"/g, '""')}"`,
         `"${(l.phoneE164 || "").replace(/"/g, '""')}"`,
         `"${l.phoneStatus}"`,
@@ -443,7 +668,7 @@ export function DataTableView({
 
       {/* Primary Filter Strip & Actions Bar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-2.5 sm:p-3 rounded-2xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xs">
-        {/* Left: Website Status Tabs */}
+        {/* Left: Website & Outreach Status Tabs (Prompt 6 Step 5 & 6) */}
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 lg:pb-0 w-full lg:w-auto -mx-1 px-1">
           <button
             type="button"
@@ -455,6 +680,60 @@ export function DataTableView({
             }`}
           >
             All Leads ({totalCount})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setWebsiteFilter("contactable")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+              websiteFilter === "contactable"
+                ? "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-xs"
+                : "text-slate-600 dark:text-slate-300 hover:text-blue-700 hover:bg-blue-50/50"
+            }`}
+            title="Show only businesses with at least one verified outreach channel"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
+            <span>Contactable only ({contactableCount})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setWebsiteFilter("has_whatsapp")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+              websiteFilter === "has_whatsapp"
+                ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-xs"
+                : "text-slate-600 dark:text-slate-300 hover:text-emerald-700 hover:bg-emerald-50/50"
+            }`}
+            title="Business-listed WhatsApp only (OSM contact:whatsapp or website wa.me link)"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+            <span>Has WhatsApp ({whatsappCount})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setWebsiteFilter("has_email")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+              websiteFilter === "has_email"
+                ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shadow-xs"
+                : "text-slate-600 dark:text-slate-300 hover:text-indigo-700 hover:bg-indigo-50/50"
+            }`}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0" />
+            <span>Has Email ({emailCount})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setWebsiteFilter("has_facebook")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+              websiteFilter === "has_facebook"
+                ? "bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 shadow-xs"
+                : "text-slate-600 dark:text-slate-300 hover:text-sky-700 hover:bg-sky-50/50"
+            }`}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-sky-500 shrink-0" />
+            <span>Has Facebook ({facebookCount})</span>
           </button>
 
           <button
@@ -488,11 +767,10 @@ export function DataTableView({
             onClick={() => setWebsiteFilter("has_website")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
               websiteFilter === "has_website"
-                ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-xs"
-                : "text-slate-600 dark:text-slate-300 hover:text-emerald-700 hover:bg-emerald-50/50"
+                ? "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 shadow-xs"
+                : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
             <span>Has Website ({hasWebsiteCount})</span>
           </button>
         </div>
@@ -665,7 +943,7 @@ export function DataTableView({
 
         </div>
 
-        {/* Sort Selector */}
+        {/* Sort Selector (Prompt 6 Step 5: Most Contactable) */}
         <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
           <span className="text-slate-500 text-[11px]">Sort:</span>
           <select
@@ -673,6 +951,7 @@ export function DataTableView({
             onChange={(e) => setSortBy(e.target.value as any)}
             className="h-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-[11px] font-semibold text-slate-800 dark:text-slate-200"
           >
+            <option value="most_contactable">Most Contactable (WhatsApp &gt; Email &gt; FB &gt; Phone)</option>
             <option value="score">Lead Score (Highest)</option>
             <option value="name">Name (A-Z)</option>
           </select>
@@ -710,15 +989,20 @@ export function DataTableView({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {processedLeads.map((lead) => {
             const isSelected = selectedLeadIds.has(lead.id);
-            const activeEmail = localEmails[lead.id]?.email || lead.email;
-            const activeEmailStatus = localEmails[lead.id]?.status || lead.emailStatus;
+            const activeEmail = localEnrichment[lead.id]?.email || lead.email;
+            const activeEmailStatus = localEnrichment[lead.id]?.status || lead.emailStatus;
             const phoneHasVal = lead.phone && lead.phoneStatus !== "Missing";
             const cleanPhoneDigits = (lead.phoneE164 || lead.phone || "").replace(/[^0-9]/g, "");
+            const waInfo = getLeadWhatsappInfo(lead, localEnrichment[lead.id]);
+            const best = getLeadBestChannel(lead, activeEmail, activeEmailStatus, waInfo);
+            const contactable = isLeadContactable(lead, activeEmail, activeEmailStatus, waInfo);
 
             return (
               <div
                 key={lead.id}
                 className={`p-3.5 sm:p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between space-y-3 relative ${
+                  !contactable ? "opacity-70 border-dashed" : ""
+                } ${
                   isSelected
                     ? "bg-blue-50/40 dark:bg-blue-950/20 border-blue-400 dark:border-blue-600 shadow-sm"
                     : "bg-white dark:bg-[#0f172a] border-slate-200 dark:border-slate-800 shadow-xs hover:border-slate-300 dark:hover:border-slate-700"
@@ -767,6 +1051,15 @@ export function DataTableView({
                               OSM
                             </span>
                           )}
+
+                          {/* Best Channel Badge (Prompt 6 Step 6) */}
+                          <span
+                            className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${best.badgeColor}`}
+                            title={`Best Channel: ${best.label}\n${best.value || "No channel"}`}
+                          >
+                            Best: {best.label}
+                          </span>
+
                           {lead.facebookUrl && (
                             <a
                               href={lead.facebookUrl}
@@ -779,6 +1072,18 @@ export function DataTableView({
                               <ExternalLink className="w-2 h-2" />
                             </a>
                           )}
+                          {lead.instagramUrl && (
+                            <a
+                              href={lead.instagramUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-pink-50 dark:bg-pink-950/50 text-pink-600 dark:text-pink-400 border border-pink-200 dark:border-pink-900 inline-flex items-center gap-0.5"
+                              title="Visit Instagram Profile"
+                            >
+                              <span>IG</span>
+                              <ExternalLink className="w-2 h-2" />
+                            </a>
+                          )}
                         </div>
                         <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5 flex-wrap">
                           <span>{lead.category}</span>
@@ -787,6 +1092,11 @@ export function DataTableView({
                           {lead.hasStreetAddress === false && (
                             <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-semibold border border-slate-200 dark:border-slate-700">
                               No street address
+                            </span>
+                          )}
+                          {!contactable && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-400 font-medium">
+                              No outreach channel
                             </span>
                           )}
                         </div>
@@ -862,12 +1172,12 @@ export function DataTableView({
                 {/* Quick Direct Contacts Bar (Phone, WhatsApp, Email) */}
                 <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 space-y-2">
                   {/* Phone & WhatsApp Row */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     {phoneHasVal ? (
                       <>
                         <a
                           href={`tel:${lead.phoneE164 || lead.phone}`}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-blue-400 text-xs font-semibold shadow-2xs truncate"
+                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-blue-400 text-xs font-semibold shadow-2xs truncate min-w-[120px]"
                           title="Tap to call directly from phone"
                         >
                           <PhoneCall className="w-3.5 h-3.5 text-blue-600 shrink-0" />
@@ -878,18 +1188,26 @@ export function DataTableView({
                           Format valid {lead.fieldAttribution?.phone === "overture" ? "(Overture)" : "(OSM)"}
                         </span>
 
-                        {lead.canWhatsApp && (
+                        {/* Prompt 6 Hard Rule: WhatsApp badge & link ONLY when business explicitly listed WhatsApp */}
+                        {waInfo.confirmed && (waInfo.link || waInfo.number) ? (
                           <a
-                            href={`https://wa.me/${cleanPhoneDigits}`}
+                            href={waInfo.link || `https://wa.me/${waInfo.number}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center justify-center gap-1 py-1.5 px-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-2xs shrink-0"
-                            title="Open WhatsApp chat directly"
+                            title={`WhatsApp (business-listed)\nSource: ${waInfo.source}`}
                           >
                             <MessageSquare className="w-3.5 h-3.5" />
                             <span className="text-[11px]">WhatsApp</span>
                           </a>
-                        )}
+                        ) : lead.canWhatsApp ? (
+                          <span
+                            className="text-[10px] text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 shrink-0"
+                            title="Mobile-format number without WhatsApp evidence"
+                          >
+                            Mobile number — WhatsApp not confirmed
+                          </span>
+                        ) : null}
                       </>
                     ) : (
                       <div className="text-[11px] text-slate-400 dark:text-slate-500 py-0.5">
@@ -926,7 +1244,7 @@ export function DataTableView({
                               }`}
                               title={
                                 isFoundOnWebsite
-                                  ? `Found on website: ${localEmails[lead.id]?.sourceUrl || lead.emailSourceUrl || lead.website}`
+                                  ? `Found on website: ${localEnrichment[lead.id]?.sourceUrl || lead.emailSourceUrl || lead.website}`
                                   : lead.fieldAttribution?.email === "overture"
                                   ? "Source: Overture Places"
                                   : "Source: OpenStreetMap"
@@ -1061,8 +1379,9 @@ export function DataTableView({
                   </button>
                 </TableHead>
                 <TableHead className="min-w-[220px] font-semibold py-3 px-3">Business Name & Category</TableHead>
-                <TableHead className="min-w-[130px] font-semibold py-3 px-3">Lead Score</TableHead>
-                <TableHead className="min-w-[170px] font-semibold py-3 px-3">Phone (E.164)</TableHead>
+                <TableHead className="min-w-[120px] font-semibold py-3 px-3">Best Channel</TableHead>
+                <TableHead className="min-w-[120px] font-semibold py-3 px-3">Lead Score</TableHead>
+                <TableHead className="min-w-[170px] font-semibold py-3 px-3">Phone &amp; WhatsApp</TableHead>
                 <TableHead className="min-w-[190px] font-semibold py-3 px-3">Email Address</TableHead>
                 <TableHead className="min-w-[140px] font-semibold py-3 px-3">Website Status</TableHead>
                 <TableHead className="min-w-[180px] font-semibold py-3 px-3">Address</TableHead>
@@ -1073,7 +1392,7 @@ export function DataTableView({
             <TableBody>
               {processedLeads.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-20 text-center space-y-2">
+                  <TableCell colSpan={9} className="py-20 text-center space-y-2">
                     <AlertCircle className="w-9 h-9 text-slate-300 dark:text-slate-600 mx-auto" />
                     <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
                       No businesses found matching current filters
@@ -1086,14 +1405,20 @@ export function DataTableView({
               ) : (
                 processedLeads.map((lead) => {
                   const isSelected = selectedLeadIds.has(lead.id);
-                  const activeEmail = localEmails[lead.id]?.email || lead.email;
-                  const activeEmailStatus = localEmails[lead.id]?.status || lead.emailStatus;
+                  const activeEmail = localEnrichment[lead.id]?.email || lead.email;
+                  const activeEmailStatus = localEnrichment[lead.id]?.status || lead.emailStatus;
                   const phoneHasVal = lead.phone && lead.phoneStatus !== "Missing";
+                  const cleanPhoneDigits = (lead.phoneE164 || lead.phone || "").replace(/[^0-9]/g, "");
+                  const waInfo = getLeadWhatsappInfo(lead, localEnrichment[lead.id]);
+                  const best = getLeadBestChannel(lead, activeEmail, activeEmailStatus, waInfo);
+                  const contactable = isLeadContactable(lead, activeEmail, activeEmailStatus, waInfo);
 
                   return (
                     <TableRow
                       key={lead.id}
                       className={`border-b border-slate-100 dark:border-slate-800/80 transition-colors ${
+                        !contactable ? "opacity-65 bg-slate-50/40 dark:bg-slate-900/20" : ""
+                      } ${
                         isSelected
                           ? "bg-blue-50/40 dark:bg-blue-950/20"
                           : "hover:bg-slate-50/60 dark:hover:bg-slate-800/40"
@@ -1168,8 +1493,44 @@ export function DataTableView({
                                 <ExternalLink className="w-2 h-2" />
                               </a>
                             )}
+                            {lead.instagramUrl && (
+                              <a
+                                href={lead.instagramUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-pink-50 dark:bg-pink-950/50 text-pink-600 dark:text-pink-400 border border-pink-200 dark:border-pink-900 inline-flex items-center gap-0.5"
+                                title="Visit Instagram Profile"
+                              >
+                                <span>IG</span>
+                                <ExternalLink className="w-2 h-2" />
+                              </a>
+                            )}
                           </div>
                         </div>
+                      </TableCell>
+
+                      {/* Best Channel (Prompt 6 Step 6) */}
+                      <TableCell className="py-3 px-3 align-middle">
+                        {best.channel !== "none" && best.value ? (
+                          <a
+                            href={best.value}
+                            target={best.channel === "whatsapp" || best.channel === "facebook" || best.channel === "instagram" ? "_blank" : undefined}
+                            rel={best.channel === "whatsapp" || best.channel === "facebook" || best.channel === "instagram" ? "noopener noreferrer" : undefined}
+                            className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-bold border transition-colors hover:opacity-90 ${best.badgeColor}`}
+                            title={`Best Channel: ${best.label}\n${best.value}`}
+                          >
+                            {best.channel === "whatsapp" && <MessageSquare className="w-3 h-3 text-emerald-600" />}
+                            {best.channel === "email" && <Mail className="w-3 h-3 text-blue-600" />}
+                            {best.channel === "facebook" && <span className="text-[10px] font-bold">FB</span>}
+                            {best.channel === "instagram" && <span className="text-[10px] font-bold">IG</span>}
+                            {best.channel === "phone" && <PhoneCall className="w-3 h-3 text-slate-600" />}
+                            <span>{best.label}</span>
+                          </a>
+                        ) : (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800/60 font-medium">
+                            No channels
+                          </span>
+                        )}
                       </TableCell>
 
                       {/* Lead Score Badge with breakdown tooltip */}
@@ -1195,7 +1556,7 @@ export function DataTableView({
                         </div>
                       </TableCell>
 
-                      {/* Phone Number */}
+                      {/* Phone & WhatsApp Number */}
                       <TableCell className="py-3 px-3 align-middle font-mono">
                         {phoneHasVal ? (
                           <div className="space-y-0.5">
@@ -1214,7 +1575,7 @@ export function DataTableView({
                                 )}
                               </button>
                             </div>
-                            <div className="text-[10px] flex items-center gap-1">
+                            <div className="text-[10px] flex items-center gap-1 flex-wrap">
                               {lead.phoneStatus === "Valid" || lead.phoneStatus === "Format valid" ? (
                                 <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
                                   Format valid
@@ -1228,6 +1589,30 @@ export function DataTableView({
                                 ({lead.fieldAttribution?.phone === "overture" ? "Overture" : "OSM"})
                               </span>
                             </div>
+                            {/* WhatsApp Status per Prompt 6 Step 4 */}
+                            {waInfo.confirmed && (waInfo.link || waInfo.number) ? (
+                              <div className="pt-0.5">
+                                <a
+                                  href={waInfo.link || `https://wa.me/${waInfo.number}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 hover:underline"
+                                  title={`WhatsApp (business-listed)\nSource: ${waInfo.source}`}
+                                >
+                                  <MessageSquare className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                                  <span>WhatsApp (business-listed)</span>
+                                </a>
+                              </div>
+                            ) : lead.canWhatsApp ? (
+                              <div className="pt-0.5">
+                                <span
+                                  className="inline-flex items-center text-[9px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded"
+                                  title="Number is in mobile format, but business has not listed it as WhatsApp"
+                                >
+                                  Mobile number — WhatsApp not confirmed
+                                </span>
+                              </div>
+                            ) : null}
                             {lead.contactWarning && (
                               <div className="pt-0.5">
                                 <span className="inline-flex text-[9px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
@@ -1277,7 +1662,7 @@ export function DataTableView({
                                     }`}
                                     title={
                                       isFoundOnWebsite
-                                        ? `Found on website: ${localEmails[lead.id]?.sourceUrl || lead.emailSourceUrl || lead.website}`
+                                        ? `Found on website: ${localEnrichment[lead.id]?.sourceUrl || lead.emailSourceUrl || lead.website}`
                                         : lead.fieldAttribution?.email === "overture"
                                         ? "Source: Overture Places"
                                         : "Source: OpenStreetMap"

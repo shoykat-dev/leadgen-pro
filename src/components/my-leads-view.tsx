@@ -411,15 +411,17 @@ export function MyLeadsView({ onOpenOutreachModal }: MyLeadsViewProps) {
                           <Phone className="w-2.5 h-2.5" />
                           <span>Call</span>
                         </a>
-                        <a
-                          href={`https://wa.me/${cleanPhoneDigits}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="h-6 px-2 rounded-md bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-1 hover:bg-emerald-100"
-                          title="Open WhatsApp chat"
-                        >
-                          <span>WA</span>
-                        </a>
+                        {lead.whatsappConfirmed && (lead.whatsappLink || lead.whatsappNumber) && (
+                          <a
+                            href={lead.whatsappLink || `https://wa.me/${lead.whatsappNumber}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="h-6 px-2 rounded-md bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-1 hover:bg-emerald-100"
+                            title="Open WhatsApp chat (Business-listed)"
+                          >
+                            <span>WA</span>
+                          </a>
+                        )}
                       </div>
                     )}
                   </div>

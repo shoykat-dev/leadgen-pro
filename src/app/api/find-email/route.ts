@@ -26,9 +26,14 @@ export async function POST(req: NextRequest) {
       emailSourceUrl: result.emailSourceUrl,
       phone: result.phone,
       phoneStatus: result.phoneStatus,
+      whatsapp: result.whatsapp,
+      whatsappNumber: result.whatsappNumber,
+      whatsappLink: result.whatsappLink,
+      whatsappConfirmed: result.whatsappConfirmed,
+      whatsappSource: result.whatsappSource,
       searchedPages: result.searchedUrls.length,
       searchedUrls: result.searchedUrls,
-      found: Boolean(result.email),
+      found: Boolean(result.email || result.whatsappNumber),
       cached: result.cached || false,
     });
   } catch (error: any) {
