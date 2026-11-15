@@ -5,7 +5,7 @@ import { BusinessLead } from "@/lib/data-integrity";
 
 export async function GET() {
   try {
-    const leads = getAllSavedLeads();
+    const leads = await getAllSavedLeads();
     return NextResponse.json({ success: true, total: leads.length, leads });
   } catch (error: any) {
     console.error("[GET /api/leads error]:", error);
@@ -23,13 +23,13 @@ export async function POST(req: NextRequest) {
 
     if (Array.isArray(leads)) {
       for (const item of leads) {
-        saveLead(item as BusinessLead);
+        await saveLead(item as BusinessLead);
       }
       return NextResponse.json({ success: true, count: leads.length });
     }
 
     if (lead) {
-      saveLead(lead as BusinessLead);
+      await saveLead(lead as BusinessLead);
       return NextResponse.json({ success: true, lead });
     }
 
@@ -58,7 +58,7 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    updateLeadStatus(id, status, notes, nextFollowUpDate);
+    await updateLeadStatus(id, status, notes, nextFollowUpDate);
     return NextResponse.json({ success: true, id, status });
   } catch (error: any) {
     console.error("[PUT /api/leads error]:", error);
@@ -81,7 +81,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    deleteSavedLead(id);
+    await deleteSavedLead(id);
     return NextResponse.json({ success: true, id });
   } catch (error: any) {
     console.error("[DELETE /api/leads error]:", error);

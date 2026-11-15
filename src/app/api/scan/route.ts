@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     // 1. ESTIMATE ACTION
     if (action === "estimate") {
       const { categories = [], areaName = "Target Area" } = body;
-      const budget = getBudgetStatus();
+      const budget = await getBudgetStatus();
       const estimate = calculateScanEstimate({ categories, areaName, budget });
       return NextResponse.json({ success: true, estimate });
     }
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
       }
 
       const apiKey = process.env.GOOGLE_PLACES_API_KEY?.trim();
-      const budget = getBudgetStatus(confirmedExtraDailyCalls);
+      const budget = await getBudgetStatus(confirmedExtraDailyCalls);
       if (apiKey && !budget.canCallGoogle) {
         return NextResponse.json({
           success: false,
@@ -121,13 +121,13 @@ export async function POST(req: NextRequest) {
 
         if (hitCap && enableAdaptiveTiling && rectangle) {
           // Check budget before subdividing into 4 quadrants
-          const currentBudget = getBudgetStatus(confirmedExtraDailyCalls);
+          const currentBudget = await getBudgetStatus(confirmedExtraDailyCalls);
           if (currentBudget.canCallGoogle && currentBudget.dailyUsed < currentBudget.dailyLimit - 2) {
             tilesSubdivided = 4;
             const quadrants = splitRectangleIntoQuadrants(rectangle);
 
             for (const quad of quadrants) {
-              const quadBudget = getBudgetStatus(confirmedExtraDailyCalls);
+              const quadBudget = await getBudgetStatus(confirmedExtraDailyCalls);
               if (!quadBudget.canCallGoogle) {
                 completeness = "Possibly incomplete";
                 completenessReason = "Daily/monthly Google limit reached during adaptive tiling.";
@@ -187,7 +187,7 @@ export async function POST(req: NextRequest) {
         reason: completenessReason,
       };
 
-      const updatedBudget = getBudgetStatus(confirmedExtraDailyCalls);
+      const updatedBudget = await getBudgetStatus(confirmedExtraDailyCalls);
 
       return NextResponse.json({
         success: true,
@@ -206,14 +206,14 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      saveScanJob(job);
+      await saveScanJob(job);
       return NextResponse.json({ success: true, id: job.id });
     }
 
     // 4. GET JOB
     if (action === "get_job") {
       const { id } = body;
-      const job = getScanJob(id);
+      const job = await getScanJob(id);
       return NextResponse.json({ success: true, job });
     }
 

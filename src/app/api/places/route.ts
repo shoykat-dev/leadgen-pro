@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
     let resultLeads: BusinessLead[] = [];
     let callsUsed = 0;
     let cached = false;
+    let partial = false;
     let engineSource = "google_places";
 
     let resolvedCountryCode = (body.countryCode || "").toUpperCase();
@@ -78,6 +79,7 @@ export async function POST(req: NextRequest) {
       areaConfig = freeRes.areaConfig;
       callsUsed = 0;
       cached = freeRes.cached || false;
+      partial = freeRes.partial || false;
       lastUpdated = freeRes.lastUpdated;
       engineSource = "free_directory";
       var resultHeaderNote = freeRes.resultHeaderNote;
@@ -97,6 +99,7 @@ export async function POST(req: NextRequest) {
       businesses: resultLeads,
       callsUsed,
       cached,
+      partial,
       lastUpdated,
       engineSource,
       resultHeaderNote,

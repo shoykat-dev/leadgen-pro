@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // 1. Check curated hierarchy first (Prompt 5: Curated entries keep priority wherever they exist)
+    // 1. Check curated hierarchy first (Phase 5: Curated entries keep priority wherever they exist)
     const curatedAreas = getAreasForHierarchyCity(countryCode, stateCode, cityName);
     const isCurated =
       curatedAreas.length > 0 &&

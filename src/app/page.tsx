@@ -7,12 +7,13 @@ import { SearchPanel } from "@/components/search-panel";
 import { DataTableView } from "@/components/data-table-view";
 import { MyLeadsView } from "@/components/my-leads-view";
 import { AreaScanModal } from "@/components/area-scan-modal";
+import { CoverageAuditModal } from "@/components/coverage-audit-modal";
 import { CsvImportModal } from "@/components/csv-import-modal";
 import { AddLeadModal } from "@/components/add-lead-modal";
 import { SettingsModal } from "@/components/settings-modal";
 import { OutreachModal } from "@/components/outreach-modal";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
-import { BusinessLead } from "@/lib/data-integrity";
+import { BusinessLead, displayWebsiteStatus } from "@/lib/data-integrity";
 import {
   Users,
   Globe2,
@@ -73,6 +74,7 @@ export default function DashboardPage() {
 
   // Modal open states
   const [isAreaScanOpen, setIsAreaScanOpen] = useState(false);
+  const [isCoverageAuditOpen, setIsCoverageAuditOpen] = useState(false);
   const [isCsvImportOpen, setIsCsvImportOpen] = useState(false);
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -159,7 +161,7 @@ export default function DashboardPage() {
   const withPhoneLeads = leads.filter((l) => !!l.phone && l.phoneStatus !== "Missing").length;
   const withFacebookLeads = leads.filter((l) => !!l.facebookUrl).length;
 
-  // Prompt 6 Step 4 & 6: Contactable = unique businesses with at least one verified channel
+  // Phase 6 Step 4 & 6: Contactable = unique businesses with at least one verified channel
   const contactableLeads = leads.filter((l) => {
     if (l.isContactable !== undefined) return l.isContactable;
     return (
@@ -294,6 +296,15 @@ export default function DashboardPage() {
                 }));
                 setIsAreaScanOpen(true);
               }}
+              onOpenCoverageAudit={(loc) => {
+                setSearchLocation((prev) => ({
+                  ...prev,
+                  area: loc.area,
+                  city: loc.city,
+                  countryCode: loc.countryCode,
+                }));
+                setIsCoverageAuditOpen(true);
+              }}
               onOpenCsvImport={() => setIsCsvImportOpen(true)}
               onOpenAddLead={() => setIsAddLeadOpen(true)}
             />
@@ -317,7 +328,9 @@ export default function DashboardPage() {
               {/* Card 2: Without Website (High Priority Cold Outreach) */}
               <div className="p-3 sm:p-4 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50/70 dark:bg-red-950/30 shadow-xs space-y-0.5 sm:space-y-1 transition-colors duration-200">
                 <div className="flex items-center justify-between text-[11px] sm:text-xs text-red-700 dark:text-red-300 font-semibold">
-                  <span className="truncate">No Website</span>
+                  <span className="truncate" title="No website was found in the directory record — the business may still have a real site">
+                    {displayWebsiteStatus("No Website")}
+                  </span>
                   <GlobeX className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600 dark:text-red-400 shrink-0" />
                 </div>
                 <div className="text-xl sm:text-2xl font-bold text-red-700 dark:text-red-400 tracking-tight">
@@ -342,7 +355,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Card 4: Contactable Leads (Prompt 6 Step 4 & 6) */}
+              {/* Card 4: Contactable Leads (Phase 6 Step 4 & 6) */}
               <div className="p-3 sm:p-4 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/60 dark:bg-blue-950/30 shadow-xs space-y-0.5 sm:space-y-1 transition-colors duration-200">
                 <div className="flex items-center justify-between text-[11px] sm:text-xs text-blue-700 dark:text-blue-300 font-semibold">
                   <span className="truncate">Contactable</span>
@@ -501,6 +514,15 @@ export default function DashboardPage() {
         }}
       />
 
+      {/* Coverage Audit Modal */}
+      <CoverageAuditModal
+        isOpen={isCoverageAuditOpen}
+        onClose={() => setIsCoverageAuditOpen(false)}
+        areaName={searchLocation.area}
+        cityName={searchLocation.city}
+        countryCode={searchLocation.countryCode}
+      />
+
       {/* CSV Import Modal */}
       <CsvImportModal
         isOpen={isCsvImportOpen}
@@ -537,19 +559,27 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* Clean Footer with Google Attribution & Legal Links (Section 5 & 13) */}
+      {/* Clean Footer with Data Attribution & Legal Links (Section 5 & 13) */}
       <footer className="w-full border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] py-6 text-xs text-slate-500 dark:text-slate-400 mt-12 transition-colors duration-200">
         <div className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="space-y-0.5 text-center sm:text-left">
+          <div className="space-y-0.5 text-center sm:text-left flex-1 min-w-0">
             <p className="font-semibold text-slate-700 dark:text-slate-300">
               © 2026 LeadGen Pro. B2B Lead Generation & Outreach Engine.
             </p>
-            <p className="text-[11px] text-slate-500">
-              Complies with GDPR, CAN-SPAM Act, and local regulations. Places data attribution: Google Maps Platform.
+            <p className="text-[11px] text-slate-500 break-words">
+              Complies with GDPR, CAN-SPAM Act, and local regulations. Business data: ©{" "}
+              <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-600">
+                OpenStreetMap contributors
+              </a>{" "}
+              &amp;{" "}
+              <a href="https://overturemaps.org/" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-600">
+                Overture Maps Foundation
+              </a>
+              . Map links: Google Maps Platform.
             </p>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-medium">
+          <div className="flex items-center gap-4 text-xs font-medium shrink-0">
             <Link href="/privacy" className="hover:text-blue-600 transition-colors">
               Privacy Policy
             </Link>

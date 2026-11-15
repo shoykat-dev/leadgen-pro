@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BusinessLead } from "@/lib/data-integrity";
+import { BusinessLead, displayWebsiteStatus } from "@/lib/data-integrity";
 import {
   DEFAULT_OUTREACH_TEMPLATES,
   OutreachTemplate,
@@ -174,7 +174,7 @@ export function OutreachModal({
                   variant={lead.websiteStatus === "No Website" ? "destructive" : "outline"}
                   className="text-[10px] px-2 py-0.5"
                 >
-                  {lead.websiteStatus}
+                  {displayWebsiteStatus(lead.websiteStatus)}
                 </Badge>
               </h3>
               <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate max-w-[220px] sm:max-w-md">
@@ -251,7 +251,7 @@ export function OutreachModal({
                   {lead.phone ? "Mobile number — WhatsApp not confirmed" : "No WhatsApp on file"}
                 </p>
                 <p className="text-[11px] opacity-90 mt-0.5">
-                  Direct WhatsApp link is disabled per Prompt 6 Hard Rule because this business has not explicitly listed this number as WhatsApp. You can call the business directly via phone or pitch via Email.
+                  Direct WhatsApp link is disabled because this business has not explicitly listed this number as WhatsApp. You can call the business directly via phone or pitch via Email.
                 </p>
               </div>
             </div>
