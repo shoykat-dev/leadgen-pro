@@ -162,7 +162,7 @@ export function extractContactsFromHtml(html: string, pageUrl: string, websiteUr
     if (cleanTel.length >= 7) phones.push(cleanTel);
   }
 
-  // 4. wa.me & api.whatsapp.com links (Prompt 6 Step 3: real WhatsApp extraction from business's own website)
+  // 4. wa.me & api.whatsapp.com links (Phase 6 Step 3: real WhatsApp extraction from business's own website)
   const waMatches = html.matchAll(/(?:href=["'](?:https?:\/\/)?(?:wa\.me\/|api\.whatsapp\.com\/send\/?\?phone=|whatsapp:\/\/send\/?\?phone=)|wa\.me\/)([+0-9]{8,16})/gi);
   for (const m of waMatches) {
     const cleanNum = m[1].replace(/[^0-9]/g, "");
@@ -216,7 +216,7 @@ export async function enrichLeadFromWebsite(rawWebsiteUrl: string | null | undef
   }
 
   // 1. Check 30-day SQLite cache
-  const cached = getCachedWebsiteEnrichment(formattedUrl);
+  const cached = await getCachedWebsiteEnrichment(formattedUrl);
   if (cached) {
     console.log(`[WebsiteEnrichment Cache HIT] ${formattedUrl} -> Email: ${cached.email || "No email"}, WhatsApp: ${cached.whatsappNumber || "No WhatsApp"}`);
     return {
@@ -324,13 +324,13 @@ export async function enrichLeadFromWebsite(rawWebsiteUrl: string | null | undef
     }
   }
 
-  // WhatsApp extraction per Prompt 6 Step 3:
+  // WhatsApp extraction per Phase 6 Step 3:
   const validWhatsapp = candidateWhatsapps.length > 0 ? candidateWhatsapps[0] : null;
 
   const finalEmailStatus = validEmail ? "Found on website" : "Missing";
 
   // 6. Save in SQLite cache for 30 days
-  setCachedWebsiteEnrichment({
+  await setCachedWebsiteEnrichment({
     websiteUrl: formattedUrl,
     email: validEmail,
     emailSourceUrl,

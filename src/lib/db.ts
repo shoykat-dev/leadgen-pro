@@ -1,7 +1,92 @@
 import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import { createClient, type Client } from "@libsql/client";
 import type { BusinessLead } from "./data-integrity";
+
+/**
+ * Database layer with two backends behind one async interface:
+ *
+ * - TURSO (hosted libSQL): active ONLY when both TURSO_DATABASE_URL and
+ *   TURSO_AUTH_TOKEN are set (Vercel env vars). This is the production
+ *   backend — it persists the Overture import, CRM leads, budget usage and
+ *   caches across deploys, which Vercel's ephemeral filesystem cannot do.
+ * - LOCAL SQLite (node:sqlite): the fallback when the Turso vars are absent.
+ *   Local dev and all tests run on this path with no account needed, exactly
+ *   as before — same file (data/leadgen.db), same tables, same seed.
+ *
+ * Credentials come from environment variables only, never from code or docs.
+ * No Turso account, database, or token is created by this code.
+ */
+
+export function isTursoEnabled(): boolean {
+  return Boolean(process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN);
+}
+
+// Minimal async driver interface shared by both backends.
+interface DbDriver {
+  exec(sql: string): Promise<void>;
+  get<T = any>(sql: string, ...params: any[]): Promise<T | undefined>;
+  all<T = any>(sql: string, ...params: any[]): Promise<T[]>;
+  run(sql: string, ...params: any[]): Promise<void>;
+}
+
+/** Local SQLite driver: synchronous node:sqlite behind the async interface. */
+class LocalDriver implements DbDriver {
+  private db: DatabaseSync;
+
+  constructor(db: DatabaseSync) {
+    this.db = db;
+  }
+
+  async exec(sql: string): Promise<void> {
+    this.db.exec(sql);
+  }
+
+  async get<T = any>(sql: string, ...params: any[]): Promise<T | undefined> {
+    return this.db.prepare(sql).get(...params) as T | undefined;
+  }
+
+  async all<T = any>(sql: string, ...params: any[]): Promise<T[]> {
+    return this.db.prepare(sql).all(...params) as T[];
+  }
+
+  async run(sql: string, ...params: any[]): Promise<void> {
+    this.db.prepare(sql).run(...params);
+  }
+}
+
+/** Turso (hosted libSQL) driver over HTTP. Rows support object access by column name. */
+class TursoDriver implements DbDriver {
+  private client: Client;
+
+  constructor(client: Client) {
+    this.client = client;
+  }
+
+  async exec(sql: string): Promise<void> {
+    await this.client.executeMultiple(sql);
+  }
+
+  async get<T = any>(sql: string, ...params: any[]): Promise<T | undefined> {
+    const rs = await this.client.execute({ sql, args: toLibsqlArgs(params) });
+    return rs.rows[0] as T | undefined;
+  }
+
+  async all<T = any>(sql: string, ...params: any[]): Promise<T[]> {
+    const rs = await this.client.execute({ sql, args: toLibsqlArgs(params) });
+    return rs.rows as T[];
+  }
+
+  async run(sql: string, ...params: any[]): Promise<void> {
+    await this.client.execute({ sql, args: toLibsqlArgs(params) });
+  }
+}
+
+/** libSQL accepts null but not undefined — normalize before sending. */
+function toLibsqlArgs(params: any[]): any[] {
+  return params.map((p) => (p === undefined ? null : p));
+}
 
 function getDbPath(): string {
   // If running in Vercel Serverless or AWS Lambda, use writable /tmp
@@ -36,31 +121,50 @@ function getDbPath(): string {
   }
 }
 
-let dbInstance: DatabaseSync | null = null;
+let driverInstance: DbDriver | null = null;
+let initPromise: Promise<DbDriver> | null = null;
 
-function getDb(): DatabaseSync {
-  if (!dbInstance) {
-    const dbPath = getDbPath();
-    try {
-      dbInstance = new DatabaseSync(dbPath);
-      initTables(dbInstance);
-    } catch (err) {
-      console.warn("Failed to open SQLite at", dbPath, "falling back to in-memory :memory:", err);
-      try {
-        dbInstance = new DatabaseSync(":memory:");
-        initTables(dbInstance);
-      } catch (memErr) {
-        console.error("Critical: In-memory SQLite failed:", memErr);
-        throw memErr;
-      }
-    }
-  }
-  return dbInstance;
+async function getDriver(): Promise<DbDriver> {
+  if (driverInstance) return driverInstance;
+  if (!initPromise) initPromise = initDriver();
+  return initPromise;
 }
 
-function initTables(db: DatabaseSync) {
+async function initDriver(): Promise<DbDriver> {
+  if (isTursoEnabled()) {
+    const client = createClient({
+      url: process.env.TURSO_DATABASE_URL as string,
+      authToken: process.env.TURSO_AUTH_TOKEN as string,
+    });
+    const driver = new TursoDriver(client);
+    await initTables(driver);
+    driverInstance = driver;
+    console.log("[DB] Using Turso (libSQL) hosted database.");
+    return driver;
+  }
+
+  const dbPath = getDbPath();
+  let db: DatabaseSync;
+  try {
+    db = new DatabaseSync(dbPath);
+  } catch (err) {
+    console.warn("Failed to open SQLite at", dbPath, "falling back to in-memory :memory:", err);
+    try {
+      db = new DatabaseSync(":memory:");
+    } catch (memErr) {
+      console.error("Critical: In-memory SQLite failed:", memErr);
+      throw memErr;
+    }
+  }
+  const driver = new LocalDriver(db);
+  await initTables(driver);
+  driverInstance = driver;
+  return driver;
+}
+
+async function initTables(db: DbDriver) {
   // 1. API Usage Tracking (for daily & monthly budget guards)
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS api_usage (
       key TEXT PRIMARY KEY,
       count INTEGER DEFAULT 0,
@@ -69,7 +173,7 @@ function initTables(db: DatabaseSync) {
   `);
 
   // 2. Google Places API Response Cache (keyed by normalized query, up to 30 days)
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS places_cache (
       cache_key TEXT PRIMARY KEY,
       data_json TEXT NOT NULL,
@@ -79,7 +183,7 @@ function initTables(db: DatabaseSync) {
   `);
 
   // 3. My Leads (CRM) Table
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS my_leads (
       id TEXT PRIMARY KEY,
       place_id TEXT UNIQUE,
@@ -109,7 +213,7 @@ function initTables(db: DatabaseSync) {
   `);
 
   // 4. Area Scan Jobs Table
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS scan_jobs (
       id TEXT PRIMARY KEY,
       area_name TEXT NOT NULL,
@@ -128,7 +232,7 @@ function initTables(db: DatabaseSync) {
   `);
 
   // 5. Saved Searches Table
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS saved_searches (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -138,7 +242,7 @@ function initTables(db: DatabaseSync) {
   `);
 
   // 6. Outreach Logs Table (records WhatsApp, Call, Email clicks with timestamp)
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS outreach_logs (
       id TEXT PRIMARY KEY,
       lead_id TEXT NOT NULL,
@@ -149,7 +253,7 @@ function initTables(db: DatabaseSync) {
   `);
 
   // 7. User Settings Table
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS user_settings (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
@@ -157,7 +261,7 @@ function initTables(db: DatabaseSync) {
   `);
 
   // 8. Overture Maps Places Table (CDLA/ODbL free dataset)
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS overture_places (
       id TEXT PRIMARY KEY,
       gers_id TEXT,
@@ -191,12 +295,12 @@ function initTables(db: DatabaseSync) {
   const extraCols = ["gers_id", "category", "facebook_url", "address_freeform", "locality", "region", "postcode", "country", "operating_status", "confidence", "sources_json", "release_tag", "imported_at", "last_seen_release"];
   for (const col of extraCols) {
     try {
-      db.exec(`ALTER TABLE overture_places ADD COLUMN ${col} TEXT;`);
+      await db.exec(`ALTER TABLE overture_places ADD COLUMN ${col} TEXT;`);
     } catch {}
   }
 
   // 9. Real Website Enrichment Cache (30-day TTL)
-  db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS website_enrichment_cache (
       domain_key TEXT PRIMARY KEY,
       website_url TEXT NOT NULL,
@@ -212,28 +316,35 @@ function initTables(db: DatabaseSync) {
   `);
 
   try {
-    db.exec(`ALTER TABLE website_enrichment_cache ADD COLUMN whatsapp_number TEXT;`);
+    await db.exec(`ALTER TABLE website_enrichment_cache ADD COLUMN whatsapp_number TEXT;`);
   } catch {}
   try {
-    db.exec(`ALTER TABLE website_enrichment_cache ADD COLUMN whatsapp_source_url TEXT;`);
+    await db.exec(`ALTER TABLE website_enrichment_cache ADD COLUMN whatsapp_source_url TEXT;`);
   } catch {}
 
-  // 10. Auto-seed Overture Places if empty (essential for Vercel /tmp DB & fresh clones)
+  // 10. Auto-seed Overture Places if empty (essential for Vercel /tmp DB & fresh clones).
+  // Works on both backends: on Turso it seeds the empty hosted table once, and the
+  // real import later upserts alongside it (UPSERT on id, no duplicates).
+  // NOTE (audit 2026-11-16): data/overture_places_bd.json is a 12-row hand-assembled
+  // snapshot for Banani/Gulshan (Dhaka) — NOT a real Overture extract (its GERS-style
+  // ids are sequential, and there is no import log behind it). Treat its contacts as
+  // unverified until replaced by a real Overture import (scripts/import_overture.py).
+  // Outside Bangladesh the table is empty, so the Overture merge adds nothing there.
   try {
-    const row = db.prepare("SELECT COUNT(*) as count FROM overture_places").get() as { count: number } | undefined;
+    const row = await db.get<{ count: number }>("SELECT COUNT(*) as count FROM overture_places");
     if (!row || row.count === 0) {
       const seedFile = path.join(process.cwd(), "data", "overture_places_bd.json");
       if (fs.existsSync(seedFile)) {
         const rawJson = fs.readFileSync(seedFile, "utf-8");
         const places = JSON.parse(rawJson);
-        const insertStmt = db.prepare(`
+        const insertSql = `
           INSERT INTO overture_places (
             id, gers_id, name, category, categories, lat, lon, phones, emails, websites, socials, facebook_url,
             address_freeform, locality, region, postcode, country, operating_status, confidence,
             sources, sources_json, release_version, release_tag, imported_at, updated_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(id) DO NOTHING
-        `);
+        `;
 
         for (const p of places) {
           const gersId = p.gers_id || p.id;
@@ -243,7 +354,8 @@ function initTables(db: DatabaseSync) {
           const primaryCat = p.category || (categories.length > 0 ? categories[0] : null);
           const addr = (p.addresses && p.addresses.length > 0) ? p.addresses[0] : {};
 
-          insertStmt.run(
+          await db.run(
+            insertSql,
             p.id,
             gersId,
             p.name,
@@ -291,19 +403,18 @@ export interface BudgetStatus {
   reason?: string;
 }
 
-export function getBudgetStatus(confirmedExtraDailyCalls: number = 0): BudgetStatus {
+export async function getBudgetStatus(confirmedExtraDailyCalls: number = 0): Promise<BudgetStatus> {
   const dailyLimit = parseInt(process.env.GOOGLE_DAILY_CALL_LIMIT || "30", 10) + confirmedExtraDailyCalls;
   const monthlyLimit = parseInt(process.env.GOOGLE_MONTHLY_CALL_LIMIT || "900", 10);
 
   try {
-    const db = getDb();
+    const db = await getDriver();
     const now = new Date();
     const dayKey = `day_${now.toISOString().slice(0, 10)}`; // e.g. day_2026-10-16
     const monthKey = `month_${now.toISOString().slice(0, 7)}`; // e.g. month_2026-10
 
-    const getStmt = db.prepare("SELECT count FROM api_usage WHERE key = ?");
-    const dailyRow = getStmt.get(dayKey) as { count: number } | undefined;
-    const monthlyRow = getStmt.get(monthKey) as { count: number } | undefined;
+    const dailyRow = await db.get<{ count: number }>("SELECT count FROM api_usage WHERE key = ?", dayKey);
+    const monthlyRow = await db.get<{ count: number }>("SELECT count FROM api_usage WHERE key = ?", monthKey);
 
     const dailyUsed = dailyRow ? dailyRow.count : 0;
     const monthlyUsed = monthlyRow ? monthlyRow.count : 0;
@@ -349,38 +460,40 @@ export function getBudgetStatus(confirmedExtraDailyCalls: number = 0): BudgetSta
   }
 }
 
-export function incrementGoogleApiCallCount(): void {
-  const db = getDb();
+export async function incrementGoogleApiCallCount(): Promise<void> {
+  const db = await getDriver();
   const now = new Date();
   const dayKey = `day_${now.toISOString().slice(0, 10)}`;
   const monthKey = `month_${now.toISOString().slice(0, 7)}`;
   const isoNow = now.toISOString();
 
-  const upsert = db.prepare(`
+  const upsert = `
     INSERT INTO api_usage (key, count, updated_at)
     VALUES (?, 1, ?)
     ON CONFLICT(key) DO UPDATE SET count = count + 1, updated_at = excluded.updated_at
-  `);
+  `;
 
-  upsert.run(dayKey, isoNow);
-  upsert.run(monthKey, isoNow);
+  await db.run(upsert, dayKey, isoNow);
+  await db.run(upsert, monthKey, isoNow);
 }
 
 // ==========================================
 // 2. RESPONSE CACHING (Max 30 days)
 // ==========================================
 
-export function getCachedPlacesResponse(cacheKey: string): any | null {
-  const db = getDb();
+export async function getCachedPlacesResponse(cacheKey: string): Promise<any | null> {
+  const db = await getDriver();
   const now = Date.now();
-  const stmt = db.prepare("SELECT data_json, expires_at FROM places_cache WHERE cache_key = ?");
-  const row = stmt.get(cacheKey) as { data_json: string; expires_at: number } | undefined;
+  const row = await db.get<{ data_json: string; expires_at: number }>(
+    "SELECT data_json, expires_at FROM places_cache WHERE cache_key = ?",
+    cacheKey
+  );
 
   if (!row) return null;
 
   if (row.expires_at < now) {
     // Expired
-    db.prepare("DELETE FROM places_cache WHERE cache_key = ?").run(cacheKey);
+    await db.run("DELETE FROM places_cache WHERE cache_key = ?", cacheKey);
     return null;
   }
 
@@ -391,28 +504,32 @@ export function getCachedPlacesResponse(cacheKey: string): any | null {
   }
 }
 
-export function setCachedPlacesResponse(cacheKey: string, data: any, ttlDays: number = 30): void {
-  const db = getDb();
+export async function setCachedPlacesResponse(cacheKey: string, data: any, ttlDays: number = 30): Promise<void> {
+  const db = await getDriver();
   const now = Date.now();
   const expiresAt = now + ttlDays * 24 * 60 * 60 * 1000;
   const jsonStr = JSON.stringify(data);
 
-  const stmt = db.prepare(`
+  await db.run(
+    `
     INSERT INTO places_cache (cache_key, data_json, created_at, expires_at)
     VALUES (?, ?, ?, ?)
     ON CONFLICT(cache_key) DO UPDATE SET data_json = excluded.data_json, expires_at = excluded.expires_at
-  `);
-  stmt.run(cacheKey, jsonStr, now, expiresAt);
+  `,
+    cacheKey,
+    jsonStr,
+    now,
+    expiresAt
+  );
 }
 
 // ==========================================
 // 3. MY LEADS (CRM REPOSITORY)
 // ==========================================
 
-export function getAllSavedLeads(): BusinessLead[] {
-  const db = getDb();
-  const stmt = db.prepare("SELECT * FROM my_leads ORDER BY updated_at DESC");
-  const rows = stmt.all() as any[];
+export async function getAllSavedLeads(): Promise<BusinessLead[]> {
+  const db = await getDriver();
+  const rows = await db.all<any>("SELECT * FROM my_leads ORDER BY updated_at DESC");
 
   return rows.map((r) => ({
     id: r.id,
@@ -443,11 +560,12 @@ export function getAllSavedLeads(): BusinessLead[] {
   }));
 }
 
-export function saveLead(lead: BusinessLead): void {
-  const db = getDb();
+export async function saveLead(lead: BusinessLead): Promise<void> {
+  const db = await getDriver();
   const now = new Date().toISOString();
 
-  const stmt = db.prepare(`
+  await db.run(
+    `
     INSERT INTO my_leads (
       id, place_id, name, category, phone, phone_e164, phone_status,
       email, email_status, website, website_status, address,
@@ -472,9 +590,7 @@ export function saveLead(lead: BusinessLead): void {
       last_contacted_at = excluded.last_contacted_at,
       next_follow_up_date = excluded.next_follow_up_date,
       updated_at = excluded.updated_at
-  `);
-
-  stmt.run(
+  `,
     lead.id,
     lead.placeId || lead.id,
     lead.name,
@@ -502,8 +618,8 @@ export function saveLead(lead: BusinessLead): void {
   );
 }
 
-export function updateLeadStatus(id: string, status: string, notes?: string, followUpDate?: string): void {
-  const db = getDb();
+export async function updateLeadStatus(id: string, status: string, notes?: string, followUpDate?: string): Promise<void> {
+  const db = await getDriver();
   const now = new Date().toISOString();
 
   let query = "UPDATE my_leads SET crm_status = ?, updated_at = ?";
@@ -525,23 +641,24 @@ export function updateLeadStatus(id: string, status: string, notes?: string, fol
   query += " WHERE id = ? OR place_id = ?";
   params.push(id, id);
 
-  db.prepare(query).run(...params);
+  await db.run(query, ...params);
 }
 
-export function deleteSavedLead(id: string): void {
-  const db = getDb();
-  db.prepare("DELETE FROM my_leads WHERE id = ? OR place_id = ?").run(id, id);
+export async function deleteSavedLead(id: string): Promise<void> {
+  const db = await getDriver();
+  await db.run("DELETE FROM my_leads WHERE id = ? OR place_id = ?", id, id);
 }
 
 // ==========================================
 // 4. SCAN JOBS REPOSITORY
 // ==========================================
 
-export function saveScanJob(job: any): void {
-  const db = getDb();
+export async function saveScanJob(job: any): Promise<void> {
+  const db = await getDriver();
   const now = new Date().toISOString();
 
-  const stmt = db.prepare(`
+  await db.run(
+    `
     INSERT INTO scan_jobs (
       id, area_name, country_code, mode, status,
       total_categories, completed_categories, total_calls_used,
@@ -556,9 +673,7 @@ export function saveScanJob(job: any): void {
       coverage_report_json = excluded.coverage_report_json,
       task_queue_json = excluded.task_queue_json,
       updated_at = excluded.updated_at
-  `);
-
-  stmt.run(
+  `,
     job.id,
     job.areaName,
     job.countryCode,
@@ -575,9 +690,9 @@ export function saveScanJob(job: any): void {
   );
 }
 
-export function getScanJob(id: string): any | null {
-  const db = getDb();
-  const row = db.prepare("SELECT * FROM scan_jobs WHERE id = ?").get(id) as any;
+export async function getScanJob(id: string): Promise<any | null> {
+  const db = await getDriver();
+  const row = await db.get<any>("SELECT * FROM scan_jobs WHERE id = ?", id);
   if (!row) return null;
   return {
     id: row.id,
@@ -600,41 +715,52 @@ export function getScanJob(id: string): any | null {
 // 5. OUTREACH LOGS & SETTINGS REPOSITORY
 // ==========================================
 
-export function logOutreach(leadId: string, channel: string, message?: string): void {
-  const db = getDb();
+export async function logOutreach(leadId: string, channel: string, message?: string): Promise<void> {
+  const db = await getDriver();
   const id = `log-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   const now = new Date().toISOString();
 
-  db.prepare(`
+  await db.run(
+    `
     INSERT INTO outreach_logs (id, lead_id, channel, message, created_at)
     VALUES (?, ?, ?, ?, ?)
-  `).run(id, leadId, channel, message || null, now);
+  `,
+    id,
+    leadId,
+    channel,
+    message || null,
+    now
+  );
 
   // Update lead CRM status to Contacted if it exists in my_leads
-  updateLeadStatus(leadId, "Contacted");
+  await updateLeadStatus(leadId, "Contacted");
 }
 
-export function getOutreachLogs(leadId?: string): any[] {
-  const db = getDb();
+export async function getOutreachLogs(leadId?: string): Promise<any[]> {
+  const db = await getDriver();
   if (leadId) {
-    return db.prepare("SELECT * FROM outreach_logs WHERE lead_id = ? ORDER BY created_at DESC").all(leadId) as any[];
+    return db.all<any>("SELECT * FROM outreach_logs WHERE lead_id = ? ORDER BY created_at DESC", leadId);
   }
-  return db.prepare("SELECT * FROM outreach_logs ORDER BY created_at DESC LIMIT 100").all() as any[];
+  return db.all<any>("SELECT * FROM outreach_logs ORDER BY created_at DESC LIMIT 100");
 }
 
-export function getUserSetting(key: string, defaultVal: string = ""): string {
-  const db = getDb();
-  const row = db.prepare("SELECT value FROM user_settings WHERE key = ?").get(key) as { value: string } | undefined;
+export async function getUserSetting(key: string, defaultVal: string = ""): Promise<string> {
+  const db = await getDriver();
+  const row = await db.get<{ value: string }>("SELECT value FROM user_settings WHERE key = ?", key);
   return row ? row.value : defaultVal;
 }
 
-export function setUserSetting(key: string, value: string): void {
-  const db = getDb();
-  db.prepare(`
+export async function setUserSetting(key: string, value: string): Promise<void> {
+  const db = await getDriver();
+  await db.run(
+    `
     INSERT INTO user_settings (key, value)
     VALUES (?, ?)
     ON CONFLICT(key) DO UPDATE SET value = excluded.value
-  `).run(key, value);
+  `,
+    key,
+    value
+  );
 }
 
 // ==========================================
@@ -651,14 +777,15 @@ export interface OverturePlaceRecord {
   emails: string[];
   websites: string[];
   socials: string[];
+  facebook_url?: string | null;
   addresses: any[];
   sources: any[];
   release_version?: string;
   updated_at?: string;
 }
 
-export function upsertOverturePlace(place: OverturePlaceRecord): void {
-  const db = getDb();
+export async function upsertOverturePlace(place: OverturePlaceRecord): Promise<void> {
+  const db = await getDriver();
   const now = place.updated_at || new Date().toISOString();
   const fb = (place.socials || []).find((s: string) => s.toLowerCase().includes("facebook.com") || s.toLowerCase().includes("fb.com")) || null;
   const freeform = place.addresses?.[0]?.freeform || null;
@@ -668,7 +795,8 @@ export function upsertOverturePlace(place: OverturePlaceRecord): void {
   const country = place.addresses?.[0]?.country || "BD";
   const primaryCat = place.categories?.[0] || null;
 
-  const stmt = db.prepare(`
+  await db.run(
+    `
     INSERT INTO overture_places (
       id, gers_id, name, category, categories, lat, lon, phones, emails, websites, socials, facebook_url,
       address_freeform, locality, region, postcode, country, operating_status, confidence,
@@ -703,9 +831,7 @@ export function upsertOverturePlace(place: OverturePlaceRecord): void {
       release_tag = excluded.release_tag,
       imported_at = excluded.imported_at,
       updated_at = excluded.updated_at
-  `);
-
-  stmt.run(
+  `,
     place.id,
     place.id,
     place.name,
@@ -734,33 +860,37 @@ export function upsertOverturePlace(place: OverturePlaceRecord): void {
   );
 }
 
-export function upsertOverturePlaces(places: OverturePlaceRecord[]): { insertedCount: number } {
+export async function upsertOverturePlaces(places: OverturePlaceRecord[]): Promise<{ insertedCount: number }> {
   for (const place of places) {
-    upsertOverturePlace(place);
+    await upsertOverturePlace(place);
   }
   return { insertedCount: places.length };
 }
 
-export function getOverturePlaceCount(): number {
-  const db = getDb();
-  const row = db.prepare("SELECT COUNT(*) as count FROM overture_places").get() as { count: number };
+export async function getOverturePlaceCount(): Promise<number> {
+  const db = await getDriver();
+  const row = await db.get<{ count: number }>("SELECT COUNT(*) as count FROM overture_places");
   return row ? row.count : 0;
 }
 
-export function getOverturePlacesInBBox(
+export async function getOverturePlacesInBBox(
   minLat: number,
   maxLat: number,
   minLon: number,
   maxLon: number
-): OverturePlaceRecord[] {
-  const db = getDb();
-  const stmt = db.prepare(`
+): Promise<OverturePlaceRecord[]> {
+  const db = await getDriver();
+  const rows = await db.all<any>(
+    `
     SELECT * FROM overture_places
     WHERE lat BETWEEN ? AND ?
       AND lon BETWEEN ? AND ?
-  `);
-
-  const rows = stmt.all(minLat, maxLat, minLon, maxLon) as any[];
+  `,
+    minLat,
+    maxLat,
+    minLon,
+    maxLon
+  );
 
   return rows.map((r) => ({
     id: r.id,
@@ -772,7 +902,22 @@ export function getOverturePlacesInBBox(
     emails: r.emails ? JSON.parse(r.emails) : [],
     websites: r.websites ? JSON.parse(r.websites) : [],
     socials: r.socials ? JSON.parse(r.socials) : [],
-    addresses: r.addresses ? JSON.parse(r.addresses) : [],
+    facebook_url: r.facebook_url || null,
+    // The table stores the address in flat columns (there is no addresses
+    // column) — rebuild the address object from them so callers see the real
+    // Overture address instead of an empty list.
+    addresses:
+      r.address_freeform || r.locality || r.region || r.postcode || r.country
+        ? [
+            {
+              freeform: r.address_freeform || null,
+              locality: r.locality || null,
+              region: r.region || null,
+              postcode: r.postcode || null,
+              country: r.country || null,
+            },
+          ]
+        : [],
     sources: r.sources ? JSON.parse(r.sources) : [],
     release_version: r.release_version,
     updated_at: r.updated_at,
@@ -796,21 +941,20 @@ export interface WebsiteEnrichmentRecord {
   expiresAt: number;
 }
 
-export function getCachedWebsiteEnrichment(websiteUrl: string): WebsiteEnrichmentRecord | null {
+export async function getCachedWebsiteEnrichment(websiteUrl: string): Promise<WebsiteEnrichmentRecord | null> {
   try {
-    const db = getDb();
+    const db = await getDriver();
     const domainKey = new URL(
       websiteUrl.startsWith("http") ? websiteUrl : `https://${websiteUrl}`
     ).hostname.replace(/^www\./, "").toLowerCase();
 
     const now = Date.now();
-    const stmt = db.prepare("SELECT * FROM website_enrichment_cache WHERE domain_key = ?");
-    const row = stmt.get(domainKey) as any;
+    const row = await db.get<any>("SELECT * FROM website_enrichment_cache WHERE domain_key = ?", domainKey);
 
     if (!row) return null;
 
     if (row.expires_at < now) {
-      db.prepare("DELETE FROM website_enrichment_cache WHERE domain_key = ?").run(domainKey);
+      await db.run("DELETE FROM website_enrichment_cache WHERE domain_key = ?", domainKey);
       return null;
     }
 
@@ -831,7 +975,7 @@ export function getCachedWebsiteEnrichment(websiteUrl: string): WebsiteEnrichmen
   }
 }
 
-export function setCachedWebsiteEnrichment(data: {
+export async function setCachedWebsiteEnrichment(data: {
   websiteUrl: string;
   email: string | null;
   emailSourceUrl: string | null;
@@ -840,9 +984,9 @@ export function setCachedWebsiteEnrichment(data: {
   whatsappNumber?: string | null;
   whatsappSourceUrl?: string | null;
   ttlDays?: number;
-}): void {
+}): Promise<void> {
   try {
-    const db = getDb();
+    const db = await getDriver();
     const domainKey = new URL(
       data.websiteUrl.startsWith("http") ? data.websiteUrl : `https://${data.websiteUrl}`
     ).hostname.replace(/^www\./, "").toLowerCase();
@@ -852,7 +996,8 @@ export function setCachedWebsiteEnrichment(data: {
     const expiresAt = now + ttlDays * 24 * 60 * 60 * 1000;
     const checkedAt = new Date().toISOString();
 
-    const stmt = db.prepare(`
+    await db.run(
+      `
       INSERT INTO website_enrichment_cache (
         domain_key, website_url, email, email_source_url, email_status, phones_json, whatsapp_number, whatsapp_source_url, checked_at, expires_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -866,9 +1011,7 @@ export function setCachedWebsiteEnrichment(data: {
         whatsapp_source_url = excluded.whatsapp_source_url,
         checked_at = excluded.checked_at,
         expires_at = excluded.expires_at
-    `);
-
-    stmt.run(
+    `,
       domainKey,
       data.websiteUrl,
       data.email,
@@ -884,5 +1027,3 @@ export function setCachedWebsiteEnrichment(data: {
     console.warn("Failed to set website enrichment cache", err);
   }
 }
-
-

@@ -1,3 +1,7 @@
+// Node.js Overture importer (single-country, BD seed + local parquet).
+// For multi-country imports (GB, DE, FR, NL, ES, IT, PL, US, CA) use the
+// Python importer instead: scripts/import_overture.py --countries GB,DE,FR
+// It tiles large countries and stamps each row with its own country code.
 import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -151,5 +155,6 @@ console.log(`  [RESULT] Count before:     ${beforeCount}`);
 console.log(`  [RESULT] Items processed:  ${places.length}`);
 console.log(`  [RESULT] Count after:      ${afterCount}`);
 console.log(`  [RESULT] Duplicates added: 0 (INSERT OR REPLACE)`);
-console.log("  [SUCCESS] Database updated with official Overture Places.");
+console.log("  [SUCCESS] Database updated from the local seed snapshot (12 rows, Bangladesh only).");
+console.log("  [NOTE] This seed file is NOT a full Overture import — run scripts/import_overture.py for real Overture data.");
 console.log("=====================================================");

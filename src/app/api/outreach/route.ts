@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const leadId = searchParams.get("leadId") || undefined;
-    const logs = getOutreachLogs(leadId);
+    const logs = await getOutreachLogs(leadId);
     return NextResponse.json({ success: true, logs });
   } catch (error: any) {
     return NextResponse.json(
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    logOutreach(leadId, channel, message);
+    await logOutreach(leadId, channel, message);
     return NextResponse.json({ success: true, leadId, channel });
   } catch (error: any) {
     return NextResponse.json(

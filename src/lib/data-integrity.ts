@@ -1,7 +1,7 @@
 import { parsePhoneNumberFromString, isValidPhoneNumber } from "libphonenumber-js";
 
 export type LeadSource = "google_places" | "csv_import" | "manual" | "free_directory";
-export type EmailProvenance = "found_on_website" | "csv" | "manual" | "google" | "osm";
+export type EmailProvenance = "found_on_website" | "csv" | "manual" | "google" | "osm" | "overture";
 export type WebsiteStatus = "No Website" | "Social Only" | "Has Website";
 export type PhoneStatus = "Valid" | "Format valid" | "Phone format unverified" | "Missing";
 export type EmailStatus =
@@ -71,13 +71,18 @@ export interface BusinessLead {
   crmStatus?: "New" | "Contacted" | "Replied" | "Meeting" | "Won" | "Lost";
   lastContactedAt?: string | null;
   nextFollowUpDate?: string | null;
-  // Prompt 5 Worldwide Correctness fields
+  // Phase 5 Worldwide Correctness fields
   hasStreetAddress?: boolean;
   secondaryLocation?: string;
   contactWarning?: string | null;
   emailWarning?: string | null;
+  phoneWarning?: string | null;
+  // How this lead was matched to its category: "tag" = its own OSM tag matched,
+  // "name" = name-keyword match only (badged "Matched by name" in the UI),
+  // "overture" = Overture-only lead, "google"/"csv"/"manual" = other sources.
+  matchType?: "tag" | "name" | "overture" | "google" | "csv" | "manual";
   distanceMeters?: number | null;
-  // Prompt 6 Contact Enrichment fields (WhatsApp + Email + Best Channel)
+  // Phase 6 Contact Enrichment fields (WhatsApp + Email + Best Channel)
   whatsapp?: string | null;
   whatsappNumber?: string | null;
   whatsappLink?: string | null;
@@ -95,7 +100,7 @@ export interface BusinessLead {
 }
 
 /**
- * Computes lead contactability and best outreach channel per Prompt 6 Step 6.
+ * Computes lead contactability and best outreach channel per Phase 6 Step 6.
  * Priority: WhatsApp (confirmed only) > Email > Facebook > Instagram > Phone
  */
 export function computeLeadContactability(lead: Partial<BusinessLead>): {
@@ -167,7 +172,8 @@ export function computeLeadContactability(lead: Partial<BusinessLead>): {
 // Common junk/placeholder phone patterns to reject unconditionally
 const JUNK_PHONE_PATTERNS = [
   /^(\d)\1{6,}$/, // Repeated digits e.g. 00000000, 1111111
-  /123456|234567|345678|456789|987654|876543/, // Sequential digits
+  /(\d)\1{5,}/, // 6+ identical digits in a row ANYWHERE in the number (e.g. +91 22 1111 1111)
+  /123456|234567|345678|456789|567890|678901|012345|987654|876543|765432|654321|543210/, // Sequential digits
   /000000$/, // Trailing zeros e.g. 1713-000000
   new RegExp(["1712", "345678"].join("-") + "|" + ["1912", "345678"].join("-")), // Known dummy patterns
 ];
@@ -221,6 +227,7 @@ export function validatePhone(
   phoneE164: string | null;
   phoneStatus: PhoneStatus;
   canWhatsApp: boolean;
+  isSuspicious?: boolean;
 } {
   if (!rawPhone || !rawPhone.trim() || rawPhone.trim() === "N/A") {
     return {
@@ -248,6 +255,7 @@ export function validatePhone(
         phoneE164: null,
         phoneStatus: "Phone format unverified",
         canWhatsApp: false,
+        isSuspicious: true,
       };
     }
   }
@@ -391,57 +399,186 @@ export function validateEmail(
 }
 
 /**
+ * Validates a raw URL from a directory record. Directory data contains
+ * malformed values — an email address stored as a website, a backslash in the
+ * URL, a doubled domain — and those must never be displayed as links.
+ * Returns the cleaned https URL, or null (meaning "not available").
+ * Never invents a URL: a rejected value stays missing.
+ */
+export function validateRecordUrl(rawUrl: string | null | undefined): string | null {
+  if (!rawUrl) return null;
+  const url = rawUrl.trim();
+  if (!url || url === "N/A") return null;
+
+  const lower = url.toLowerCase();
+  // An email address is not a URL; a backslash, quote or space means the
+  // value is corrupted, not a link.
+  if (
+    url.includes("@") ||
+    url.includes("\\") ||
+    url.includes('"') ||
+    url.includes("'") ||
+    /\s/.test(url) ||
+    lower.includes("example.com") ||
+    lower.includes("localhost") ||
+    lower.includes("placeholder")
+  ) {
+    return null;
+  }
+
+  let withScheme = url;
+  if (!/^https?:\/\//i.test(withScheme)) {
+    withScheme = `https://${withScheme}`;
+  }
+
+  try {
+    const parsed = new URL(withScheme);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+    const host = parsed.hostname.toLowerCase();
+    if (!host.includes(".") || !/^[a-z0-9.\-]+$/.test(host)) return null;
+    if (host.startsWith(".") || host.endsWith(".") || host.includes("..")) return null;
+    // A doubled domain in the path (facebook.com/www.facebook.com/6155...)
+    // is corrupted data, not a usable link.
+    const firstSegment = parsed.pathname.split("/").filter(Boolean)[0] || "";
+    if (/^[a-z0-9.\-]+\.[a-z]{2,}$/i.test(firstSegment)) return null;
+    // Keep bare domains slash-free (https://example.com, not ...com/).
+    if (parsed.pathname === "/" && !parsed.search && !parsed.hash) return parsed.origin;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+const SOCIAL_DOMAINS: Record<"facebook" | "instagram", string[]> = {
+  facebook: ["facebook.com", "fb.com", "fb.me"],
+  instagram: ["instagram.com", "instagr.am"],
+};
+
+/**
+ * Validates a full social URL against its platform. A facebook field holding
+ * an instagram.com link (or vice versa) is rejected — the channel label must
+ * match the link it points to. A bare platform homepage (no page path) is
+ * not a business profile, so it is rejected too.
+ */
+export function validatePlatformUrl(
+  rawUrl: string | null | undefined,
+  platform: "facebook" | "instagram"
+): string | null {
+  const url = validateRecordUrl(rawUrl);
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
+    if (!SOCIAL_DOMAINS[platform].includes(host)) return null;
+    if (!parsed.pathname.replace(/\//g, "")) return null;
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Builds a social profile URL from a raw directory value, which may be a
+ * full URL, a domain-prefixed path, or a bare handle. Never builds a social
+ * URL from an email address, and never prefixes a value that already
+ * contains the platform domain (that would double it).
+ */
+export function buildSocialUrl(
+  raw: string | null | undefined,
+  platform: "facebook" | "instagram"
+): string | null {
+  if (!raw) return null;
+  const value = raw.trim();
+  if (!value) return null;
+
+  // An email address is not a social handle ("@handle" is fine).
+  if (value.includes("@") && !/^@[^@]+$/.test(value)) return null;
+
+  const candidate = value.replace(/^@/, "");
+  const lower = candidate.toLowerCase();
+  const isUrlLike =
+    lower.startsWith("http://") ||
+    lower.startsWith("https://") ||
+    SOCIAL_DOMAINS[platform].some(
+      (d) => lower === d || lower.startsWith(d + "/") || lower.startsWith("www." + d + "/")
+    );
+
+  if (isUrlLike) {
+    return validatePlatformUrl(
+      lower.startsWith("http") ? candidate : `https://${candidate}`,
+      platform
+    );
+  }
+
+  // Plain handle: letters, digits, dots, underscores, hyphens only.
+  if (!/^[A-Za-z0-9._-]{2,}$/.test(candidate)) return null;
+  const base =
+    platform === "facebook" ? "https://www.facebook.com/" : "https://www.instagram.com/";
+  return `${base}${candidate}`;
+}
+
+/**
  * Classifies a website URL as "No Website", "Social Only" (FB/IG/Linktree), or "Has Website".
+ * Malformed values (email as website, backslash URL, doubled domain) are
+ * rejected by validateRecordUrl and count as "No Website".
  */
 export function classifyWebsite(rawUrl: string | null | undefined): {
   website: string | null;
   websiteStatus: WebsiteStatus;
 } {
-  if (!rawUrl || !rawUrl.trim() || rawUrl.trim() === "N/A") {
+  const valid = validateRecordUrl(rawUrl);
+  if (!valid) {
     return { website: null, websiteStatus: "No Website" };
   }
 
-  const url = rawUrl.trim();
-
-  // Check for localhosts or placeholders
-  if (
-    url.includes("example.com") ||
-    url.includes("localhost") ||
-    url.includes("placeholder")
-  ) {
+  let host = "";
+  try {
+    host = new URL(valid).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
     return { website: null, websiteStatus: "No Website" };
   }
 
-  const lower = url.toLowerCase();
-  const isSocial =
-    lower.includes("facebook.com") ||
-    lower.includes("fb.com") ||
-    lower.includes("fb.me") ||
-    lower.includes("instagram.com") ||
-    lower.includes("instagr.am") ||
-    lower.includes("linktr.ee") ||
-    lower.includes("tiktok.com") ||
-    lower.includes("wa.me") ||
-    lower.includes("api.whatsapp.com");
-
-  let formattedUrl = url;
-  if (!formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
-    formattedUrl = `https://${formattedUrl}`;
-  }
+  const socialHosts = [
+    "facebook.com",
+    "fb.com",
+    "fb.me",
+    "instagram.com",
+    "instagr.am",
+    "linktr.ee",
+    "tiktok.com",
+    "wa.me",
+    "api.whatsapp.com",
+  ];
+  const isSocial = socialHosts.some((h) => host === h || host.endsWith("." + h));
 
   return {
-    website: formattedUrl,
+    website: valid,
     websiteStatus: isSocial ? "Social Only" : "Has Website",
   };
 }
 
 /**
- * Calculates Lead Score (0–100) using ONLY real signals (Prompt 3 Part C):
- * - No website (+40) / Social only (+30) -> High pitch opportunity for web development
- * - Has phone (+20) -> Valid format phone for calling/WhatsApp
- * - Has Facebook/social (+15) -> Confirmed digital presence via Facebook, Instagram, or LinkedIn
- * - Has email (+15) -> Real email found on website or directory
- * - Recently updated source record (+10) -> Source timestamp active within the last 180 days
+ * Honest display label for a website status. "No Website" in the record means
+ * only that no website was found in the directory data — the business may
+ * still have a real site (chains usually do), so the label says so.
+ */
+export function displayWebsiteStatus(status: WebsiteStatus | string | null | undefined): string {
+  if (status === "No Website") return "No website in directory record";
+  return status || "";
+}
+
+/**
+ * Calculates Lead Score (0–100) using ONLY real signals. The score tracks
+ * CONTACTABILITY first (can the owner actually reach this business?) and
+ * OPPORTUNITY second (does it need a website?):
+ * - Opportunity: no website in directory record (+25) / social only (+15) /
+ *   has website (+5 — redesign/SEO opportunity, and no lead ever scores 0)
+ * - Email (+25) — the primary outreach channel
+ * - WhatsApp-capable mobile (+20), else valid phone (+10), else listed phone (+5)
+ * - Facebook / Instagram / social (+10)
+ * - Recently updated source record (+10)
+ * Max 90. Tiers: High >= 60, Medium >= 35. An uncontactable lead can reach
+ * at most 35 (Medium); High requires at least one real channel.
  */
 export function calculateLeadScore(lead: Partial<BusinessLead>): {
   score: number;
@@ -451,44 +588,52 @@ export function calculateLeadScore(lead: Partial<BusinessLead>): {
   let score = 0;
   const reasons: ScoreReason[] = [];
 
-  // 1. Website Status (Sales opportunity)
+  // 1. Website status (sales opportunity)
   if (lead.websiteStatus === "No Website") {
-    score += 40;
-    reasons.push({ reason: "No website (High-value design & dev opportunity)", points: 40 });
+    score += 25;
+    reasons.push({ reason: "No website in directory record (web design opportunity)", points: 25 });
   } else if (lead.websiteStatus === "Social Only") {
-    score += 30;
-    reasons.push({ reason: "Social-only presence (Needs standalone web storefront)", points: 30 });
-  }
-
-  // 2. Has Phone
-  if (lead.phoneStatus === "Valid" || lead.phoneStatus === "Format valid") {
-    score += 20;
-    reasons.push({ reason: "Phone present in OSM record", points: 20 });
-  } else if (lead.phone && lead.phoneStatus !== "Missing") {
-    score += 10;
-    reasons.push({ reason: "Phone number available", points: 10 });
-  }
-
-  // 3. Has Facebook / Social
-  const hasSocial = Boolean(
-    lead.facebookUrl ||
-    (lead.socials && lead.socials.length > 0) ||
-    lead.websiteStatus === "Social Only"
-  );
-  if (hasSocial) {
     score += 15;
-    reasons.push({ reason: "Active Facebook / Social media profile", points: 15 });
+    reasons.push({ reason: "Social-only presence (needs a standalone website)", points: 15 });
+  } else if (lead.websiteStatus === "Has Website") {
+    score += 5;
+    reasons.push({ reason: "Has a website (redesign / SEO opportunity)", points: 5 });
   }
 
-  // 4. Has Email
+  // 2. Email (primary outreach channel)
   if (lead.email && lead.emailStatus !== "Invalid format" && lead.emailStatus !== "Missing") {
-    score += 15;
+    score += 25;
     reasons.push({
       reason: lead.emailStatus === "Found on website"
         ? "Email extracted from company website"
         : "Email address available in directory record",
-      points: 15,
+      points: 25,
     });
+  }
+
+  // 3. Phone / WhatsApp reachability
+  const phoneFormatOk = lead.phoneStatus === "Valid" || lead.phoneStatus === "Format valid";
+  if (lead.canWhatsApp && phoneFormatOk) {
+    score += 20;
+    reasons.push({ reason: "Mobile number — WhatsApp reachable", points: 20 });
+  } else if (phoneFormatOk) {
+    score += 10;
+    reasons.push({ reason: "Phone present in OSM record", points: 10 });
+  } else if (lead.phone && lead.phoneStatus !== "Missing") {
+    score += 5;
+    reasons.push({ reason: "Phone number listed (format not checked)", points: 5 });
+  }
+
+  // 4. Facebook / social presence
+  const hasSocial = Boolean(
+    lead.facebookUrl ||
+    lead.instagramUrl ||
+    (lead.socials && lead.socials.length > 0) ||
+    lead.websiteStatus === "Social Only"
+  );
+  if (hasSocial) {
+    score += 10;
+    reasons.push({ reason: "Facebook / social profile available", points: 10 });
   }
 
   // 5. Recently updated source record

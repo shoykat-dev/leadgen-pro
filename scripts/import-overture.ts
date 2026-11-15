@@ -1,3 +1,7 @@
+// Loads the 12-row Bangladesh seed snapshot into the database via src/lib/db.ts.
+// The target follows the same env-var rule as the site: Turso when
+// TURSO_DATABASE_URL + TURSO_AUTH_TOKEN are set, local SQLite otherwise.
+// For the real multi-country import, use scripts/import_overture.py instead.
 import fs from "node:fs";
 import path from "node:path";
 import { upsertOverturePlaces, getOverturePlaceCount, type OverturePlaceRecord } from "../src/lib/db";
@@ -17,12 +21,12 @@ async function runImport() {
   const rawJson = fs.readFileSync(seedPath, "utf-8");
   const places: OverturePlaceRecord[] = JSON.parse(rawJson);
 
-  const beforeCount = getOverturePlaceCount();
+  const beforeCount = await getOverturePlaceCount();
   console.log(`[*] Places currently in local database: ${beforeCount}`);
   console.log(`[*] Processing ${places.length} Overture Places for Bangladesh...`);
 
-  const { insertedCount } = upsertOverturePlaces(places);
-  const afterCount = getOverturePlaceCount();
+  const { insertedCount } = await upsertOverturePlaces(places);
+  const afterCount = await getOverturePlaceCount();
 
   console.log("-----------------------------------------------------");
   console.log(`  [RESULT] Count before:     ${beforeCount}`);

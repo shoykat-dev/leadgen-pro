@@ -315,7 +315,7 @@ export function AreaScanModal({
                     All Services (A to Z)
                   </span>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                    Iterates all 99 services. Requires multi-day execution under daily quota limit.
+                    Iterates all 101 services. Requires multi-day execution under daily quota limit.
                   </p>
                 </button>
               </div>

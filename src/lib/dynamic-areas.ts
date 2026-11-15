@@ -130,6 +130,14 @@ export async function getOrBuildCityAreas(
     if (fs.existsSync(filePath)) {
       const parsed = JSON.parse(fs.readFileSync(filePath, "utf-8"));
       if (parsed.expiresAt && parsed.expiresAt > now) {
+        // Normalize old caches: "City centre" is always offered first, even
+        // when the cached list was written before that rule existed.
+        if (
+          Array.isArray(parsed.result?.areas) &&
+          !parsed.result.areas.some((a: string) => a.toLowerCase() === "city centre")
+        ) {
+          parsed.result.areas = ["City centre", ...parsed.result.areas.slice(0, 29)];
+        }
         dynamicMemoryCache.set(cacheKey, parsed);
         // Register areas into AREAS table
         for (const a of parsed.result.areas) {
@@ -212,25 +220,28 @@ export async function getOrBuildCityAreas(
     }
   }
 
-  // 4. If city has no suburb/neighbourhood nodes, offer "City centre" search (Prompt 5 Worldwide Coverage)
+  // 4. "City centre" is ALWAYS offered first (Phase 5 Worldwide Coverage):
+  // it is the whole-city-centre search (3000m) for cities whose suburbs are
+  // unknown or too small to bother with. Suburbs follow it when found.
+  const centreName = "City centre";
+  const centreKey = normalizeKey(`${cityName}_${centreName}`);
+  AREAS[centreKey] = {
+    name: centreName,
+    city: cityName,
+    centerLat: cityCenter.lat,
+    centerLon: cityCenter.lon,
+    radiusMeters: 3000,
+  };
   let result: DynamicAreaResult;
   if (suburbNames.length > 0) {
+    const suburbs = suburbNames.filter((n) => n.toLowerCase() !== centreName.toLowerCase());
     result = {
-      areas: suburbNames.slice(0, 30),
+      areas: [centreName, ...suburbs.slice(0, 29)],
       cityCenter,
       isDynamic: true,
       source: "osm_suburbs",
     };
   } else {
-    const centreName = "City centre";
-    const compKey = normalizeKey(`${cityName}_${centreName}`);
-    AREAS[compKey] = {
-      name: centreName,
-      city: cityName,
-      centerLat: cityCenter.lat,
-      centerLon: cityCenter.lon,
-      radiusMeters: 3000,
-    };
     result = {
       areas: [centreName],
       cityCenter,

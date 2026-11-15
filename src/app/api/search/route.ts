@@ -6,7 +6,7 @@ import { getBudgetStatus } from "@/lib/db";
 
 export async function GET() {
   try {
-    const budget = getBudgetStatus();
+    const budget = await getBudgetStatus();
     return NextResponse.json({
       success: true,
       budget,
@@ -116,13 +116,14 @@ export async function POST(req: NextRequest) {
         nextPageToken: undefined,
         callsUsed: 0,
         cached: freeRes.cached || false,
+        partial: freeRes.partial || false,
         lastUpdated: freeRes.lastUpdated,
         totalFetched: freeRes.leads.length,
         resultHeaderNote: freeRes.resultHeaderNote,
       };
     }
 
-    const budget = getBudgetStatus();
+    const budget = await getBudgetStatus();
 
     return NextResponse.json({
       success: true,
@@ -131,6 +132,7 @@ export async function POST(req: NextRequest) {
       nextPageToken: searchResult.nextPageToken,
       callsUsed: searchResult.callsUsed,
       cached: searchResult.cached,
+      partial: (searchResult as any).partial || false,
       lastUpdated: (searchResult as any).lastUpdated,
       resultHeaderNote: (searchResult as any).resultHeaderNote,
       budget,
