@@ -16,7 +16,7 @@ import {
   countCategoryCoverage,
   searchFreeLiveDirectory,
 } from "../src/lib/free-search.ts";
-import { getAreaConfig, haversineDistanceMeters } from "../src/lib/areas.ts";
+import { getAreaConfig, haversineDistanceMeters, postcodeConflicts } from "../src/lib/areas.ts";
 
 console.log("================================================================================");
 console.log("  COVERAGE + NAME-FALLBACK TESTS: keyword matching, precedence, Overture gate,");
@@ -264,6 +264,60 @@ async function runTests() {
     assert.equal(counts.total, counts.tagCount + counts.nameCount, "total must equal tag + name");
     assert.ok(counts.total >= 1, "coverage total must be at least 1");
     console.log("[Live] Coverage helper works (powers the coverage-audit modal).");
+  });
+
+  // ---------------------------------------------------------------------------
+  // UNIT: postcode-boundary gate (round 3) — Paris postcodes map 1:1 to
+  // arrondissements, so a record asserting a different Paris postcode is out.
+  // ---------------------------------------------------------------------------
+  await test("UNIT: postcodeConflicts fires only on a different Paris postcode", () => {
+    assert.equal(postcodeConflicts("75001", "75006"), true, "75006 conflicts with 75001");
+    assert.equal(postcodeConflicts("75001", "75007"), true, "75007 conflicts with 75001");
+    assert.equal(postcodeConflicts("75001", "75001"), false, "same postcode never conflicts");
+    assert.equal(postcodeConflicts("75001", null), false, "missing record postcode never conflicts");
+    assert.equal(postcodeConflicts("75001", undefined), false, "missing record postcode never conflicts");
+    assert.equal(postcodeConflicts(undefined, "75006"), false, "area without postcode never gates");
+    assert.equal(postcodeConflicts("75001", "2000"), false, "non-Paris postcode never conflicts");
+    assert.equal(postcodeConflicts("75001", "75006 "), true, "whitespace is trimmed before comparing");
+    assert.equal(postcodeConflicts("75001", "7500"), false, "malformed postcode never conflicts");
+    const cfg = getAreaConfig("1st - Louvre / Palais-Royal", "Paris");
+    assert.equal(cfg.postcode, "75001", "Paris 1st must carry postcode 75001");
+    assert.equal(cfg.radiusMeters, 900, "Paris 1st radius must be 900m (centroid)");
+    console.log(`[Config] Paris 1st: centre (${cfg.centerLat}, ${cfg.centerLon}), ${cfg.radiusMeters}m, postcode ${cfg.postcode}`);
+  });
+
+  // ---------------------------------------------------------------------------
+  // LIVE 4: Paris 1st Cafe — the round-3 offenders are gone (postcode gate +
+  // centroid re-centre) and nothing is beyond the 900m radius.
+  // ---------------------------------------------------------------------------
+  await test("LIVE 4: Paris 1st Cafe excludes 6th/7th-arrondissement records", async () => {
+    const config = getAreaConfig("1st - Louvre / Palais-Royal", "Paris");
+    const result = await searchFreeLiveDirectory({
+      category: "cafe",
+      categoryLabel: "Cafe",
+      country: "France",
+      countryCode: "FR",
+      city: "Paris",
+      area: "1st - Louvre / Palais-Royal",
+      bypassCache: true,
+    });
+    console.log(`[Paris 1st] ${result.leads.length} leads, radius ${config.radiusMeters}m`);
+    assert.ok(result.leads.length > 0, "Paris 1st Cafe must return leads");
+    let maxD = 0;
+    for (const lead of result.leads) {
+      assert.ok(lead.lat != null && lead.lon != null, `lead ${lead.name} must have coordinates`);
+      const d = haversineDistanceMeters(config.centerLat, config.centerLon, lead.lat, lead.lon);
+      if (d > maxD) maxD = d;
+      assert.ok(d <= config.radiusMeters, `Paris lead ${lead.name} at ${Math.round(d)}m > ${config.radiusMeters}m`);
+    }
+    console.log(`[Paris 1st] max distance ${Math.round(maxD)}m (limit ${config.radiusMeters}m)`);
+    // Known 6th/7th records (verified in OSM with postcodes 75006/75007) must be gone.
+    const offenders = ["les deux magots", "le hibou", "blitz society", "café de la gare"];
+    for (const name of offenders) {
+      const found = result.leads.find((l) => (l.name || "").toLowerCase().includes(name));
+      assert.ok(!found, `offender "${name}" must not appear in Paris 1st results`);
+    }
+    console.log("[Paris 1st] known 6th/7th offenders absent (Deux Magots, Le Hibou, Blitz Society, Café de la Gare).");
   });
 
   console.log("================================================================================");

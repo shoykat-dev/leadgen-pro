@@ -8,6 +8,7 @@ import {
   deduplicateLeads,
   computeLeadContactability,
 } from "./data-integrity";
+import { haversineDistanceMeters } from "./areas";
 import {
   getBudgetStatus,
   incrementGoogleApiCallCount,
@@ -207,6 +208,8 @@ export async function searchGooglePlaces(
     categoryId,
     countryCode = "BD",
     rectangle,
+    center,
+    radiusMeters,
     pageToken,
     pageSize = 20,
     confirmedExtraDailyCalls = 0,
@@ -221,12 +224,21 @@ export async function searchGooglePlaces(
   // 2. Check 30-day response cache
   const cachedResponse = await getCachedPlacesResponse(cacheKey);
   if (cachedResponse) {
+    // Same distance guarantee as fresh results: cached rows are re-checked
+    // against the area centre + radius when the caller supplied them.
+    let cachedLeads = cachedResponse.leads || [];
+    if (center && radiusMeters) {
+      cachedLeads = cachedLeads.filter((lead: BusinessLead) => {
+        if (lead.lat == null || lead.lon == null || isNaN(lead.lat) || isNaN(lead.lon)) return false;
+        return haversineDistanceMeters(center.lat, center.lon, lead.lat, lead.lon) <= radiusMeters;
+      });
+    }
     return {
-      leads: cachedResponse.leads || [],
+      leads: cachedLeads,
       nextPageToken: cachedResponse.nextPageToken,
       callsUsed: 0,
       cached: true,
-      totalFetched: cachedResponse.leads?.length || 0,
+      totalFetched: cachedLeads.length,
     };
   }
 
@@ -417,12 +429,25 @@ export async function searchGooglePlaces(
   // Deduplicate results
   const uniqueLeads = deduplicateLeads(leads);
 
+  // Distance guarantee (round 3): when the caller supplies the area centre
+  // + radius, no lead may be farther than the radius from the centre, and
+  // leads without usable coordinates are excluded — the same rule as the
+  // free-directory path. Google's text search is global, so without this a
+  // result far outside the area could slip through.
+  let finalLeads = uniqueLeads;
+  if (center && radiusMeters) {
+    finalLeads = uniqueLeads.filter((lead) => {
+      if (lead.lat == null || lead.lon == null || isNaN(lead.lat) || isNaN(lead.lon)) return false;
+      return haversineDistanceMeters(center.lat, center.lon, lead.lat, lead.lon) <= radiusMeters;
+    });
+  }
+
   const result: GooglePlacesSearchResult = {
-    leads: uniqueLeads,
+    leads: finalLeads,
     nextPageToken: data.nextPageToken || undefined,
     callsUsed: 1,
     cached: false,
-    totalFetched: uniqueLeads.length,
+    totalFetched: finalLeads.length,
   };
 
   // 8. Cache response for up to 30 days

@@ -3,6 +3,7 @@ import { Country } from "country-state-city";
 import { BusinessLead } from "@/lib/data-integrity";
 import { searchGooglePlaces } from "@/lib/google-places";
 import { searchFreeLiveDirectory } from "@/lib/free-search";
+import { getAreaConfig } from "@/lib/areas";
 
 export type { BusinessLead };
 
@@ -51,10 +52,24 @@ export async function POST(req: NextRequest) {
     let lastUpdated: string | undefined = undefined;
 
     if (apiKey) {
+      // Resolve the area centre + radius so the Google path enforces the
+      // same distance guarantee as the free path (round 3). If the area is
+      // unresolvable, the text search proceeds unfiltered, as before.
+      let center: { lat: number; lon: number } | undefined;
+      let radiusMeters: number | undefined;
+      try {
+        const cfg = getAreaConfig(area || city || "", city || "");
+        center = { lat: cfg.centerLat, lon: cfg.centerLon };
+        radiusMeters = cfg.radiusMeters;
+      } catch {
+        // Leave center/radius unset — no distance filter on this call.
+      }
       const googleRes = await searchGooglePlaces({
         query,
         categoryId: category,
         countryCode: resolvedCountryCode,
+        center,
+        radiusMeters,
       });
       resultLeads = googleRes.leads;
       callsUsed = googleRes.callsUsed;

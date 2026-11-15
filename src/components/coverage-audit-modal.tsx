@@ -242,7 +242,7 @@ export function CoverageAuditModal({
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3">
           {rows.length === 0 && status === "running" ? (
             <p className="text-xs text-slate-500 text-center py-8">
-              Counting businesses per category — this takes a minute or two for all categories.
+              Counting businesses per category — this takes a few minutes for all categories.
             </p>
           ) : (
             <table className="w-full text-xs">

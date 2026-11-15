@@ -23,6 +23,28 @@ interface AccountModalProps {
 export function AccountModal({ isOpen, onClose }: AccountModalProps) {
   const { user } = useUser();
   const { signOut } = useClerk();
+  const [isSigningOut, setIsSigningOut] = React.useState(false);
+
+  // Same hardening as the navbar sign-out (round 3): guests skip the Clerk
+  // call, and a hung sign-out still navigates within 3 seconds.
+  const handleSignOut = async () => {
+    if (isSigningOut) return;
+    setIsSigningOut(true);
+    document.cookie = "leadgen_guest=; path=/; max-age=0";
+    if (!user) {
+      window.location.href = "/sign-in";
+      return;
+    }
+    try {
+      await Promise.race([
+        signOut({ redirectUrl: "/sign-in" }),
+        new Promise((resolve) => setTimeout(resolve, 3000)),
+      ]);
+      window.location.href = "/sign-in";
+    } catch {
+      window.location.href = "/sign-in";
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -131,14 +153,8 @@ export function AccountModal({ isOpen, onClose }: AccountModalProps) {
           <Button
             variant="destructive"
             size="sm"
-            onClick={async () => {
-              document.cookie = "leadgen_guest=; path=/; max-age=0";
-              try {
-                await signOut({ redirectUrl: "/sign-in" });
-              } catch {
-                window.location.href = "/sign-in";
-              }
-            }}
+            onClick={handleSignOut}
+            disabled={isSigningOut}
             className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
           >
             <LogOut className="w-4 h-4" />

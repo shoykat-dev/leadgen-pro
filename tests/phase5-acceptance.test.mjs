@@ -153,14 +153,14 @@ async function runPhase5Tests() {
     country: "France",
     countryCode: "FR",
     city: "Paris",
-    area: "1st Arrondissement (Louvre)",
+    area: "1st - Louvre / Palais-Royal",
     bypassCache: false,
   });
   const parisDuration = Date.now() - startParis;
   console.log(`[Paris Response] Completed in ${(parisDuration / 1000).toFixed(2)}s with ${parisSearch.leads.length} leads.`);
   assert.ok(parisDuration < 60000, `Paris search took ${parisDuration}ms, must complete under 60s`);
 
-  const parisConfig = getAreaConfig("1st Arrondissement (Louvre)", "Paris");
+  const parisConfig = getAreaConfig("1st - Louvre / Palais-Royal", "Paris");
   for (const lead of parisSearch.leads.slice(0, 30)) {
     if (lead.lat && lead.lon) {
       const dist = haversineDistanceMeters(parisConfig.centerLat, parisConfig.centerLon, lead.lat, lead.lon);

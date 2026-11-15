@@ -33,7 +33,7 @@ function getCacheDir(): string {
   return dir;
 }
 
-export const CACHE_VERSION = "v7_name_fallback";
+export const CACHE_VERSION = "v8_postcode_gate";
 
 function sanitizeKey(key: string): string {
   return key.toLowerCase().replace(/[^a-z0-9_-]/g, "_");

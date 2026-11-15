@@ -7,6 +7,16 @@ export interface AreaConfig {
   centerLat: number;
   centerLon: number;
   radiusMeters: number;
+  /**
+   * The area's own postcode, when the area maps 1:1 to one (Paris
+   * arrondissements: 75001–75020). When set, a record whose own postcode is
+   * a DIFFERENT postcode of the same scheme is excluded from this area's
+   * results (see postcodeConflicts) — a circle around a centre can never
+   * follow an administrative boundary, so the postcode is the boundary
+   * signal where the data carries it. Records without a postcode are
+   * unaffected (the circle rules apply to them).
+   */
+  postcode?: string;
 }
 
 /**
@@ -52,10 +62,10 @@ export const AREAS: Record<string, AreaConfig> = {
   newyorkcitymidtown: { name: "Midtown", city: "New York", centerLat: 40.7549, centerLon: -73.9840, radiusMeters: 1800 },
   newyorkcitymanhattanmidtown: { name: "Midtown", city: "New York", centerLat: 40.7549, centerLon: -73.9840, radiusMeters: 1800 },
   manhattanmidtown: { name: "Midtown", city: "New York", centerLat: 40.7549, centerLon: -73.9840, radiusMeters: 1800 },
-  paris1st: { name: "1st Arrondissement", city: "Paris", centerLat: 48.8606, centerLon: 2.3376, radiusMeters: 1000 },
-  paris1starrondissement: { name: "1st Arrondissement", city: "Paris", centerLat: 48.8606, centerLon: 2.3376, radiusMeters: 1000 },
-  paris1erarrondissement: { name: "1st Arrondissement", city: "Paris", centerLat: 48.8606, centerLon: 2.3376, radiusMeters: 1000 },
-  paris1stlouvrepalaisroyal: { name: "1st (Louvre / Palais-Royal)", city: "Paris", centerLat: 48.8606, centerLon: 2.3376, radiusMeters: 1000 },
+  paris1st: { name: "1st Arrondissement", city: "Paris", centerLat: 48.8622, centerLon: 2.3365, radiusMeters: 900, postcode: "75001" },
+  paris1starrondissement: { name: "1st Arrondissement", city: "Paris", centerLat: 48.8622, centerLon: 2.3365, radiusMeters: 900, postcode: "75001" },
+  paris1erarrondissement: { name: "1st Arrondissement", city: "Paris", centerLat: 48.8622, centerLon: 2.3365, radiusMeters: 900, postcode: "75001" },
+  paris1stlouvrepalaisroyal: { name: "1st (Louvre / Palais-Royal)", city: "Paris", centerLat: 48.8622, centerLon: 2.3365, radiusMeters: 900, postcode: "75001" },
 };
 
 export interface CityBoundingBox {
@@ -133,6 +143,31 @@ export function haversineDistanceMeters(
       Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
+}
+
+/**
+ * Postcode-boundary gate (round 3, 2026-11-16). A circle around a centre
+ * cannot follow an administrative boundary: the Louvre sits on the 1st
+ * arrondissement's southern edge, so a 1000m circle around it legitimately
+ * contains Saint-Germain-des-Prés cafés (Les Deux Magots 798m, Café de
+ * Flore 805m, Le Hibou 997m — all verified in OSM). Paris postcodes map 1:1
+ * to arrondissements (75001–75020), so a record that asserts a DIFFERENT
+ * Paris postcode positively belongs to another arrondissement and is
+ * excluded. The gate is deliberately narrow: it fires ONLY when both the
+ * area postcode and the record postcode look like Paris postcodes
+ * (75001–75020) and differ. Records without a postcode, and postcodes from
+ * any other scheme, are never excluded by this gate.
+ */
+export function postcodeConflicts(
+  areaPostcode: string | undefined | null,
+  recordPostcode: string | undefined | null
+): boolean {
+  if (!areaPostcode || !recordPostcode) return false;
+  const area = String(areaPostcode).replace(/[\s-]/g, "");
+  const record = String(recordPostcode).replace(/[\s-]/g, "");
+  const parisPostcode = /^750\d{2}$/;
+  if (!parisPostcode.test(area) || !parisPostcode.test(record)) return false;
+  return area !== record;
 }
 
 /**

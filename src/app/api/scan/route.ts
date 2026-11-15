@@ -10,6 +10,7 @@ import {
 } from "@/lib/area-scan";
 import { searchGooglePlaces } from "@/lib/google-places";
 import { searchFreeLiveDirectory } from "@/lib/free-search";
+import { getAreaConfig } from "@/lib/areas";
 import { getBudgetStatus, saveScanJob, getScanJob } from "@/lib/db";
 import { ALL_BUSINESS_SERVICES } from "@/lib/directory-data";
 import { deduplicateLeads, BusinessLead } from "@/lib/data-integrity";
@@ -91,6 +92,18 @@ export async function POST(req: NextRequest) {
       let completenessReason: string | undefined = undefined;
 
       // Primary Search Call
+      // Resolve the area centre + radius so the Google path enforces the
+      // same distance guarantee as the free path (round 3).
+      let scanCenter: { lat: number; lon: number } | undefined;
+      let scanRadiusMeters: number | undefined;
+      try {
+        const cfg = getAreaConfig(areaName || "", body.city || "");
+        scanCenter = { lat: cfg.centerLat, lon: cfg.centerLon };
+        scanRadiusMeters = cfg.radiusMeters;
+      } catch {
+        // Leave unset — Google results proceed unfiltered, as before.
+      }
+
       try {
         if (!apiKey) {
           const freeRes = await searchFreeLiveDirectory({
@@ -110,6 +123,8 @@ export async function POST(req: NextRequest) {
             categoryId,
             countryCode,
             rectangle,
+            center: scanCenter,
+            radiusMeters: scanRadiusMeters,
             confirmedExtraDailyCalls,
           });
 
@@ -140,6 +155,8 @@ export async function POST(req: NextRequest) {
                   categoryId,
                   countryCode,
                   rectangle: quad,
+                  center: scanCenter,
+                  radiusMeters: scanRadiusMeters,
                   confirmedExtraDailyCalls,
                 });
                 callsUsed += quadResult.callsUsed;

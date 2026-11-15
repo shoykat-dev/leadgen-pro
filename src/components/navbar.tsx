@@ -8,20 +8,42 @@ import { AccountModal } from "@/components/account-modal";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Navbar() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
   const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
-  const displayName =
-    user?.fullName ||
-    user?.firstName ||
-    user?.primaryEmailAddress?.emailAddress?.split("@")[0] ||
-    "Sabbir Hossain";
+  // Honest identity label: guests are "Guest", never a hardcoded personal
+  // name (round 3 — the old "Sabbir Hossain" fallback made a signed-out
+  // guest look signed in). While Clerk is still loading, show nothing yet.
+  const displayName = !isLoaded
+    ? ""
+    : user?.fullName ||
+      user?.firstName ||
+      user?.primaryEmailAddress?.emailAddress?.split("@")[0] ||
+      "Guest";
 
   const handleSignOut = async () => {
+    if (isSigningOut) return;
+    setIsSigningOut(true);
     document.cookie = "leadgen_guest=; path=/; max-age=0";
+    // Guests have no Clerk session: skip the Clerk call entirely and go
+    // straight to the sign-in page (round 3 — calling signOut with no
+    // session could hang with no visible response).
+    if (!user) {
+      window.location.href = "/sign-in";
+      return;
+    }
     try {
-      await signOut({ redirectUrl: "/sign-in" });
+      // Never hang the button: if Clerk's sign-out does not resolve within
+      // 3 seconds (slow/blocked network), navigate anyway — the session
+      // cookie is cleared server-side on the next load, and the sign-in
+      // page is the correct place either way.
+      await Promise.race([
+        signOut({ redirectUrl: "/sign-in" }),
+        new Promise((resolve) => setTimeout(resolve, 3000)),
+      ]);
+      window.location.href = "/sign-in";
     } catch {
       window.location.href = "/sign-in";
     }
@@ -84,6 +106,7 @@ export function Navbar() {
               variant="outline"
               size="sm"
               onClick={handleSignOut}
+              disabled={isSigningOut}
               className="inline-flex items-center gap-1.5 border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/90 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900 text-slate-700 dark:text-slate-300 transition-colors shadow-xs px-2 sm:px-3 h-8 sm:h-9"
               title="Sign Out"
             >

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { searchGooglePlaces } from "@/lib/google-places";
 import { searchFreeLiveDirectory } from "@/lib/free-search";
+import { getAreaConfig } from "@/lib/areas";
 import { getBudgetStatus } from "@/lib/db";
 
 export async function GET() {
@@ -87,11 +88,25 @@ export async function POST(req: NextRequest) {
     let searchResult;
 
     if (apiKey) {
+      // Resolve the area centre + radius so the Google path enforces the
+      // same distance guarantee as the free path (round 3). If the area is
+      // unresolvable, the text search proceeds unfiltered, as before.
+      let center: { lat: number; lon: number } | undefined;
+      let radiusMeters: number | undefined;
+      try {
+        const cfg = getAreaConfig(body.area || body.city || "", body.city || "");
+        center = { lat: cfg.centerLat, lon: cfg.centerLon };
+        radiusMeters = cfg.radiusMeters;
+      } catch {
+        // Leave center/radius unset — no distance filter on this call.
+      }
       searchResult = await searchGooglePlaces({
         query: query || categoryId,
         categoryId,
         countryCode,
         rectangle,
+        center,
+        radiusMeters,
         pageToken,
         pageSize,
         confirmedExtraDailyCalls,

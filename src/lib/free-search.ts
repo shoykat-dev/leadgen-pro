@@ -10,7 +10,7 @@ import {
   assessDataQuality,
   computeLeadContactability,
 } from "./data-integrity";
-import { getAreaConfig, haversineDistanceMeters, type AreaConfig } from "./areas";
+import { getAreaConfig, haversineDistanceMeters, postcodeConflicts, type AreaConfig } from "./areas";
 import { getFallbackCoordinates } from "./location-hierarchy";
 import {
   getCategoryOsmTags,
@@ -820,6 +820,15 @@ export async function searchFreeLiveDirectory(
     // A lead enters a category ONLY via its own primary-tag mapping OR a
     // name-keyword match. An element found by both counts once, as tag-matched.
     const tags = el.tags || {};
+
+    // Postcode-boundary gate (round 3): a record that asserts a different
+    // Paris postcode belongs to another arrondissement — excluded even when
+    // its coordinates fall inside the search circle (a circle cannot follow
+    // a boundary). Records without a postcode are unaffected.
+    if (postcodeConflicts(areaConfig.postcode, tags["addr:postcode"])) {
+      continue;
+    }
+
     const osmKey = `${el.type}/${el.id}`;
     const matchesCategoryTag = tagSpecs.some((ts) => tags[ts.key] === ts.value);
     const isNameCandidate = nameElementIds.has(osmKey) && !tagElementIds.has(osmKey);
@@ -1057,6 +1066,12 @@ export async function searchFreeLiveDirectory(
     const street = tags["addr:street"] || tags.street || "";
     const housenumber = tags["addr:housenumber"] || tags.housenumber || "";
     const streetAddress = [housenumber, street].filter(Boolean).join(" ");
+    // Housename + postcode disambiguate look-alike addresses (round 3:
+    // "Fodoo Coffee Lounge, Corner George and Smith Streets" looked like a
+    // Parramatta business until its housename "Myer City Store" and postcode
+    // 2000 showed it is a CBD business — 237m from the CBD centre).
+    const houseName = tags["addr:housename"] || "";
+    const recordPostcode = tags["addr:postcode"] || "";
     const hasFullStreet = Boolean(streetAddress || tags["addr:full"]);
 
     let address: string;
@@ -1064,7 +1079,9 @@ export async function searchFreeLiveDirectory(
     let hasStreetAddress: boolean;
 
     if (hasFullStreet) {
-      address = streetAddress || tags["addr:full"];
+      address = [houseName, streetAddress || tags["addr:full"], recordPostcode]
+        .filter(Boolean)
+        .join(", ");
       hasStreetAddress = true;
     } else {
       address = "Street address not available in OSM record";
@@ -1340,6 +1357,12 @@ export async function searchFreeLiveDirectory(
 
     const cleanName = (ov.name || "").trim();
     if (!cleanName || cleanName.length < 2) continue;
+
+    // Postcode-boundary gate (round 3): same rule as the OSM path — an
+    // Overture record asserting a different Paris postcode belongs to
+    // another arrondissement.
+    const ovPostcode = ov.addresses?.[0]?.postcode || null;
+    if (postcodeConflicts(areaConfig.postcode, ovPostcode)) continue;
 
     // Dedupe guard: never add an Overture row that duplicates an existing lead
     // (same normalised name + coords within 50m, or same normalised phone + coords

@@ -15003,23 +15003,26 @@
   "paris1stlouvrepalaisroyal": {
     "name": "1st (Louvre / Palais-Royal)",
     "city": "Paris",
-    "centerLat": 48.8606,
-    "centerLon": 2.3376,
-    "radiusMeters": 1000
+    "centerLat": 48.8622,
+    "centerLon": 2.3365,
+    "radiusMeters": 900,
+    "postcode": "75001"
   },
   "1stlouvrepalaisroyal": {
     "name": "1st - Louvre / Palais-Royal",
     "city": "Paris",
-    "centerLat": 48.8606,
-    "centerLon": 2.3376,
-    "radiusMeters": 1000
+    "centerLat": 48.8622,
+    "centerLon": 2.3365,
+    "radiusMeters": 900,
+    "postcode": "75001"
   },
   "paris2ndboursesentier": {
     "name": "2nd - Bourse / Sentier",
     "city": "Paris",
     "centerLat": 48.8566,
     "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "radiusMeters": 3500,
+    "postcode": "75002"
   },
   "2ndboursesentier": {
     "name": "2nd - Bourse / Sentier",
@@ -15033,7 +15036,8 @@
     "city": "Paris",
     "centerLat": 48.8566,
     "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "radiusMeters": 3500,
+    "postcode": "75003"
   },
   "3rdlemarais": {
     "name": "3rd - Le Marais",
@@ -15047,7 +15051,8 @@
     "city": "Paris",
     "centerLat": 48.8566,
     "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "radiusMeters": 3500,
+    "postcode": "75004"
   },
   "4thnotredamemarais": {
     "name": "4th - Notre-Dame / Marais",
@@ -15061,7 +15066,8 @@
     "city": "Paris",
     "centerLat": 48.8566,
     "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "radiusMeters": 3500,
+    "postcode": "75005"
   },
   "5thlatinquarter": {
     "name": "5th - Latin Quarter",
@@ -15075,7 +15081,8 @@
     "city": "Paris",
     "centerLat": 48.8566,
     "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "radiusMeters": 3500,
+    "postcode": "75006"
   },
   "6thsaintgermaindespres": {
     "name": "6th - Saint-Germain-des-Pres",
@@ -15089,7 +15096,8 @@
     "city": "Paris",
     "centerLat": 48.8566,
     "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "radiusMeters": 3500,
+    "postcode": "75007"
   },
   "7theiffeltowerinvalides": {
     "name": "7th - Eiffel Tower / Invalides",
@@ -15103,7 +15111,8 @@
     "city": "Paris",
     "centerLat": 48.8566,
     "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "radiusMeters": 3500,
+    "postcode": "75008"
   },
   "8thchampselysees": {
     "name": "8th - Champs-Elysees",
@@ -15117,7 +15126,8 @@
     "city": "Paris",
     "centerLat": 48.8566,
     "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "radiusMeters": 3500,
+    "postcode": "75009"
   },
   "9thopera": {
     "name": "9th - Opera",
@@ -15131,7 +15141,8 @@
     "city": "Paris",
     "centerLat": 48.8566,
     "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "radiusMeters": 3500,
+    "postcode": "75010"
   },
   "10thcanalsaintmartin": {
     "name": "10th - Canal Saint-Martin",
@@ -15145,7 +15156,8 @@
     "city": "Paris",
     "centerLat": 48.8566,
     "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "radiusMeters": 3500,
+    "postcode": "75011"
   },
   "11thbastillerepublique": {
     "name": "11th - Bastille / Republique",
@@ -19455,22 +19467,25 @@
   "paris1st": {
     "name": "1st Arrondissement",
     "city": "Paris",
-    "centerLat": 48.8606,
-    "centerLon": 2.3376,
-    "radiusMeters": 1000
+    "centerLat": 48.8622,
+    "centerLon": 2.3365,
+    "radiusMeters": 900,
+    "postcode": "75001"
   },
   "paris1starrondissement": {
     "name": "1st Arrondissement",
     "city": "Paris",
-    "centerLat": 48.8606,
-    "centerLon": 2.3376,
-    "radiusMeters": 1000
+    "centerLat": 48.8622,
+    "centerLon": 2.3365,
+    "radiusMeters": 900,
+    "postcode": "75001"
   },
   "paris1erarrondissement": {
     "name": "1st Arrondissement",
     "city": "Paris",
-    "centerLat": 48.8606,
-    "centerLon": 2.3376,
-    "radiusMeters": 1000
+    "centerLat": 48.8622,
+    "centerLon": 2.3365,
+    "radiusMeters": 900,
+    "postcode": "75001"
   }
 }
