@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BusinessLead } from "@/app/api/places/route";
+import { displayWebsiteStatus } from "@/lib/data-integrity";
 
 interface GoogleMapModalProps {
   lead: BusinessLead | null;
@@ -64,8 +65,12 @@ export function GoogleMapModal({ lead, isOpen, onClose }: GoogleMapModalProps) {
                     Has Website
                   </Badge>
                 ) : (
-                  <Badge variant="destructive" className="text-[10px] py-0">
-                    No Website
+                  <Badge
+                    variant="destructive"
+                    className="text-[10px] py-0"
+                    title="No website was found in the directory record — the business may still have a real site"
+                  >
+                    {displayWebsiteStatus("No Website")}
                   </Badge>
                 )}
               </div>

@@ -3,6 +3,9 @@ import {
   validatePhone,
   validateEmail,
   classifyWebsite,
+  validateRecordUrl,
+  validatePlatformUrl,
+  buildSocialUrl,
   calculateLeadScore,
   assessDataQuality,
   deduplicateLeads,
@@ -109,20 +112,66 @@ test("Website: Empty or null -> No Website", () => {
   assert.equal(res.website, null);
 });
 
-// 4. Lead Score Formula (Prompt 3 Part C: Only real signals)
-test("Lead Score: No Website (+40) + Valid Phone (+20) + Valid Email (+15) = 75 (High)", () => {
+test("Website: email address stored as website -> rejected (No Website)", () => {
+  const res = classifyWebsite("shop@gmail.com");
+  assert.equal(res.websiteStatus, "No Website");
+  assert.equal(res.website, null);
+});
+
+test("Website: backslash URL -> rejected (No Website)", () => {
+  const res = classifyWebsite("https:\\vidhi'.com");
+  assert.equal(res.websiteStatus, "No Website");
+  assert.equal(res.website, null);
+});
+
+test("Website: doubled domain in path -> rejected (No Website)", () => {
+  const res = classifyWebsite("facebook.com/www.facebook.com/61550000000000");
+  assert.equal(res.websiteStatus, "No Website");
+  assert.equal(res.website, null);
+});
+
+test("Social URL: never built from an email address", () => {
+  assert.equal(buildSocialUrl("xophermmanuel+osm@gmail.com", "facebook"), null);
+  assert.equal(buildSocialUrl("shop@gmail.com", "instagram"), null);
+});
+
+test("Social URL: domain-prefixed value is not doubled", () => {
+  assert.equal(
+    buildSocialUrl("www.facebook.com/61550000000000", "facebook"),
+    "https://www.facebook.com/61550000000000"
+  );
+});
+
+test("Social URL: bare handle gets the platform base", () => {
+  assert.equal(buildSocialUrl("@myhandle", "instagram"), "https://www.instagram.com/myhandle");
+  assert.equal(buildSocialUrl("myshop", "facebook"), "https://www.facebook.com/myshop");
+});
+
+test("Social URL: instagram link in a facebook field is rejected", () => {
+  assert.equal(validatePlatformUrl("https://instagram.com/myshop", "facebook"), null);
+  assert.equal(validatePlatformUrl("https://www.facebook.com/myshop", "facebook"), "https://www.facebook.com/myshop");
+});
+
+test("URL: validateRecordUrl keeps a good URL and drops a bad one", () => {
+  assert.equal(validateRecordUrl("https://mnlash.ca"), "https://mnlash.ca");
+  assert.equal(validateRecordUrl("mnlash.ca"), "https://mnlash.ca");
+  assert.equal(validateRecordUrl("not a url"), null);
+});
+
+// 4. Lead Score Formula (contactability first, opportunity second; max 90)
+test("Lead Score: No Website (+25) + Valid Phone (+10) + Valid Email (+25) = 60 (High)", () => {
   const res = calculateLeadScore({
     websiteStatus: "No Website",
     phoneStatus: "Valid",
     email: "test@domain.com",
     emailStatus: "Found on website",
   });
-  assert.equal(res.score, 75);
+  assert.equal(res.score, 60);
   assert.equal(res.tier, "High");
   assert(res.reasons.length >= 3);
 });
 
-test("Lead Score: Has Website (0) + Unverified Phone (0) + No Email (0) = 0 (Low)", () => {
+test("Lead Score: Has Website (+5) + No Phone (0) + No Email (0) = 5 (Low) — never 0", () => {
   const res = calculateLeadScore({
     websiteStatus: "Has Website",
     phoneStatus: "Phone format unverified",
@@ -130,8 +179,32 @@ test("Lead Score: Has Website (0) + Unverified Phone (0) + No Email (0) = 0 (Low
     rating: 3.5,
     userRatingCount: 5,
   });
-  assert.equal(res.score, 0);
+  assert.equal(res.score, 5);
   assert.equal(res.tier, "Low");
+});
+
+test("Lead Score: No Website + no channels at all = 25 (Low) — uncontactable never High", () => {
+  const res = calculateLeadScore({
+    websiteStatus: "No Website",
+    phoneStatus: "Missing",
+    email: null,
+  });
+  assert.equal(res.score, 25);
+  assert.equal(res.tier, "Low");
+});
+
+test("Lead Score: No Website + Email + WhatsApp mobile + Social + Recent = 90 (High)", () => {
+  const res = calculateLeadScore({
+    websiteStatus: "No Website",
+    phoneStatus: "Valid",
+    canWhatsApp: true,
+    email: "test@domain.com",
+    emailStatus: "Found on website",
+    facebookUrl: "https://www.facebook.com/myshop",
+    fetchedAt: new Date().toISOString(),
+  });
+  assert.equal(res.score, 90);
+  assert.equal(res.tier, "High");
 });
 
 // 5. Contactable Count Logic (Section 7: never add phones and emails together)

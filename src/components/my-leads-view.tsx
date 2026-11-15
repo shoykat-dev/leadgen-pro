@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BusinessLead } from "@/lib/data-integrity";
+import { BusinessLead, displayWebsiteStatus } from "@/lib/data-integrity";
 import { OutreachModal } from "@/components/outreach-modal";
 
 interface MyLeadsViewProps {
@@ -375,7 +375,7 @@ export function MyLeadsView({ onOpenOutreachModal }: MyLeadsViewProps) {
                       variant={lead.websiteStatus === "No Website" ? "destructive" : "outline"}
                       className="text-[10px] py-0"
                     >
-                      {lead.websiteStatus}
+                      {displayWebsiteStatus(lead.websiteStatus)}
                     </Badge>
 
                     {lead.nextFollowUpDate && (
@@ -566,7 +566,7 @@ export function MyLeadsView({ onOpenOutreachModal }: MyLeadsViewProps) {
                         variant={lead.websiteStatus === "No Website" ? "destructive" : "outline"}
                         className="text-[10px]"
                       >
-                        {lead.websiteStatus}
+                        {displayWebsiteStatus(lead.websiteStatus)}
                       </Badge>
                     </td>
 

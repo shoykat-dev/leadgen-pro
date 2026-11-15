@@ -26,7 +26,6 @@ export const AREAS: Record<string, AreaConfig> = {
   // Core verified reference areas per specification
   banani: { name: "Banani", city: "Dhaka", centerLat: 23.7937, centerLon: 90.4043, radiusMeters: 1500 },
   dhakabanani: { name: "Banani", city: "Dhaka", centerLat: 23.7937, centerLon: 90.4043, radiusMeters: 1500 },
-  dhaka_banani: { name: "Banani", city: "Dhaka", centerLat: 23.7937, centerLon: 90.4043, radiusMeters: 1500 },
   gulshan1: { name: "Gulshan-1", city: "Dhaka", centerLat: 23.7785, centerLon: 90.4162, radiusMeters: 2000 },
   dhakagulshan1: { name: "Gulshan-1", city: "Dhaka", centerLat: 23.7785, centerLon: 90.4162, radiusMeters: 2000 },
   "gulshan-1": { name: "Gulshan-1", city: "Dhaka", centerLat: 23.7785, centerLon: 90.4162, radiusMeters: 2000 },
@@ -40,23 +39,23 @@ export const AREAS: Record<string, AreaConfig> = {
   mirpur: { name: "Mirpur", city: "Dhaka", centerLat: 23.8071, centerLon: 90.3686, radiusMeters: 3500 },
   dhakamirpur: { name: "Mirpur", city: "Dhaka", centerLat: 23.8071, centerLon: 90.3686, radiusMeters: 3500 },
 
-  // Worldwide verified areas (Prompt 5 Worldwide Correctness)
+  // Worldwide verified areas (Phase 5 Worldwide Correctness)
   berlinmitte: { name: "Mitte", city: "Berlin", centerLat: 52.5200, centerLon: 13.4050, radiusMeters: 2000 },
   madridsalamanca: { name: "Salamanca", city: "Madrid", centerLat: 40.4285, centerLon: -3.6800, radiusMeters: 1800 },
-  sydneysydneycbd: { name: "Sydney CBD", city: "Sydney", centerLat: -33.8688, centerLon: 151.2093, radiusMeters: 2000 },
-  sydneycbd: { name: "Sydney CBD", city: "Sydney", centerLat: -33.8688, centerLon: 151.2093, radiusMeters: 2000 },
-  dubaidowntowndubai: { name: "Downtown Dubai", city: "Dubai", centerLat: 25.1972, centerLon: 55.2744, radiusMeters: 2000 },
-  dubaidowntown: { name: "Downtown Dubai", city: "Dubai", centerLat: 25.1972, centerLon: 55.2744, radiusMeters: 2000 },
+  sydneysydneycbd: { name: "Sydney CBD", city: "Sydney", centerLat: -33.8688, centerLon: 151.2093, radiusMeters: 1500 },
+  sydneycbd: { name: "Sydney CBD", city: "Sydney", centerLat: -33.8688, centerLon: 151.2093, radiusMeters: 1500 },
+  dubaidowntowndubai: { name: "Downtown Dubai", city: "Dubai", centerLat: 25.1972, centerLon: 55.2744, radiusMeters: 1200 },
+  dubaidowntown: { name: "Downtown Dubai", city: "Dubai", centerLat: 25.1972, centerLon: 55.2744, radiusMeters: 1200 },
   mumbaibandrawest: { name: "Bandra West", city: "Mumbai", centerLat: 19.0596, centerLon: 72.8295, radiusMeters: 2000 },
   bandrawest: { name: "Bandra West", city: "Mumbai", centerLat: 19.0596, centerLon: 72.8295, radiusMeters: 2000 },
   newyorkmidtown: { name: "Midtown", city: "New York", centerLat: 40.7549, centerLon: -73.9840, radiusMeters: 1800 },
   newyorkcitymidtown: { name: "Midtown", city: "New York", centerLat: 40.7549, centerLon: -73.9840, radiusMeters: 1800 },
   newyorkcitymanhattanmidtown: { name: "Midtown", city: "New York", centerLat: 40.7549, centerLon: -73.9840, radiusMeters: 1800 },
   manhattanmidtown: { name: "Midtown", city: "New York", centerLat: 40.7549, centerLon: -73.9840, radiusMeters: 1800 },
-  paris1st: { name: "1st Arrondissement", city: "Paris", centerLat: 48.8606, centerLon: 2.3376, radiusMeters: 1500 },
-  paris1starrondissement: { name: "1st Arrondissement", city: "Paris", centerLat: 48.8606, centerLon: 2.3376, radiusMeters: 1500 },
-  paris1erarrondissement: { name: "1st Arrondissement", city: "Paris", centerLat: 48.8606, centerLon: 2.3376, radiusMeters: 1500 },
-  paris1stlouvrepalaisroyal: { name: "1st (Louvre / Palais-Royal)", city: "Paris", centerLat: 48.8606, centerLon: 2.3376, radiusMeters: 1500 },
+  paris1st: { name: "1st Arrondissement", city: "Paris", centerLat: 48.8606, centerLon: 2.3376, radiusMeters: 1000 },
+  paris1starrondissement: { name: "1st Arrondissement", city: "Paris", centerLat: 48.8606, centerLon: 2.3376, radiusMeters: 1000 },
+  paris1erarrondissement: { name: "1st Arrondissement", city: "Paris", centerLat: 48.8606, centerLon: 2.3376, radiusMeters: 1000 },
+  paris1stlouvrepalaisroyal: { name: "1st (Louvre / Palais-Royal)", city: "Paris", centerLat: 48.8606, centerLon: 2.3376, radiusMeters: 1000 },
 };
 
 export interface CityBoundingBox {
@@ -71,7 +70,7 @@ export interface CityBoundingBox {
 }
 
 /**
- * Authoritative city bounding boxes for major curated worldwide cities (Prompt 5 Bug 1).
+ * Authoritative city bounding boxes for major curated worldwide cities (Phase 5 Bug 1).
  * Used to validate resolved area centers and ensure area geocoding never resolves to the wrong city.
  */
 export const CITY_BOUNDING_BOXES: Record<string, CityBoundingBox> = {
@@ -106,7 +105,7 @@ export function isCoordinateInCityBounds(cityName: string, lat: number, lon: num
 
 /**
  * Validates that coordinates lie inside the specified city's bounding box.
- * Throws "Could not locate {Area} in {City}" if coordinates fail validation (Prompt 5 Bug 1).
+ * Throws "Could not locate {Area} in {City}" if coordinates fail validation (Phase 5 Bug 1).
  */
 export function validateAreaInCity(areaName: string, cityName: string, lat: number, lon: number): void {
   if (!isCoordinateInCityBounds(cityName, lat, lon)) {
@@ -138,7 +137,7 @@ export function haversineDistanceMeters(
 
 /**
  * Resolves area configuration: exact center coordinates, canonical name, city, and radius in meters.
- * Validates that resolved center coordinates strictly lie inside the selected city's bounding box (Prompt 5 Bug 1).
+ * Validates that resolved center coordinates strictly lie inside the selected city's bounding box (Phase 5 Bug 1).
  * Never silently searches the wrong city.
  */
 export function getAreaConfig(
@@ -161,7 +160,7 @@ export function getAreaConfig(
 
   let config: AreaConfig | null = null;
 
-  // 0. Explicit City Centre search (Prompt 5 Worldwide Coverage)
+  // 0. Explicit City Centre search (Phase 5 Worldwide Coverage)
   if (isCityCentre) {
     const cKey = normalizeKey(cleanCity);
     const bbox = CITY_BOUNDING_BOXES[cKey];
@@ -236,7 +235,30 @@ export function getAreaConfig(
     };
   }
 
-  // Prompt 5 Bug 1 Hard Validation: resolved center must lie inside selected city's bbox
+  // Dense-centre radius guardrail: an area whose centre sits within 1500m of
+  // the city default centre is a central district, not a whole-city search —
+  // a radius above 2000m there pulls in neighbouring districts (this is how a
+  // stale 3500m city-default entry used to leak the 5th/6th/7th into a Paris
+  // 1st search). Genuine outer areas (Mirpur, Uttara, Scarborough) sit far
+  // from their city centre and are unaffected. An explicit "City centre"
+  // search is exempt: it is deliberately a whole-city-centre search at 3000m.
+  const cityBbox = CITY_BOUNDING_BOXES[normalizeKey(cleanCity)];
+  if (!isCityCentre && cityBbox && config.radiusMeters > 2000) {
+    const distToCityCentre = haversineDistanceMeters(
+      config.centerLat,
+      config.centerLon,
+      cityBbox.defaultCenterLat,
+      cityBbox.defaultCenterLon
+    );
+    if (distToCityCentre <= 1500) {
+      console.warn(
+        `[Area Radius Guardrail] ${config.name}, ${config.city}: radius ${config.radiusMeters}m capped to 2000m (centre ${Math.round(distToCityCentre)}m from city centre).`
+      );
+      config = { ...config, radiusMeters: 2000 };
+    }
+  }
+
+  // Phase 5 Bug 1 Hard Validation: resolved center must lie inside selected city's bbox
   const isValidInCity = isCoordinateInCityBounds(cleanCity, config.centerLat, config.centerLon);
   if (!isValidInCity) {
     console.error(

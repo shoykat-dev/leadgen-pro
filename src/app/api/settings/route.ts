@@ -3,12 +3,13 @@ import { getUserSetting, setUserSetting } from "@/lib/db";
 
 export async function GET() {
   try {
-    const settings = {
-      myName: getUserSetting("my_name", "Sabbir Hossain"),
-      myService: getUserSetting("my_service", "Full-stack Web Developer & WordPress Specialist"),
-      portfolioLink: getUserSetting("portfolio_link", "https://sabbirhossain.dev"),
-      myPhone: getUserSetting("my_phone", "+8801700000000"),
-    };
+    const [myName, myService, portfolioLink, myPhone] = await Promise.all([
+      getUserSetting("my_name", "Sabbir Hossain"),
+      getUserSetting("my_service", "Full-stack Web Developer & WordPress Specialist"),
+      getUserSetting("portfolio_link", "https://sabbirhossain.dev"),
+      getUserSetting("my_phone", "+8801700000000"),
+    ]);
+    const settings = { myName, myService, portfolioLink, myPhone };
     return NextResponse.json({ success: true, settings });
   } catch (error: any) {
     return NextResponse.json(
@@ -23,10 +24,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const { myName, myService, portfolioLink, myPhone } = body;
 
-    if (myName !== undefined) setUserSetting("my_name", String(myName));
-    if (myService !== undefined) setUserSetting("my_service", String(myService));
-    if (portfolioLink !== undefined) setUserSetting("portfolio_link", String(portfolioLink));
-    if (myPhone !== undefined) setUserSetting("my_phone", String(myPhone));
+    if (myName !== undefined) await setUserSetting("my_name", String(myName));
+    if (myService !== undefined) await setUserSetting("my_service", String(myService));
+    if (portfolioLink !== undefined) await setUserSetting("portfolio_link", String(portfolioLink));
+    if (myPhone !== undefined) await setUserSetting("my_phone", String(myPhone));
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

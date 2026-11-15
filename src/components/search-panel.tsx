@@ -14,6 +14,7 @@ import {
   Radar,
   FileSpreadsheet,
   PlusCircle,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BusinessLead } from "@/app/api/places/route";
@@ -55,6 +56,7 @@ interface SearchPanelProps {
   onOpenAreaScan?: (location: { area: string; city: string; countryCode: string }) => void;
   onOpenCsvImport?: () => void;
   onOpenAddLead?: () => void;
+  onOpenCoverageAudit?: (location: { area: string; city: string; countryCode: string }) => void;
 }
 
 export function SearchPanel({
@@ -65,6 +67,7 @@ export function SearchPanel({
   onOpenAreaScan,
   onOpenCsvImport,
   onOpenAddLead,
+  onOpenCoverageAudit,
 }: SearchPanelProps) {
   // All countries
   const countries = useMemo(() => Country.getAllCountries(), []);
@@ -133,7 +136,7 @@ export function SearchPanel({
     }));
   }, [cities]);
 
-  // Dynamic areas state for non-curated worldwide cities (Prompt 5 Worldwide Coverage)
+  // Dynamic areas state for non-curated worldwide cities (Phase 5 Worldwide Coverage)
   const [dynamicAreas, setDynamicAreas] = useState<string[] | null>(null);
 
   useEffect(() => {
@@ -344,11 +347,22 @@ export function SearchPanel({
         lon: null,
       };
 
-      const res = await fetch("/api/places", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      // Client timeout: the server budget is ~52s, so 65s here leaves room
+      // for a slow response without hanging the UI forever. On timeout the
+      // error box below offers a retry.
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 65000);
+      let res: Response;
+      try {
+        res = await fetch("/api/places", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       const data = await res.json().catch(() => null);
 
@@ -377,10 +391,14 @@ export function SearchPanel({
       });
     } catch (err: unknown) {
       console.error("Search failed:", err);
-      const friendlyMessage =
-        err instanceof Error && err.message
-          ? err.message
-          : "Could not load results. Please try again.";
+      const isTimeout =
+        (err instanceof Error && err.name === "AbortError") ||
+        (err instanceof DOMException && err.name === "AbortError");
+      const friendlyMessage = isTimeout
+        ? "Search timed out after 65 seconds — the data source is slow right now. Please try again."
+        : err instanceof Error && err.message
+        ? err.message
+        : "Could not load results. Please try again.";
       setSearchError(friendlyMessage);
     } finally {
       setIsLoading(false);
@@ -566,6 +584,26 @@ export function SearchPanel({
               >
                 <Radar className="w-3.5 h-3.5 text-blue-600 animate-pulse shrink-0" />
                 <span className="truncate">Area Scan</span>
+              </Button>
+            )}
+
+            {onOpenCoverageAudit && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  onOpenCoverageAudit({
+                    area: selectedArea,
+                    city: selectedCityName,
+                    countryCode: selectedCountryCode,
+                  })
+                }
+                className="h-9 sm:h-10 px-2 sm:px-3.5 rounded-xl border-violet-200 dark:border-violet-900/60 bg-violet-50/50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300 hover:bg-violet-100 text-[11px] sm:text-xs font-semibold gap-1 sm:gap-1.5 justify-center"
+                title="Check how many businesses each category finds in this area"
+              >
+                <BarChart3 className="w-3.5 h-3.5 text-violet-600 shrink-0" />
+                <span className="truncate">Coverage Audit</span>
               </Button>
             )}
 

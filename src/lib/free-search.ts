@@ -3,14 +3,29 @@ import {
   validatePhone,
   validateEmail,
   classifyWebsite,
+  validateRecordUrl,
+  validatePlatformUrl,
+  buildSocialUrl,
   calculateLeadScore,
   assessDataQuality,
   computeLeadContactability,
 } from "./data-integrity";
 import { getAreaConfig, haversineDistanceMeters, type AreaConfig } from "./areas";
 import { getFallbackCoordinates } from "./location-hierarchy";
-import { getCategoryOsmTags, type OsmTagCriteria } from "./category-tags";
-import { getFromCache, saveToCache } from "./server-cache";
+import {
+  getCategoryOsmTags,
+  getCategoryNameKeywords,
+  getCategoriesForTag,
+  nameMatchesKeywords,
+  nameMatchesPhraseExclusions,
+  nameMatchesFoodBlocklist,
+  overtureCategoriesMatch,
+  NAME_MATCH_EXCLUSIONS,
+  NAME_MATCH_PHRASE_EXCLUSIONS,
+  NAME_MATCH_BLOCKED_PRIMARY_VALUES,
+  type OsmTagCriteria,
+} from "./category-tags";
+import { getFromCache, saveToCache, formatLastUpdated } from "./server-cache";
 import { getOverturePlacesInBBox } from "./db";
 
 export interface FreeSearchOptions {
@@ -36,7 +51,19 @@ export interface FreeSearchResult {
   cached?: boolean;
   lastUpdated?: string;
   resultHeaderNote?: string;
+  /** True when the data source gave up part-way and only some leads were collected. */
+  partial?: boolean;
 }
+
+/**
+ * Shared deadline for one search: every Overpass attempt (combined query,
+ * per-tag split fallback, name-keyword query) must finish before this time,
+ * so a search never spins longer than ~60s in total. Partial results collected
+ * before the deadline are returned honestly instead of an error.
+ */
+const SEARCH_BUDGET_MS = 52000;
+/** Name-keyword fetch is skipped once the tag query already found this many elements. */
+const NAME_FALLBACK_TAG_CEILING = 400;
 
 interface OverpassElement {
   type: "node" | "way" | "relation";
@@ -75,12 +102,18 @@ function isSimilarBusinessName(nameA: string, nameB: string): boolean {
   if (!normA || !normB) return false;
   if (normA === normB) return true;
 
-  // Substring match for names of reasonable length
-  if (normA.length >= 4 && normB.length >= 4) {
+  // Substring match for names of reasonable length. Minimum 8 characters:
+  // at 4, short names such as "Cafe" inside "Cafe Aroma" merged businesses
+  // that merely share a generic word.
+  if (normA.length >= 8 && normB.length >= 8) {
     if (normA.includes(normB) || normB.includes(normA)) return true;
   }
 
-  // Bigram Dice coefficient similarity
+  // Bigram Dice coefficient similarity. Threshold 0.80 (raised from 0.55 on
+  // 2026-11-16): at 0.55, "Coal & Coffee Banani" wrongly merged with the Overture
+  // record "Crimson Cup Coffee Banani" (Dice 0.57 — shared generic tokens
+  // "coffee"/"banani") and inherited Crimson Cup's phone, email and website.
+  // True same-business pairs (e.g. "Nando's Banani" vs "Nandos Banani") score ~0.95+.
   if (normA.length < 2 || normB.length < 2) return false;
   const bigramsA = new Set<string>();
   for (let i = 0; i < normA.length - 1; i++) bigramsA.add(normA.slice(i, i + 2));
@@ -93,7 +126,7 @@ function isSimilarBusinessName(nameA: string, nameB: string): boolean {
   }
   const total = bigramsA.size + bigramsB.size;
   if (total === 0) return false;
-  return (2 * common) / total >= 0.55;
+  return (2 * common) / total >= 0.8;
 }
 
 /**
@@ -122,7 +155,8 @@ out center tags;`;
 
 /**
  * Executes an Overpass query against a single mirror with a resilient timeout.
- * Per Prompt 5 Bug 2: Timeout per mirror max 25s (configured to 22s).
+ * Default 22s per attempt; callers pass a shorter budget (usually 15s) when
+ * several mirrors still have to be tried inside the shared search deadline.
  */
 async function fetchOverpassMirror(
   mirrorUrl: string,
@@ -163,25 +197,33 @@ async function fetchOverpassMirror(
   return json.elements;
 }
 
+export interface OverpassFetchOutcome {
+  elements: OverpassElement[];
+  /** True when the deadline cut the fetch short with only some tags collected. */
+  partial: boolean;
+}
+
 /**
- * Robust fetcher with mirror rotation, automatic failover on 429/5xx/timeout, and exponential backoff.
- * Per Prompt 5 Bug 2: Never spin longer than 60s total; max 25s per mirror.
+ * Runs one Overpass query string against the mirrors in rotation, respecting
+ * the shared search deadline. Returns the first successful response.
  */
-async function fetchOverpassWithFailover(
-  tags: OsmTagCriteria[],
-  radiusMeters: number,
-  lat: number,
-  lon: number,
-  simulateMirror1Failure = false
+async function fetchOverpassQueryWithFailover(
+  query: string,
+  deadlineMs: number,
+  simulateMirror1Failure = false,
+  /** Per-mirror ceiling. Tag queries use the 15s default; name-regex queries
+   *  are far slower in dense areas (measured ~37s for a 2km central-London
+   *  radius) and need a longer ceiling to ever succeed. The shared deadline
+   *  still caps the total time — this only stops a slow mirror from being
+   *  abandoned before it can answer. */
+  perMirrorTimeoutMs = 15000
 ): Promise<OverpassElement[]> {
-  const query = buildOverpassQuery(tags, radiusMeters, lat, lon, 60);
   let lastError: Error | null = null;
-  const startTime = Date.now();
 
   for (let i = 0; i < OVERPASS_MIRRORS.length; i++) {
-    // 52s global timeout guard to ensure total request never exceeds 60s
-    if (Date.now() - startTime > 52000) {
-      console.warn("[Overpass Failover] Global 52s limit approached. Aborting mirror attempts.");
+    const remaining = deadlineMs - Date.now();
+    if (remaining <= 2000) {
+      console.warn("[Overpass Failover] Search deadline reached. Aborting mirror attempts.");
       break;
     }
 
@@ -199,8 +241,7 @@ async function fetchOverpassWithFailover(
       console.log(
         `[Overpass Mirror ${i + 1}/${OVERPASS_MIRRORS.length}] Querying ${mirrorUrl}...`
       );
-      const remainingTime = Math.max(5000, 55000 - (Date.now() - startTime));
-      const mirrorTimeout = Math.min(15000, remainingTime);
+      const mirrorTimeout = Math.min(perMirrorTimeoutMs, Math.max(5000, remaining - 1000));
       const elements = await fetchOverpassMirror(mirrorUrl, query, mirrorTimeout);
       console.log(
         `[Overpass Mirror Success] ${mirrorUrl} returned ${elements.length} raw elements.`
@@ -219,19 +260,67 @@ async function fetchOverpassWithFailover(
     }
   }
 
-  // If combined multi-tag query failed across all mirrors, try query splitting per tag
+  throw (
+    lastError ||
+    new Error("All OpenStreetMap Overpass mirrors are currently busy or unavailable.")
+  );
+}
+
+/**
+ * Robust fetcher with mirror rotation, automatic failover on 429/5xx/timeout, and exponential backoff.
+ * Never spins longer than the shared search deadline (60s total for the whole
+ * search). If the combined multi-tag query fails everywhere, it falls back to
+ * per-tag split queries — also inside the same deadline — and returns whatever
+ * was collected as a PARTIAL result instead of failing the whole search.
+ */
+async function fetchOverpassWithFailover(
+  tags: OsmTagCriteria[],
+  radiusMeters: number,
+  lat: number,
+  lon: number,
+  deadlineMs: number,
+  simulateMirror1Failure = false
+): Promise<OverpassFetchOutcome> {
+  const query = buildOverpassQuery(tags, radiusMeters, lat, lon, 60);
+
+  try {
+    const elements = await fetchOverpassQueryWithFailover(query, deadlineMs, simulateMirror1Failure);
+    return { elements, partial: false };
+  } catch (err: any) {
+    console.warn(`[Overpass Failover] Combined query failed on all mirrors: ${err.message}`);
+  }
+
+  // If combined multi-tag query failed across all mirrors, try query splitting per tag.
+  // The split shares the SAME deadline: every tag and mirror attempt checks the
+  // remaining budget first, and whatever was collected before the deadline is
+  // returned as a partial result (previously this fallback had no budget at
+  // all and a single search could run ~71s).
   if (tags.length > 1) {
     console.log(
       `[Overpass Splitting] Combined query failed. Splitting into ${tags.length} individual tag queries...`
     );
     const combinedElements: OverpassElement[] = [];
+    let tagsAttempted = 0;
 
     for (const singleTag of tags) {
+      if (Date.now() > deadlineMs - 3000) {
+        console.warn(
+          `[Overpass Splitting] Deadline reached after ${tagsAttempted}/${tags.length} tags; returning ${combinedElements.length} collected elements as partial results.`
+        );
+        break;
+      }
+      tagsAttempted++;
       const splitQuery = buildOverpassQuery([singleTag], radiusMeters, lat, lon, 60);
 
       for (const mirrorUrl of OVERPASS_MIRRORS) {
+        const remaining = deadlineMs - Date.now();
+        if (remaining <= 2000) break;
         try {
-          const elements = await fetchOverpassMirror(mirrorUrl, splitQuery, 45000);
+          const elements = await fetchOverpassMirror(
+            mirrorUrl,
+            splitQuery,
+            Math.min(12000, Math.max(4000, remaining - 1000))
+          );
           combinedElements.push(...elements);
           break; // Succeeded for this tag, move to next
         } catch {
@@ -241,24 +330,337 @@ async function fetchOverpassWithFailover(
     }
 
     if (combinedElements.length > 0) {
-      return combinedElements;
+      const partial = tagsAttempted < tags.length;
+      return { elements: combinedElements, partial };
     }
   }
 
-  throw (
-    lastError ||
-    new Error("All OpenStreetMap Overpass mirrors are currently busy or unavailable.")
-  );
+  throw new Error("All OpenStreetMap Overpass mirrors are currently busy or unavailable.");
+}
+
+// ---------------------------------------------------------------------------
+// Name-keyword fallback
+// Service trades are rarely tagged with a category tag in OSM, so the tag
+// query alone finds almost none of them. The fallback runs a second Overpass
+// query matching business NAMES against the category keywords, then unions
+// those elements with the tag set in the same pipeline (coordinates,
+// Haversine post-filter, dedupe by element id). Tag matches always win:
+// an element found by both counts once, as tag-matched.
+// ---------------------------------------------------------------------------
+
+/** OSM tag keys that mark an element's own business type (precedence rule). */
+const PRIMARY_TAG_KEYS = [
+  "amenity",
+  "shop",
+  "office",
+  "craft",
+  "leisure",
+  "tourism",
+  "healthcare",
+  "club",
+  "emergency",
+];
+
+/** OSM tag keys that count as commercial context for a name match. */
+const COMMERCIAL_TAG_KEYS = [
+  "amenity",
+  "shop",
+  "office",
+  "craft",
+  "leisure",
+  "tourism",
+  "healthcare",
+  "club",
+];
+
+const CONTACT_TAG_KEYS = [
+  "phone",
+  "contact:phone",
+  "mobile",
+  "contact:mobile",
+  "email",
+  "contact:email",
+  "website",
+  "contact:website",
+];
+
+function escapeOverpassRegex(text: string): string {
+  return text.replace(/[.*+?()[\]{}^$|\\]/g, "\\$&");
+}
+
+/**
+ * Bounding box covering a circle of the given radius. Name-regex queries use
+ * a bbox instead of `around:` — measured 37s vs >70s for a 2km central-London
+ * radius (the `around` distance check is expensive on top of the regex scan).
+ * The Haversine post-filter in the main loop is the real radius guarantee,
+ * so the slightly larger bbox corners are harmless.
+ */
+function bboxForRadius(
+  radiusMeters: number,
+  lat: number,
+  lon: number
+): [number, number, number, number] {
+  const latDelta = radiusMeters / 111320;
+  const lonDelta = radiusMeters / (111320 * Math.max(0.2, Math.cos((lat * Math.PI) / 180)));
+  const south = Math.max(-90, lat - latDelta);
+  const north = Math.min(90, lat + latDelta);
+  const west = Math.max(-180, lon - lonDelta);
+  const east = Math.min(180, lon + lonDelta);
+  return [south, west, north, east];
+}
+
+/**
+ * Builds the name-match Overpass query: elements whose name contains a
+ * category keyword, restricted server-side to elements with a commercial tag,
+ * a contact tag, or a commercial building context. The code-side checks in
+ * the main loop (strict word-boundary keyword match, precedence rule) are the
+ * real guarantee — this query only narrows the candidate set.
+ *
+ * The indexed tag filter comes FIRST in each statement and the area filter is
+ * a bbox (see bboxForRadius) — both measured faster than the regex-first /
+ * `around:` form for dense areas.
+ */
+function buildNameMatchQuery(
+  keywords: string[],
+  radiusMeters: number,
+  lat: number,
+  lon: number,
+  timeoutSeconds = 60
+): string {
+  const pattern = keywords.map(escapeOverpassRegex).join("|");
+  const [south, west, north, east] = bboxForRadius(radiusMeters, lat, lon);
+  const bbox = `(${south},${west},${north},${east})`;
+  const statements: string[] = [];
+  for (const key of COMMERCIAL_TAG_KEYS) {
+    statements.push(`nwr["${key}"]["name"~"${pattern}",i]${bbox};`);
+  }
+  for (const key of CONTACT_TAG_KEYS) {
+    statements.push(`nwr["${key}"]["name"~"${pattern}",i]${bbox};`);
+  }
+  statements.push(`nwr["building"~"commercial|retail|office"]["name"~"${pattern}",i]${bbox};`);
+
+  return `[out:json][timeout:${timeoutSeconds}];
+(
+  ${statements.join("\n  ")}
+);
+out center tags;`;
+}
+
+/**
+ * Precedence rule: an element whose own primary tag maps to a DIFFERENT
+ * category is never name-matched into this one. Returns false when the
+ * element belongs elsewhere, true when it may be name-matched here.
+ */
+export function elementPassesNamePrecedence(
+  tags: Record<string, string>,
+  categoryId: string
+): boolean {
+  const normalizedId = categoryId.toLowerCase().trim();
+  const mapped = new Set<string>();
+  for (const key of PRIMARY_TAG_KEYS) {
+    const value = tags[key];
+    if (!value) continue;
+    // A blocked primary tag (cinema, museum, library, ...) is never a local
+    // service business, even though it maps to no directory category.
+    if (NAME_MATCH_BLOCKED_PRIMARY_VALUES.has(value.toLowerCase().trim())) return false;
+    for (const cat of getCategoriesForTag(key, value)) mapped.add(cat);
+  }
+  if (mapped.size === 0) return true; // Generic element — no category claims it.
+  return mapped.has(normalizedId);
+}
+
+/** A name match needs a commercial tag, a contact tag, or a commercial building. */
+export function elementHasCommercialContext(tags: Record<string, string>): boolean {
+  for (const key of COMMERCIAL_TAG_KEYS) {
+    if (tags[key]) return true;
+  }
+  for (const key of CONTACT_TAG_KEYS) {
+    if (tags[key]) return true;
+  }
+  const building = (tags["building"] || "").toLowerCase();
+  return building === "commercial" || building === "retail" || building === "office";
+}
+
+/**
+ * Runs the name-keyword query inside the shared search deadline. A failure
+ * here never fails the search — the tag results stand on their own.
+ */
+async function fetchNameMatches(
+  keywords: string[],
+  radiusMeters: number,
+  lat: number,
+  lon: number,
+  deadlineMs: number
+): Promise<OverpassElement[]> {
+  if (keywords.length === 0) return [];
+  const remaining = deadlineMs - Date.now();
+  if (remaining <= 10000) {
+    console.warn("[Name Fallback] Skipped: less than 10s left in the search budget.");
+    return [];
+  }
+  const query = buildNameMatchQuery(keywords, radiusMeters, lat, lon, 60);
+  try {
+    // Name-regex queries are slow in dense areas (measured ~37s for a 2km
+    // central-London radius), so they get a 40s per-mirror ceiling instead of
+    // the 15s tag-query default. The shared deadline still caps total time.
+    const elements = await fetchOverpassQueryWithFailover(query, deadlineMs, false, 40000);
+    console.log(`[Name Fallback] Name query returned ${elements.length} candidate elements.`);
+    return elements;
+  } catch (err: any) {
+    console.warn(`[Name Fallback] Name query failed (${err.message}); continuing with tag matches only.`);
+    return [];
+  }
+}
+
+/**
+ * Turns raw Overture social URLs into validated { platform, url } objects.
+ * Malformed URLs are dropped, and the platform is classified from the URL
+ * hostname — never from a substring — so a link labelled Facebook really
+ * points at facebook.com.
+ */
+function overtureSocialObjects(socials: string[]): { platform: string; url: string }[] {
+  const out: { platform: string; url: string }[] = [];
+  for (const s of socials || []) {
+    const valid = validateRecordUrl(s);
+    if (!valid) continue;
+    let host = "";
+    try {
+      host = new URL(valid).hostname.toLowerCase().replace(/^www\./, "");
+    } catch {
+      continue;
+    }
+    let platform = "social";
+    if (host === "facebook.com" || host === "fb.com" || host === "fb.me") platform = "Facebook";
+    else if (host === "instagram.com" || host === "instagr.am") platform = "Instagram";
+    else if (host === "linkedin.com") platform = "LinkedIn";
+    else if (host === "twitter.com" || host === "x.com") platform = "Twitter/X";
+    else if (host === "tiktok.com") platform = "TikTok";
+    out.push({ platform, url: valid });
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Coverage counts (used by the coverage-audit API route)
+// Counts use the Overpass radius filter plus the same code-side rules as the
+// main pipeline (strict keyword match, precedence, commercial context), but
+// without the Haversine re-check on element centres — counts are therefore a
+// close upper bound, and the audit UI says so.
+// ---------------------------------------------------------------------------
+
+export interface CategoryCoverageCounts {
+  tagCount: number;
+  nameCount: number;
+  total: number;
+}
+
+function buildIdsQuery(
+  tags: OsmTagCriteria[],
+  radiusMeters: number,
+  lat: number,
+  lon: number
+): string {
+  const statements = tags
+    .map((t) => `nwr["${t.key}"="${t.value}"](around:${radiusMeters}, ${lat}, ${lon});`)
+    .join("\n  ");
+  return `[out:json][timeout:30];
+(
+  ${statements}
+);
+out ids;`;
+}
+
+function buildNameTagsQuery(
+  keywords: string[],
+  radiusMeters: number,
+  lat: number,
+  lon: number
+): string {
+  const pattern = keywords.map(escapeOverpassRegex).join("|");
+  const [south, west, north, east] = bboxForRadius(radiusMeters, lat, lon);
+  const bbox = `(${south},${west},${north},${east})`;
+  const statements: string[] = [];
+  for (const key of COMMERCIAL_TAG_KEYS) {
+    statements.push(`nwr["${key}"]["name"~"${pattern}",i]${bbox};`);
+  }
+  for (const key of CONTACT_TAG_KEYS) {
+    statements.push(`nwr["${key}"]["name"~"${pattern}",i]${bbox};`);
+  }
+  statements.push(`nwr["building"~"commercial|retail|office"]["name"~"${pattern}",i]${bbox};`);
+  return `[out:json][timeout:30];
+(
+  ${statements.join("\n  ")}
+);
+out tags;`;
+}
+
+/**
+ * Counts tag-matched and name-matched businesses for one category in one area.
+ * Used by the coverage audit; each query gets its own short deadline so one
+ * slow category cannot stall the whole audit.
+ */
+export async function countCategoryCoverage(
+  categoryId: string,
+  radiusMeters: number,
+  lat: number,
+  lon: number,
+  budgetMs = 25000
+): Promise<CategoryCoverageCounts> {
+  const tagSpecs = getCategoryOsmTags(categoryId);
+  const keywords = getCategoryNameKeywords(categoryId);
+  const deadlineMs = Date.now() + budgetMs;
+
+  const tagIds = new Set<string>();
+  try {
+    const tagQuery = buildIdsQuery(tagSpecs, radiusMeters, lat, lon);
+    const tagElements = await fetchOverpassQueryWithFailover(tagQuery, deadlineMs);
+    for (const el of tagElements) tagIds.add(`${el.type}/${el.id}`);
+  } catch (err: any) {
+    console.warn(`[Coverage Audit] Tag count failed for ${categoryId}: ${err.message}`);
+  }
+
+  const nameIds = new Set<string>();
+  if (keywords.length > 0) {
+    try {
+      const nameQuery = buildNameTagsQuery(keywords, radiusMeters, lat, lon);
+      // The name query may use the whole remaining budget (name-regex scans
+      // are slow in dense areas); the shared deadline still caps total time.
+      const nameElements = await fetchOverpassQueryWithFailover(nameQuery, deadlineMs, false, budgetMs);
+      const exclusions = NAME_MATCH_EXCLUSIONS[categoryId.toLowerCase().trim()] || [];
+      const phraseExclusions = NAME_MATCH_PHRASE_EXCLUSIONS[categoryId.toLowerCase().trim()] || [];
+      for (const el of nameElements) {
+        const key = `${el.type}/${el.id}`;
+        if (tagIds.has(key)) continue; // Tag-matched already — counts once, as tag.
+        const tags = el.tags || {};
+        const rawName = tags.name || tags["name:en"] || tags.brand || "";
+        if (!rawName || !nameMatchesKeywords(rawName, keywords)) continue;
+        if (!elementPassesNamePrecedence(tags, categoryId)) continue;
+        if (!elementHasCommercialContext(tags)) continue;
+        if (exclusions.some((ex) => tags[ex.key] === ex.value)) continue;
+        if (nameMatchesPhraseExclusions(rawName, phraseExclusions)) continue;
+        nameIds.add(key);
+      }
+    } catch (err: any) {
+      console.warn(`[Coverage Audit] Name count failed for ${categoryId}: ${err.message}`);
+    }
+  }
+
+  return {
+    tagCount: tagIds.size,
+    nameCount: nameIds.size,
+    total: tagIds.size + nameIds.size,
+  };
 }
 
 /**
  * Searches real local businesses using OpenStreetMap Overpass API:
  * 1. Multi-tag mapping per category (e.g. amenity=restaurant, amenity=fast_food, amenity=cafe).
- * 2. High reliability mirror rotation across overpass-api.de, overpass.kumi.systems, overpass.private.coffee.
- * 3. Two-tier deduplication: by OSM type+id, then by normalized name + coordinates within 50m.
- * 4. Mandatory Haversine post-filtering <= radiusMeters.
- * 5. Server-side caching keyed by areaId + categoryId (TTL: 7 days) returning "Last updated" date.
- * 6. Hard data honesty: 0 fake emails, phones, ratings, or websites.
+ * 2. Name-keyword fallback for service trades (union with the tag set, badged "Matched by name").
+ * 3. High reliability mirror rotation across overpass-api.de, overpass.kumi.systems, overpass.private.coffee.
+ * 4. Two-tier deduplication: by OSM type+id, then by normalized name + coordinates within 50m.
+ * 5. Mandatory Haversine post-filtering <= radiusMeters.
+ * 6. Server-side caching keyed by areaId + categoryId (TTL: 7 days) returning "Last updated" date.
+ * 7. Hard data honesty: 0 fake emails, phones, ratings, or websites.
  */
 export async function searchFreeLiveDirectory(
   options: FreeSearchOptions
@@ -322,6 +724,9 @@ export async function searchFreeLiveDirectory(
     }
   }
 
+  // Shared deadline for every Overpass attempt in this search (60s total).
+  const searchDeadlineMs = Date.now() + SEARCH_BUDGET_MS;
+
   // 3. Resolve Multi-Tag Criteria for the category
   const tagSpecs = getCategoryOsmTags(category);
   console.log(
@@ -330,15 +735,19 @@ export async function searchFreeLiveDirectory(
   );
 
   // 4. Fetch from Overpass mirrors with automatic failover
-  let rawElements: OverpassElement[] = [];
+  let tagElements: OverpassElement[] = [];
+  let searchPartial = false;
   try {
-    rawElements = await fetchOverpassWithFailover(
+    const tagOutcome = await fetchOverpassWithFailover(
       tagSpecs,
       radiusMeters,
       centerLat,
       centerLon,
+      searchDeadlineMs,
       simulateMirror1Failure
     );
+    tagElements = tagOutcome.elements;
+    searchPartial = tagOutcome.partial;
   } catch (err: any) {
     console.error("[Overpass Execution Error]:", err.message);
     throw new Error(
@@ -346,11 +755,35 @@ export async function searchFreeLiveDirectory(
     );
   }
 
-  // 5. Deduplication Tier 1: Dedupe by OSM type + id
+  // 4b. Name-keyword fallback: service trades are rarely category-tagged, so
+  // match business names too and union them with the tag set. Skipped when the
+  // tag query already returned plenty (tag-rich categories gain nothing from
+  // a second query) or when the search budget is nearly spent.
+  const nameKeywords = getCategoryNameKeywords(category);
+  let nameElements: OverpassElement[] = [];
+  if (nameKeywords.length > 0 && tagElements.length < NAME_FALLBACK_TAG_CEILING) {
+    nameElements = await fetchNameMatches(
+      nameKeywords,
+      radiusMeters,
+      centerLat,
+      centerLon,
+      searchDeadlineMs
+    );
+  } else if (nameKeywords.length > 0) {
+    console.log(
+      `[Name Fallback] Skipped: tag query already returned ${tagElements.length} elements (>= ${NAME_FALLBACK_TAG_CEILING}).`
+    );
+  }
+
+  const tagElementIds = new Set(tagElements.map((el) => `${el.type}/${el.id}`));
+  const nameElementIds = new Set(nameElements.map((el) => `${el.type}/${el.id}`));
+
+  // 5. Deduplication Tier 1: Dedupe by OSM type + id (tag set + name set union).
+  // An element found by both counts once, as tag-matched.
   const uniqueOsmElements: OverpassElement[] = [];
   const seenOsmTypeAndId = new Set<string>();
 
-  for (const el of rawElements) {
+  for (const el of [...tagElements, ...nameElements]) {
     const osmKey = `${el.type}/${el.id}`;
     if (seenOsmTypeAndId.has(osmKey)) {
       continue;
@@ -360,7 +793,7 @@ export async function searchFreeLiveDirectory(
   }
 
   console.log(
-    `[Dedupe Tier 1] ${rawElements.length} raw elements deduplicated to ${uniqueOsmElements.length} unique OSM records.`
+    `[Dedupe Tier 1] ${tagElements.length} tag + ${nameElements.length} name elements deduplicated to ${uniqueOsmElements.length} unique OSM records.`
   );
 
   // 6. Mandatory Haversine Post-Filtering & Deduplication Tier 2:
@@ -384,11 +817,33 @@ export async function searchFreeLiveDirectory(
       lon
     );
 
-    // BUG 6 Fix: A lead is included ONLY if the element's OWN primary tag matches the category tag mapping
+    // A lead enters a category ONLY via its own primary-tag mapping OR a
+    // name-keyword match. An element found by both counts once, as tag-matched.
     const tags = el.tags || {};
+    const osmKey = `${el.type}/${el.id}`;
     const matchesCategoryTag = tagSpecs.some((ts) => tags[ts.key] === ts.value);
-    if (!matchesCategoryTag) {
+    const isNameCandidate = nameElementIds.has(osmKey) && !tagElementIds.has(osmKey);
+    if (!matchesCategoryTag && !isNameCandidate) {
       continue;
+    }
+
+    const rawName = tags.name || tags["name:en"] || tags.brand;
+    if (!rawName || rawName.trim().length < 2) continue;
+
+    const matchType: "tag" | "name" = matchesCategoryTag ? "tag" : "name";
+
+    // Name-only matches must pass every gate: strict word-boundary keyword
+    // match, precedence rule (a barbershop named "Clean Cuts" stays out of
+    // Cleaning), commercial context, and per-category exclusions (dry
+    // cleaning never enters Cleaning).
+    if (matchType === "name") {
+      if (!nameMatchesKeywords(rawName, nameKeywords)) continue;
+      if (!elementPassesNamePrecedence(tags, category)) continue;
+      if (!elementHasCommercialContext(tags)) continue;
+      const tagExclusions = NAME_MATCH_EXCLUSIONS[category.toLowerCase().trim()] || [];
+      if (tagExclusions.some((ex) => tags[ex.key] === ex.value)) continue;
+      const phraseExclusions = NAME_MATCH_PHRASE_EXCLUSIONS[category.toLowerCase().trim()] || [];
+      if (nameMatchesPhraseExclusions(rawName, phraseExclusions)) continue;
     }
 
     // Explicitly exclude non-matching establishments that might sit in commercial spaces (Bug 6)
@@ -396,28 +851,26 @@ export async function searchFreeLiveDirectory(
       (ts) => ts.key === "amenity" && ["restaurant", "cafe", "fast_food", "food_court", "bar", "pub"].includes(ts.value)
     );
     if (isFoodCategory) {
-      if (tags.office && !tags.amenity) continue;
-      if (tags.craft && !tags.amenity) continue;
-      if (
-        tags.shop &&
-        !["bakery", "pastry", "coffee", "tea", "deli", "ice_cream", "confectionery"].includes(tags.shop) &&
-        !tags.amenity
-      ) {
+      // A name that shows the business is not food at all (events venue,
+      // interiors firm, supplier) vetoes the lead however it is tagged —
+      // OSM mis-tags venues (DORANGOS, a comedy-events business, is cafe).
+      if (nameMatchesFoodBlocklist(rawName)) {
         continue;
       }
-      const rawNameLower = (tags.name || "").toLowerCase();
-      if (
-        rawNameLower.includes("interiors") ||
-        rawNameLower.includes("interior design") ||
-        rawNameLower.includes("coffee machine supplier") ||
-        rawNameLower.includes("documents clearing")
-      ) {
-        continue;
+      // Structural exclusions apply to tag matches only: a name-matched
+      // business is vouched for by its name plus the gates above.
+      if (matchesCategoryTag) {
+        if (tags.office && !tags.amenity) continue;
+        if (tags.craft && !tags.amenity) continue;
+        if (
+          tags.shop &&
+          !["bakery", "pastry", "coffee", "tea", "deli", "ice_cream", "confectionery"].includes(tags.shop) &&
+          !tags.amenity
+        ) {
+          continue;
+        }
       }
     }
-
-    const rawName = tags.name || tags["name:en"] || tags.brand;
-    if (!rawName || rawName.trim().length < 2) continue;
 
     const cleanName = rawName.trim();
     const isWithin = distanceToCenter <= radiusMeters;
@@ -431,7 +884,7 @@ export async function searchFreeLiveDirectory(
       continue;
     }
 
-    // 7. Strict Data Honesty (BUG 2 Fix - Never fabricate or guess) & Prompt 6 Step 1 (Read ALL OSM contact tags)
+    // 7. Strict Data Honesty (BUG 2 Fix - Never fabricate or guess) & Phase 6 Step 1 (Read ALL OSM contact tags)
     const contactTagSource: Record<string, string> = {};
 
     // 1. Phone extraction
@@ -449,9 +902,14 @@ export async function searchFreeLiveDirectory(
     let phoneE164: string | null = null;
     let phoneStatus: "Valid" | "Format valid" | "Phone format unverified" | "Missing" = "Missing";
     let canWhatsApp = false;
+    let phoneWarning: string | null = null;
 
     if (rawPhone) {
       const pRes = validatePhone(rawPhone, cCode);
+      if (pRes.isSuspicious) {
+        // Placeholder-looking number (e.g. +91 22 1111 1111): never "Format valid".
+        phoneWarning = "Suspicious number — verify before use";
+      }
       if (pRes.phoneStatus === "Valid") {
         phone = pRes.phone;
         phoneE164 = pRes.phoneE164;
@@ -499,7 +957,30 @@ export async function searchFreeLiveDirectory(
 
     // Deduplication Tier 2: Check normalized name + (same phone OR coordinates within 50m)
     const normName = normalizeBusinessName(cleanName);
+    const phoneDigits = phoneE164
+      ? phoneE164.replace(/[^0-9]/g, "")
+      : phone
+      ? phone.replace(/[^0-9]/g, "")
+      : "";
     const isDuplicate = leads.some((existing) => {
+      // Cross-script duplicate: same normalised phone + coordinates within 50m
+      // merges even when the names are in different scripts (e.g. Arabic vs Latin McDonald's).
+      if (phoneDigits && existing.lat && existing.lon) {
+        const existingDigits = existing.phoneE164
+          ? existing.phoneE164.replace(/[^0-9]/g, "")
+          : existing.phone
+          ? existing.phone.replace(/[^0-9]/g, "")
+          : "";
+        if (existingDigits && existingDigits === phoneDigits) {
+          const distBetween = haversineDistanceMeters(
+            existing.lat,
+            existing.lon,
+            lat,
+            lon
+          );
+          if (distBetween <= 50) return true;
+        }
+      }
       const existingNorm = normalizeBusinessName(existing.name);
       if (existingNorm === normName) {
         if (existing.phone && phone && existing.phone === phone) return true;
@@ -556,28 +1037,23 @@ export async function searchFreeLiveDirectory(
       }
     }
 
-    // 5. Facebook & Instagram extraction (Prompt 6 Step 1 & 2)
+    // 5. Facebook & Instagram extraction (Phase 6 Step 1 & 2).
+    // buildSocialUrl validates: an email address is never turned into a
+    // social URL, and a value that already contains the platform domain is
+    // never prefixed again (that used to double the domain).
     let rawFacebook = tags["contact:facebook"] || tags["facebook"] || null;
     if (tags["contact:facebook"]) contactTagSource.facebook = "contact:facebook";
     else if (tags["facebook"]) contactTagSource.facebook = "facebook";
 
-    let facebookUrl: string | null = null;
-    if (rawFacebook) {
-      const cleanFb = rawFacebook.trim();
-      facebookUrl = cleanFb.startsWith("http") ? cleanFb : `https://www.facebook.com/${cleanFb.replace(/^@/, "")}`;
-    }
+    const facebookUrl = buildSocialUrl(rawFacebook, "facebook");
 
     let rawInstagram = tags["contact:instagram"] || tags["instagram"] || null;
     if (tags["contact:instagram"]) contactTagSource.instagram = "contact:instagram";
     else if (tags["instagram"]) contactTagSource.instagram = "instagram";
 
-    let instagramUrl: string | null = null;
-    if (rawInstagram) {
-      const cleanInsta = rawInstagram.trim();
-      instagramUrl = cleanInsta.startsWith("http") ? cleanInsta : `https://www.instagram.com/${cleanInsta.replace(/^@/, "")}`;
-    }
+    const instagramUrl = buildSocialUrl(rawInstagram, "instagram");
 
-    // Address (Prompt 5 Bug 4: Street address detection)
+    // Address (Phase 5 Bug 4: Street address detection)
     const street = tags["addr:street"] || tags.street || "";
     const housenumber = tags["addr:housenumber"] || tags.housenumber || "";
     const streetAddress = [housenumber, street].filter(Boolean).join(" ");
@@ -608,9 +1084,13 @@ export async function searchFreeLiveDirectory(
 
     const scoreResult = calculateLeadScore({
       phoneStatus,
+      phone,
+      canWhatsApp,
       email,
       emailStatus,
       websiteStatus,
+      facebookUrl,
+      instagramUrl,
       rating: null,
       userRatingCount: null,
     });
@@ -625,7 +1105,7 @@ export async function searchFreeLiveDirectory(
       websiteStatus,
     });
 
-    // Compute any-channel contactability & best channel (Prompt 6 Step 6)
+    // Compute any-channel contactability & best channel (Phase 6 Step 6)
     const contactInfo = computeLeadContactability({
       whatsappConfirmed,
       whatsapp,
@@ -665,6 +1145,8 @@ export async function searchFreeLiveDirectory(
       phoneE164,
       phoneStatus,
       canWhatsApp,
+      phoneWarning,
+      matchType,
       whatsapp,
       whatsappNumber,
       whatsappLink,
@@ -700,7 +1182,7 @@ export async function searchFreeLiveDirectory(
     });
   }
 
-  // 7. Overture Maps Integration & Merge (Prompt 3 Part A)
+  // 7. Overture Maps Integration & Merge (Phase 3 Part A)
   // Query Overture Places from SQLite within bounding box of the target area
   const deltaLat = (radiusMeters + 500) / 111000;
   const deltaLon = (radiusMeters + 500) / (111000 * Math.max(0.1, Math.cos((centerLat * Math.PI) / 180)));
@@ -711,7 +1193,7 @@ export async function searchFreeLiveDirectory(
 
   let rawOverturePlaces: any[] = [];
   try {
-    rawOverturePlaces = getOverturePlacesInBBox(minLat, maxLat, minLon, maxLon);
+    rawOverturePlaces = await getOverturePlacesInBBox(minLat, maxLat, minLon, maxLon);
     console.log(
       `[Overture Query] Found ${rawOverturePlaces.length} Overture Places in BBox for ${areaConfig.name} (${minLat.toFixed(3)} - ${maxLat.toFixed(3)}, ${minLon.toFixed(3)} - ${maxLon.toFixed(3)}).`
     );
@@ -744,7 +1226,11 @@ export async function searchFreeLiveDirectory(
       if (!lead.phone && matchedOv.phones && matchedOv.phones.length > 0) {
         const rawOvPhone = matchedOv.phones[0];
         const ovPhoneRes = validatePhone(rawOvPhone, cCode);
-        if (ovPhoneRes.phone) {
+        if (ovPhoneRes.isSuspicious && !lead.phoneWarning) {
+          lead.phoneWarning = "Suspicious number — verify before use";
+        }
+        // Only accept libphonenumber-valid numbers as "Format valid" (same rule as the OSM path).
+        if (ovPhoneRes.phoneStatus === "Valid" && ovPhoneRes.phone) {
           lead.phone = ovPhoneRes.phone;
           lead.phoneE164 = ovPhoneRes.phoneE164;
           lead.phoneStatus = "Format valid";
@@ -776,55 +1262,54 @@ export async function searchFreeLiveDirectory(
         if (eRes.email) {
           lead.email = eRes.email;
           lead.emailStatus = "OpenStreetMap";
-          lead.emailProvenance = "osm";
+          lead.emailProvenance = "overture";
           attr.email = "overture";
         }
       } else if (lead.email) {
         attr.email = "osm";
       }
 
-      // 4. Socials & Facebook: keep the Facebook URL and Instagram URL from Overture (Prompt 6 Step 2)
+      // 4. Socials & Facebook: keep the Facebook URL and Instagram URL from Overture (Phase 6 Step 2)
       if (matchedOv.socials && matchedOv.socials.length > 0) {
-        const socialObjs = matchedOv.socials.map((s: string) => {
-          let platform = "social";
-          const lower = s.toLowerCase();
-          if (lower.includes("facebook.com") || lower.includes("fb.com")) platform = "Facebook";
-          else if (lower.includes("instagram.com")) platform = "Instagram";
-          else if (lower.includes("linkedin.com")) platform = "LinkedIn";
-          else if (lower.includes("twitter.com") || lower.includes("x.com")) platform = "Twitter/X";
-          return { platform, url: s };
-        });
+        const socialObjs = overtureSocialObjects(matchedOv.socials);
 
-        lead.socials = socialObjs;
-        const fb = socialObjs.find((s: any) => s.platform === "Facebook");
-        if (fb && !lead.facebookUrl) {
-          lead.facebookUrl = fb.url;
-          lead.facebookSource = "overture";
+        if (socialObjs.length > 0) {
+          lead.socials = socialObjs;
+          const fb = socialObjs.find((s: any) => s.platform === "Facebook");
+          if (fb && !lead.facebookUrl) {
+            lead.facebookUrl = fb.url;
+            lead.facebookSource = "overture";
+          }
+          const insta = socialObjs.find((s: any) => s.platform === "Instagram");
+          if (insta && !lead.instagramUrl) {
+            lead.instagramUrl = insta.url;
+            lead.instagramSource = "overture";
+          }
+          attr.socials = "overture";
         }
-        const insta = socialObjs.find((s: any) => s.platform === "Instagram");
-        if (insta && !lead.instagramUrl) {
-          lead.instagramUrl = insta.url;
-          lead.instagramSource = "overture";
-        }
-        attr.socials = "overture";
       }
 
       if (matchedOv.facebook_url && !lead.facebookUrl) {
-        lead.facebookUrl = matchedOv.facebook_url;
-        lead.facebookSource = "overture";
+        const ovFb = validatePlatformUrl(matchedOv.facebook_url, "facebook");
+        if (ovFb) {
+          lead.facebookUrl = ovFb;
+          lead.facebookSource = "overture";
+        }
       }
 
       lead.fieldAttribution = attr;
 
-      // Recompute Lead Score using real signals (Prompt 3 Part C)
+      // Recompute Lead Score using real signals (Phase 3 Part C)
       const reScore = calculateLeadScore({
         websiteStatus: lead.websiteStatus,
         phoneStatus: lead.phoneStatus,
         phone: lead.phone,
+        canWhatsApp: lead.canWhatsApp,
         email: lead.email,
         emailStatus: lead.emailStatus,
         socials: lead.socials,
         facebookUrl: lead.facebookUrl,
+        instagramUrl: lead.instagramUrl,
         sourceUpdatedAt: lead.sourceUpdatedAt,
         fetchedAt: lead.fetchedAt,
       });
@@ -833,7 +1318,7 @@ export async function searchFreeLiveDirectory(
       lead.leadScoreTier = reScore.tier;
       lead.scoreReasons = reScore.reasons;
 
-      // Recompute any-channel contactability & best channel (Prompt 6 Step 6)
+      // Recompute any-channel contactability & best channel (Phase 6 Step 6)
       const reContact = computeLeadContactability(lead);
       lead.isContactable = reContact.isContactable;
       lead.bestChannel = reContact.bestChannel;
@@ -856,23 +1341,58 @@ export async function searchFreeLiveDirectory(
     const cleanName = (ov.name || "").trim();
     if (!cleanName || cleanName.length < 2) continue;
 
-    const ovCats = (ov.categories || []).map((c: string) => c.toLowerCase());
-    const targetCat = category.toLowerCase().replace(/_/g, " ");
-    const isRelevant =
-      category === "all" ||
-      ovCats.some((c: string) => c.includes(targetCat) || targetCat.includes(c)) ||
-      tagSpecs.some((t) => ovCats.some((c: string) => c.includes(t.value)));
+    // Dedupe guard: never add an Overture row that duplicates an existing lead
+    // (same normalised name + coords within 50m, or same normalised phone + coords
+    // within 50m). Without this, a business present in both OSM and Overture but
+    // failing the name-similarity merge above would appear twice in the results.
+    const ovNormName = normalizeBusinessName(cleanName);
+    const ovPhoneDigits = (ov.phones?.[0] || "").replace(/[^0-9]/g, "");
+    const duplicatesExisting = leads.some((existing) => {
+      if (!existing.lat || !existing.lon) return false;
+      const d = haversineDistanceMeters(existing.lat, existing.lon, ov.lat, ov.lon);
+      if (d > 50) return false;
+      if (ovNormName && normalizeBusinessName(existing.name) === ovNormName) return true;
+      if (ovPhoneDigits) {
+        const exDigits = existing.phoneE164
+          ? existing.phoneE164.replace(/[^0-9]/g, "")
+          : existing.phone
+          ? existing.phone.replace(/[^0-9]/g, "")
+          : "";
+        if (exDigits && exDigits === ovPhoneDigits) return true;
+      }
+      return false;
+    });
+    if (duplicatesExisting) continue;
 
-    if (!isRelevant) continue;
+    // Tight relevance gate: the Overture categories must contain a
+    // per-category keyword as a whole word/phrase. The previous loose
+    // substring check let unrelated trades through (e.g. an events business
+    // under Restaurant). Food categories also apply the name blocklist.
+    const ovCats = (ov.categories || []).map((c: string) => String(c));
+    if (!overtureCategoriesMatch(category, ovCats)) continue;
+
+    // Food categories also apply the name blocklist (an interiors firm or a
+    // documents-clearing office is not a restaurant, however it is tagged).
+    const isFoodTarget = ["restaurant", "cafe", "fast_food", "bakery", "catering", "bar_pub"].includes(
+      category.toLowerCase().trim()
+    );
+    if (isFoodTarget && nameMatchesFoodBlocklist(cleanName)) {
+      continue;
+    }
 
     let phone: string | null = null;
     let phoneE164: string | null = null;
     let phoneStatus: "Valid" | "Format valid" | "Phone format unverified" | "Missing" = "Missing";
     let canWhatsApp = false;
+    let phoneWarning: string | null = null;
 
     if (ov.phones && ov.phones.length > 0) {
       const pRes = validatePhone(ov.phones[0], cCode);
-      if (pRes.phone) {
+      if (pRes.isSuspicious) {
+        phoneWarning = "Suspicious number — verify before use";
+      }
+      // Only accept libphonenumber-valid numbers as "Format valid" (same rule as the OSM path).
+      if (pRes.phoneStatus === "Valid" && pRes.phone) {
         phone = pRes.phone;
         phoneE164 = pRes.phoneE164;
         phoneStatus = "Format valid";
@@ -893,14 +1413,7 @@ export async function searchFreeLiveDirectory(
       }
     }
 
-    const socialObjs = (ov.socials || []).map((s: string) => {
-      let platform = "social";
-      const lower = s.toLowerCase();
-      if (lower.includes("facebook.com") || lower.includes("fb.com")) platform = "Facebook";
-      else if (lower.includes("instagram.com")) platform = "Instagram";
-      else if (lower.includes("linkedin.com")) platform = "LinkedIn";
-      return { platform, url: s };
-    });
+    const socialObjs = overtureSocialObjects(ov.socials || []);
     const facebookUrl = socialObjs.find((s: any) => s.platform === "Facebook")?.url || null;
     const instagramUrl = socialObjs.find((s: any) => s.platform === "Instagram")?.url || null;
 
@@ -912,10 +1425,12 @@ export async function searchFreeLiveDirectory(
       websiteStatus: webRes.websiteStatus,
       phoneStatus,
       phone,
+      canWhatsApp,
       email,
       emailStatus,
       socials: socialObjs,
       facebookUrl,
+      instagramUrl,
       sourceUpdatedAt: ov.updated_at,
       fetchedAt: now,
     });
@@ -947,6 +1462,8 @@ export async function searchFreeLiveDirectory(
       phoneE164,
       phoneStatus,
       canWhatsApp,
+      phoneWarning,
+      matchType: "overture",
       whatsapp: null,
       whatsappNumber: null,
       whatsappLink: null,
@@ -954,7 +1471,7 @@ export async function searchFreeLiveDirectory(
       whatsappStatus: canWhatsApp ? "Mobile number — WhatsApp not confirmed" : "Not listed as WhatsApp",
       whatsappSource: null,
       email,
-      emailProvenance: email ? "osm" : undefined,
+      emailProvenance: email ? "overture" : undefined,
       emailStatus,
       website: webRes.website,
       websiteStatus: webRes.websiteStatus,
@@ -1064,13 +1581,13 @@ export async function searchFreeLiveDirectory(
     let isShared = false;
     if (lead.phone) {
       const pKey = lead.phoneE164 || lead.phone.replace(/[^0-9]/g, "");
-      if ((phoneToNames.get(pKey)?.size || 0) >= 3) {
+      if ((phoneToNames.get(pKey)?.size || 0) >= 2) {
         isShared = true;
       }
     }
     if (lead.email) {
       const eKey = lead.email.toLowerCase().trim();
-      if ((emailToNames.get(eKey)?.size || 0) >= 3) {
+      if ((emailToNames.get(eKey)?.size || 0) >= 2) {
         isShared = true;
       }
     }
@@ -1125,8 +1642,23 @@ export async function searchFreeLiveDirectory(
     console.log(`[Hard Processing Cap Applied]: ${resultHeaderNote}`);
   }
 
-  // 9. Save to Server-Side Cache (7-day TTL with radius included in key)
-  const savedCache = saveToCache(areaId, category, finalFilteredLeads, radiusMeters);
+  // Honest partial results: when the deadline cut the fetch short, return what
+  // was collected with a clear note instead of failing the whole search.
+  if (searchPartial) {
+    resultHeaderNote = `Partial results — data source busy, showing ${finalFilteredLeads.length.toLocaleString()} businesses`;
+    console.log(`[Partial Results] ${resultHeaderNote}`);
+  }
+
+  // 9. Save to Server-Side Cache (7-day TTL with radius included in key).
+  // Partial results are NEVER cached — caching them would serve an incomplete
+  // result set for 7 days.
+  let lastUpdated: string;
+  if (!searchPartial) {
+    const savedCache = saveToCache(areaId, category, finalFilteredLeads, radiusMeters);
+    lastUpdated = savedCache.lastUpdated;
+  } else {
+    lastUpdated = formatLastUpdated(new Date().toISOString());
+  }
 
   return {
     leads: finalFilteredLeads,
@@ -1134,7 +1666,8 @@ export async function searchFreeLiveDirectory(
     total: finalFilteredLeads.length,
     areaConfig,
     cached: false,
-    lastUpdated: savedCache.lastUpdated,
+    lastUpdated,
     resultHeaderNote,
+    partial: searchPartial,
   };
 }
