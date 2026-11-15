@@ -410,7 +410,7 @@
     "city": "London",
     "centerLat": 51.5137,
     "centerLon": -0.1365,
-    "radiusMeters": 1500
+    "radiusMeters": 1000
   },
   "canarywharf": {
     "name": "Canary Wharf",
@@ -459,7 +459,7 @@
     "city": "Dubai",
     "centerLat": 25.1972,
     "centerLon": 55.2744,
-    "radiusMeters": 2000
+    "radiusMeters": 1200
   },
   "dubaimarina": {
     "name": "Dubai Marina",
@@ -485,23 +485,23 @@
   "dhakadhanmondi": {
     "name": "Dhanmondi",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7461,
+    "centerLon": 90.3742,
+    "radiusMeters": 2500
   },
   "dhakagulshan1": {
     "name": "Gulshan-1",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7785,
+    "centerLon": 90.4162,
+    "radiusMeters": 2000
   },
   "dhakagulshan2": {
     "name": "Gulshan-2",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7925,
+    "centerLon": 90.415,
+    "radiusMeters": 2000
   },
   "dhakabanani": {
     "name": "Banani",
@@ -541,121 +541,121 @@
   "dhakamotijheel": {
     "name": "Motijheel",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.733,
+    "centerLon": 90.4172,
+    "radiusMeters": 2000
   },
   "dhakamohammadpur": {
     "name": "Mohammadpur",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7658,
+    "centerLon": 90.3584,
+    "radiusMeters": 2500
   },
   "dhakabadda": {
     "name": "Badda",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7805,
+    "centerLon": 90.4267,
+    "radiusMeters": 2500
   },
   "dhakakhilgaon": {
     "name": "Khilgaon",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7516,
+    "centerLon": 90.4223,
+    "radiusMeters": 2000
   },
   "dhakatejgaon": {
     "name": "Tejgaon",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7598,
+    "centerLon": 90.3916,
+    "radiusMeters": 2500
   },
   "dhakalalbagh": {
     "name": "Lalbagh",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7188,
+    "centerLon": 90.3882,
+    "radiusMeters": 2000
   },
   "dhakapaltan": {
     "name": "Paltan",
     "city": "Dhaka",
-    "centerLat": 23.73625,
-    "centerLon": 90.41426,
-    "radiusMeters": 2500
+    "centerLat": 23.735,
+    "centerLon": 90.4125,
+    "radiusMeters": 1800
   },
   "dhakaramna": {
     "name": "Ramna",
     "city": "Dhaka",
-    "centerLat": 23.7772,
-    "centerLon": 90.17604,
-    "radiusMeters": 2500
+    "centerLat": 23.7389,
+    "centerLon": 90.4025,
+    "radiusMeters": 2000
   },
   "dhakashahbagh": {
     "name": "Shahbagh",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.738,
+    "centerLon": 90.3955,
+    "radiusMeters": 1500
   },
   "dhakanewmarket": {
     "name": "New Market",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7334,
+    "centerLon": 90.3843,
+    "radiusMeters": 1800
   },
   "dhakacantonment": {
     "name": "Cantonment",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.8223,
+    "centerLon": 90.3935,
+    "radiusMeters": 2500
   },
   "dhakajatrabari": {
     "name": "Jatrabari",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7115,
+    "centerLon": 90.4343,
+    "radiusMeters": 2500
   },
   "dhakasutrapur": {
     "name": "Sutrapur",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7088,
+    "centerLon": 90.4168,
+    "radiusMeters": 2000
   },
   "dhakademra": {
     "name": "Demra",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7085,
+    "centerLon": 90.4897,
+    "radiusMeters": 3000
   },
   "dhakasabujbagh": {
     "name": "Sabujbagh",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7397,
+    "centerLon": 90.4336,
+    "radiusMeters": 2000
   },
   "dhakakafrul": {
     "name": "Kafrul",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7915,
+    "centerLon": 90.3831,
+    "radiusMeters": 2000
   },
   "dhakahazaribagh": {
     "name": "Hazaribagh",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.735,
+    "centerLon": 90.3667,
+    "radiusMeters": 2000
   },
   "dhakabashundharara": {
     "name": "Bashundhara R/A",
@@ -674,65 +674,65 @@
   "dhakabaridhara": {
     "name": "Baridhara",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7997,
+    "centerLon": 90.4206,
+    "radiusMeters": 1800
   },
   "dhakaniketan": {
     "name": "Niketan",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7745,
+    "centerLon": 90.4072,
+    "radiusMeters": 1500
   },
   "dhakarampura": {
     "name": "Rampura",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7612,
+    "centerLon": 90.4208,
+    "radiusMeters": 2000
   },
   "dhakamoghbazar": {
     "name": "Moghbazar",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7495,
+    "centerLon": 90.4035,
+    "radiusMeters": 1800
   },
   "dhakaeskaton": {
     "name": "Eskaton",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.745,
+    "centerLon": 90.398,
+    "radiusMeters": 1500
   },
   "dhakamalibagh": {
     "name": "Malibagh",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7482,
+    "centerLon": 90.414,
+    "radiusMeters": 1800
   },
   "dhakashantinagar": {
     "name": "Shantinagar",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.7385,
+    "centerLon": 90.4142,
+    "radiusMeters": 1500
   },
   "dhakakeraniganj": {
     "name": "Keraniganj",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
+    "centerLat": 23.6844,
+    "centerLon": 90.3686,
     "radiusMeters": 3500
   },
   "dhakasavar": {
     "name": "Savar",
     "city": "Dhaka",
-    "centerLat": 23.8103,
-    "centerLon": 90.4125,
-    "radiusMeters": 3500
+    "centerLat": 23.8442,
+    "centerLon": 90.2583,
+    "radiusMeters": 4000
   },
   "dhakadhamrai": {
     "name": "Dhamrai",
@@ -786,9 +786,9 @@
   "gazipurtongi": {
     "name": "Tongi",
     "city": "Gazipur",
-    "centerLat": 24.0023,
-    "centerLon": 90.4264,
-    "radiusMeters": 3500
+    "centerLat": 23.8967,
+    "centerLon": 90.4014,
+    "radiusMeters": 3000
   },
   "gazipurkaliakair": {
     "name": "Kaliakair",
@@ -907,7 +907,7 @@
     "city": "Narayanganj",
     "centerLat": 23.6238,
     "centerLon": 90.5,
-    "radiusMeters": 3500
+    "radiusMeters": 3000
   },
   "narayanganjbandar": {
     "name": "Bandar",
@@ -926,9 +926,9 @@
   "narayanganjfatullah": {
     "name": "Fatullah",
     "city": "Narayanganj",
-    "centerLat": 23.6238,
-    "centerLon": 90.5,
-    "radiusMeters": 3500
+    "centerLat": 23.65,
+    "centerLon": 90.4833,
+    "radiusMeters": 2500
   },
   "narayanganjsiddhirganj": {
     "name": "Siddhirganj",
@@ -5581,16 +5581,16 @@
   "sylhetamberkhana": {
     "name": "Amberkhana",
     "city": "Sylhet",
-    "centerLat": 24.8949,
-    "centerLon": 91.8687,
-    "radiusMeters": 3500
+    "centerLat": 24.9036,
+    "centerLon": 91.8681,
+    "radiusMeters": 2000
   },
   "sylhetzindabazar": {
-    "name": "Zindabazar",
+    "name": "Zinda Bazar",
     "city": "Sylhet",
     "centerLat": 24.8949,
     "centerLon": 91.8687,
-    "radiusMeters": 3500
+    "radiusMeters": 2000
   },
   "sylhetshibgonj": {
     "name": "Shibgonj",
@@ -5651,9 +5651,9 @@
   "sylhetsubidbazar": {
     "name": "Subidbazar",
     "city": "Sylhet",
-    "centerLat": 24.8949,
-    "centerLon": 91.8687,
-    "radiusMeters": 3500
+    "centerLat": 24.9042,
+    "centerLon": 91.8558,
+    "radiusMeters": 2000
   },
   "sylhettilagarh": {
     "name": "Tilagarh",
@@ -10481,9 +10481,9 @@
   "londoncityoflondon": {
     "name": "City of London",
     "city": "London",
-    "centerLat": 51.5156,
-    "centerLon": -0.0919,
-    "radiusMeters": 2500
+    "centerLat": 51.5155,
+    "centerLon": -0.0922,
+    "radiusMeters": 2000
   },
   "londonwestminster": {
     "name": "Westminster",
@@ -10495,8 +10495,8 @@
   "londoncamden": {
     "name": "Camden",
     "city": "London",
-    "centerLat": 51.529,
-    "centerLon": -0.1255,
+    "centerLat": 51.543,
+    "centerLon": -0.143,
     "radiusMeters": 2500
   },
   "londonshoreditch": {
@@ -10518,7 +10518,7 @@
     "city": "London",
     "centerLat": 51.5054,
     "centerLon": -0.0235,
-    "radiusMeters": 2500
+    "radiusMeters": 2000
   },
   "londonkensington": {
     "name": "Kensington",
@@ -10544,23 +10544,23 @@
   "londonsoho": {
     "name": "Soho",
     "city": "London",
-    "centerLat": 51.5074,
-    "centerLon": -0.1278,
-    "radiusMeters": 3500
+    "centerLat": 51.5137,
+    "centerLon": -0.1365,
+    "radiusMeters": 1000
   },
   "londonmayfair": {
     "name": "Mayfair",
     "city": "London",
-    "centerLat": 51.5074,
-    "centerLon": -0.1278,
-    "radiusMeters": 3500
+    "centerLat": 51.5097,
+    "centerLon": -0.1468,
+    "radiusMeters": 1500
   },
   "mayfair": {
     "name": "Mayfair",
     "city": "London",
-    "centerLat": 51.5074,
-    "centerLon": -0.1278,
-    "radiusMeters": 3500
+    "centerLat": 51.5097,
+    "centerLon": -0.1468,
+    "radiusMeters": 1500
   },
   "londonislington": {
     "name": "Islington",
@@ -10621,16 +10621,16 @@
   "londoncoventgarden": {
     "name": "Covent Garden",
     "city": "London",
-    "centerLat": 51.5074,
-    "centerLon": -0.1278,
-    "radiusMeters": 3500
+    "centerLat": 51.5118,
+    "centerLon": -0.1228,
+    "radiusMeters": 1500
   },
   "coventgarden": {
     "name": "Covent Garden",
     "city": "London",
-    "centerLat": 51.5074,
-    "centerLon": -0.1278,
-    "radiusMeters": 3500
+    "centerLat": 51.5118,
+    "centerLon": -0.1228,
+    "radiusMeters": 1500
   },
   "londonbrixton": {
     "name": "Brixton",
@@ -11358,21 +11358,21 @@
     "city": "Dubai",
     "centerLat": 25.1972,
     "centerLon": 55.2744,
-    "radiusMeters": 2000
+    "radiusMeters": 1200
   },
   "dubaidubaimarina": {
     "name": "Dubai Marina",
     "city": "Dubai",
-    "centerLat": 25.2048,
-    "centerLon": 55.2708,
-    "radiusMeters": 3500
+    "centerLat": 25.0805,
+    "centerLon": 55.1403,
+    "radiusMeters": 2500
   },
   "dubaibusinessbay": {
     "name": "Business Bay",
     "city": "Dubai",
-    "centerLat": 25.2048,
-    "centerLon": 55.2708,
-    "radiusMeters": 3500
+    "centerLat": 25.1837,
+    "centerLon": 55.2666,
+    "radiusMeters": 2500
   },
   "dubaijbrjumeirahbeachresidence": {
     "name": "JBR (Jumeirah Beach Residence)",
@@ -11419,9 +11419,9 @@
   "dubaideira": {
     "name": "Deira",
     "city": "Dubai",
-    "centerLat": 25.2048,
-    "centerLon": 55.2708,
-    "radiusMeters": 3500
+    "centerLat": 25.2697,
+    "centerLon": 55.3095,
+    "radiusMeters": 3000
   },
   "dubaiburdubai": {
     "name": "Bur Dubai",
@@ -11792,14 +11792,14 @@
     "city": "Toronto",
     "centerLat": 43.6532,
     "centerLon": -79.3832,
-    "radiusMeters": 3500
+    "radiusMeters": 2000
   },
   "downtowntoronto": {
     "name": "Downtown Toronto",
     "city": "Toronto",
     "centerLat": 43.6532,
     "centerLon": -79.3832,
-    "radiusMeters": 3500
+    "radiusMeters": 2000
   },
   "torontoyorkville": {
     "name": "Yorkville",
@@ -12492,14 +12492,14 @@
     "city": "Sydney",
     "centerLat": -33.8688,
     "centerLon": 151.2093,
-    "radiusMeters": 2000
+    "radiusMeters": 1500
   },
   "sydneycbd": {
     "name": "Sydney CBD",
     "city": "Sydney",
     "centerLat": -33.8688,
     "centerLon": 151.2093,
-    "radiusMeters": 2000
+    "radiusMeters": 1500
   },
   "sydneysurryhills": {
     "name": "Surry Hills",
@@ -15005,14 +15005,14 @@
     "city": "Paris",
     "centerLat": 48.8606,
     "centerLon": 2.3376,
-    "radiusMeters": 1500
+    "radiusMeters": 1000
   },
   "1stlouvrepalaisroyal": {
     "name": "1st - Louvre / Palais-Royal",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "centerLat": 48.8606,
+    "centerLon": 2.3376,
+    "radiusMeters": 1000
   },
   "paris2ndboursesentier": {
     "name": "2nd - Bourse / Sentier",
@@ -19436,7 +19436,7 @@
     "city": "Dubai",
     "centerLat": 25.1972,
     "centerLon": 55.2744,
-    "radiusMeters": 2000
+    "radiusMeters": 1200
   },
   "newyorkmidtown": {
     "name": "Midtown",
@@ -19457,20 +19457,20 @@
     "city": "Paris",
     "centerLat": 48.8606,
     "centerLon": 2.3376,
-    "radiusMeters": 1500
+    "radiusMeters": 1000
   },
   "paris1starrondissement": {
     "name": "1st Arrondissement",
     "city": "Paris",
     "centerLat": 48.8606,
     "centerLon": 2.3376,
-    "radiusMeters": 1500
+    "radiusMeters": 1000
   },
   "paris1erarrondissement": {
     "name": "1st Arrondissement",
     "city": "Paris",
     "centerLat": 48.8606,
     "centerLon": 2.3376,
-    "radiusMeters": 1500
+    "radiusMeters": 1000
   }
 }
