@@ -3,7 +3,7 @@ import path from "node:path";
 import { execSync } from "node:child_process";
 
 console.log("=================================================");
-console.log("▶ LeadGen Pro MASTER PROMPT v2 - Automated QA Check");
+console.log("▶ LeadGen Pro MASTER QA CHECK v2 - Automated QA Check");
 console.log("=================================================\n");
 
 let checksFailed = 0;
@@ -52,9 +52,13 @@ function scanDirectoryForSecrets(dir) {
 
 try {
   scanDirectoryForSecrets("src");
-  const envExample = fs.readFileSync(".env.example", "utf8");
-  if (/AIza[0-9A-Za-z\-_]{35}/.test(envExample)) {
-    throw new Error("Exposed key in .env.example");
+  // .env.example is optional: only scan it when the file exists (it is not
+  // shipped in this repo, and a missing file must not fail the QA run).
+  if (fs.existsSync(".env.example")) {
+    const envExample = fs.readFileSync(".env.example", "utf8");
+    if (/AIza[0-9A-Za-z\-_]{35}/.test(envExample)) {
+      throw new Error("Exposed key in .env.example");
+    }
   }
   report("Secrets scan: No Google API keys (AIza...) exposed in src or .env.example", true);
 } catch (e) {
@@ -82,6 +86,14 @@ function scanForFakeData(dir) {
       }
       if (content.includes("generateWorldwideLeads") && !full.includes("qa-check")) {
         throw new Error(`Synthetic generateWorldwideLeads generator found in ${full}`);
+      }
+      // Regression guard (cleanup 2026-11-16): invented-name generators were
+      // removed from directory-data.ts — they must never come back.
+      if (
+        (content.includes("CATEGORY_NAME_GENERATORS") || content.includes("getCategoryProfile")) &&
+        !full.includes("qa-check")
+      ) {
+        throw new Error(`Synthetic business-name generator found in ${full}`);
       }
     }
   }
