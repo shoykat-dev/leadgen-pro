@@ -120,23 +120,42 @@ async function runPhase2Tests() {
   console.log("▶ ACCEPTANCE TEST 3: Instant Cache Retrieval & 'Last updated' Header");
   console.log("--------------------------------------------------------------------------------");
 
-  // First call already cached the result for Banani + Cafe
-  const startTime = Date.now();
-  const cachedResult = await searchFreeLiveDirectory({
+  const searchParams = {
     category: "cafe",
     categoryLabel: "Cafe & Coffee Shop",
     country: "Bangladesh",
     countryCode: "BD",
     city: "Dhaka",
     area: "Banani",
-    bypassCache: false, // Must hit cache!
-  });
+  };
+
+  // Seed: ensure a complete Banani + Cafe result is cached before asserting
+  // on the cache. Test 2's search may have hit the Overpass deadline and
+  // returned partial results, which are deliberately never cached — so the
+  // repeat below would miss and this test would fail on a slow data-source
+  // day. A probe either hits a warm cache, runs a complete live search
+  // (which saves), or retries on partial (bounded).
+  let expectedLeads = null;
+  for (let attempt = 1; attempt <= 3 && expectedLeads === null; attempt++) {
+    const probe = await searchFreeLiveDirectory({ ...searchParams, bypassCache: false });
+    if (probe.cached) {
+      expectedLeads = probe.leads.length; // cache already warm
+    } else if (!probe.partial) {
+      expectedLeads = probe.leads.length; // just ran live and saved a complete set
+    } else {
+      console.log(`[Cache Seed] attempt ${attempt} returned partial results (never cached); retrying...`);
+    }
+  }
+  assert.ok(expectedLeads !== null, "Could not obtain a complete Banani + Cafe search after 3 attempts");
+
+  const startTime = Date.now();
+  const cachedResult = await searchFreeLiveDirectory({ ...searchParams, bypassCache: false });
   const elapsedMs = Date.now() - startTime;
 
   assert.equal(cachedResult.cached, true, "Repeat search must return cached=true");
   assert.ok(cachedResult.lastUpdated, "Cached search must have a lastUpdated date string");
   assert.ok(elapsedMs < 100, `Cache retrieval must be virtually instant (<100ms), took ${elapsedMs}ms`);
-  assert.equal(cachedResult.leads.length, failoverResult.leads.length, "Cached leads count must match original count");
+  assert.equal(cachedResult.leads.length, expectedLeads, "Cached leads count must match the complete search count");
 
   console.log(`[Cache Hit Verified]`);
   console.log(`  • Cached flag: ${cachedResult.cached}`);
