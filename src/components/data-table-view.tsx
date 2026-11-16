@@ -768,12 +768,16 @@ export function DataTableView({
       ];
     });
 
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
+    // Blob download — never a data: URI. encodeURI leaves '#' unencoded, and a
+    // '#' in any field (e.g. a website URL with a fragment) made the browser
+    // treat the rest of the file as a URI fragment and drop it: Sydney CBD
+    // Cafe exported 383 rows instead of the 410 on screen. A Blob carries
+    // the bytes verbatim, so the export always matches the displayed count.
+    const csvContent = [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", url);
     link.setAttribute(
       "download",
       `LeadGenPro_Leads_${searchLocation.area || searchLocation.city || "Export"}.csv`
@@ -781,6 +785,7 @@ export function DataTableView({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 
     // Show on-screen confirmation toast
     setSavedSuccessMsg(`CSV downloaded: ${targetLeads.length} leads`);
