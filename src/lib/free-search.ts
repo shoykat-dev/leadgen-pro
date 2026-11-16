@@ -26,7 +26,7 @@ import {
   type OsmTagCriteria,
 } from "./category-tags";
 import { getFromCache, saveToCache, formatLastUpdated } from "./server-cache";
-import { getOverturePlacesInBBox } from "./db";
+import { getOverturePlacesInBBox, type OverturePlaceRecord } from "./db";
 
 export interface FreeSearchOptions {
   query?: string;
@@ -96,9 +96,15 @@ function normalizeBusinessName(name: string): string {
  * Checks similarity between two business names for merging Overture and Overpass records.
  */
 function isSimilarBusinessName(nameA: string, nameB: string): boolean {
-  const normA = normalizeBusinessName(nameA);
-  const normB = normalizeBusinessName(nameB);
+  return isSimilarNormalizedName(normalizeBusinessName(nameA), normalizeBusinessName(nameB));
+}
 
+/**
+ * Name-similarity core on already-normalized names (round 6): the hot merge
+ * loops precompute normalized names once instead of re-normalizing per
+ * candidate pair. Logic identical to the body isSimilarBusinessName had.
+ */
+function isSimilarNormalizedName(normA: string, normB: string): boolean {
   if (!normA || !normB) return false;
   if (normA === normB) return true;
 
@@ -127,6 +133,66 @@ function isSimilarBusinessName(nameA: string, nameB: string): boolean {
   const total = bigramsA.size + bigramsB.size;
   if (total === 0) return false;
   return (2 * common) / total >= 0.8;
+}
+
+/** Digits-only phone for dedupe: E.164 first, else the display number. */
+function phoneDigitsForLead(lead: BusinessLead): string {
+  return (lead.phoneE164 || lead.phone || "").replace(/[^0-9]/g, "");
+}
+
+// ---------------------------------------------------------------------------
+// Round 6 — spatial grid index for the Overture merge.
+//
+// Dense areas (e.g. City of London: ~2,250 OSM leads x ~43,700 Overture
+// rows) made the merge quadratic: every lead scanned every Overture row with
+// a haversine call (~98M distance computations per loop), blowing the 65 s
+// search budget once the Turso connection actually worked. A grid of ~150 m
+// cells keeps the match rules identical while only testing nearby rows: with
+// cells >= the 100 m match radius, every point within range sits in the
+// query point's own cell or one of its 8 immediate neighbours.
+// ---------------------------------------------------------------------------
+
+/** Cell edge in metres. Must stay >= the 100 m enrichment radius (see above). */
+const MERGE_GRID_CELL_M = 150;
+
+interface MergeGrid {
+  cellLatDeg: number;
+  cellLonDeg: number;
+  cells: Map<string, number[]>;
+}
+
+function createMergeGrid(centerLat: number): MergeGrid {
+  const cosLat = Math.max(0.1, Math.cos((centerLat * Math.PI) / 180));
+  return {
+    cellLatDeg: MERGE_GRID_CELL_M / 111000,
+    cellLonDeg: MERGE_GRID_CELL_M / (111000 * cosLat),
+    cells: new Map<string, number[]>(),
+  };
+}
+
+function gridCellKey(grid: MergeGrid, lat: number, lon: number): string {
+  return `${Math.floor(lat / grid.cellLatDeg)}:${Math.floor(lon / grid.cellLonDeg)}`;
+}
+
+function gridInsert(grid: MergeGrid, lat: number, lon: number, index: number): void {
+  const key = gridCellKey(grid, lat, lon);
+  const bucket = grid.cells.get(key);
+  if (bucket) bucket.push(index);
+  else grid.cells.set(key, [index]);
+}
+
+/** Indices in the query point's own cell plus its 8 immediate neighbours. */
+function gridCandidates(grid: MergeGrid, lat: number, lon: number): number[] {
+  const cx = Math.floor(lat / grid.cellLatDeg);
+  const cy = Math.floor(lon / grid.cellLonDeg);
+  const out: number[] = [];
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      const bucket = grid.cells.get(`${cx + dx}:${cy + dy}`);
+      if (bucket) out.push(...bucket);
+    }
+  }
+  return out;
 }
 
 /**
@@ -677,6 +743,383 @@ export async function countCategoryCoverage(
     nameCount: nameIds.size,
     total: tagIds.size + nameIds.size,
   };
+}
+
+export interface OvertureMergeContext {
+  centerLat: number;
+  centerLon: number;
+  radiusMeters: number;
+  areaConfig: AreaConfig;
+  category: string;
+  categoryLabel: string;
+  cCode: string;
+  now: string;
+}
+
+/**
+ * Step 7 of searchFreeLiveDirectory, extracted verbatim (round 6) so the
+ * merge can be timed in isolation: enriches OSM leads with Overture contact
+ * data (normalized names similar AND coordinates <= 100 m) and appends
+ * unmatched Overture places that pass the radius, postcode, dedupe,
+ * category and food-blocklist gates. Mutates `leads` in place, exactly as
+ * the inline version did. Match rules, scoring and contactability recompute
+ * are unchanged — only the candidate lookup is indexed (spatial grid).
+ */
+export function mergeOverturePlaces(
+  leads: BusinessLead[],
+  overturePlaces: OverturePlaceRecord[],
+  ctx: OvertureMergeContext
+): void {
+  const { centerLat, centerLon, radiusMeters, areaConfig, category, categoryLabel, cCode, now } = ctx;
+  const matchedOvertureIds = new Set<string>();
+
+  // Round 6: spatial grid over the Overture rows + each row's normalized
+  // name precomputed once. The enrichment loop below used to scan every row
+  // per lead (~98M haversines in dense areas); the grid tests only the
+  // lead's own cell + neighbours, which provably covers every point within
+  // the 100 m match radius (cells are 150 m).
+  const ovGrid = createMergeGrid(centerLat);
+  const ovNormNames: string[] = new Array(overturePlaces.length);
+  for (let i = 0; i < overturePlaces.length; i++) {
+    ovNormNames[i] = normalizeBusinessName(overturePlaces[i].name || "");
+    gridInsert(ovGrid, overturePlaces[i].lat, overturePlaces[i].lon, i);
+  }
+
+  // Merge Overture records with Overpass results (match when normalized names are similar AND coordinates <= 100m)
+  for (const lead of leads) {
+    if (!lead.lat || !lead.lon) continue;
+
+    // Round 6: grid candidates only (own cell + 8 neighbours provably cover
+    // every point within 100 m); keep the lowest original index to preserve
+    // the exact .find() first-match semantics of the previous full scan.
+    const leadNormName = normalizeBusinessName(lead.name);
+    let matchedOv: OverturePlaceRecord | undefined;
+    let matchedOvIndex = Infinity;
+    for (const ovIndex of gridCandidates(ovGrid, lead.lat!, lead.lon!)) {
+      if (ovIndex >= matchedOvIndex) continue;
+      const ov = overturePlaces[ovIndex];
+      if (matchedOvertureIds.has(ov.id)) continue;
+      const dist = haversineDistanceMeters(lead.lat!, lead.lon!, ov.lat, ov.lon);
+      if (dist > 100) continue;
+      if (!isSimilarNormalizedName(leadNormName, ovNormNames[ovIndex])) continue;
+      matchedOv = ov;
+      matchedOvIndex = ovIndex;
+    }
+
+    if (matchedOv) {
+      matchedOvertureIds.add(matchedOv.id);
+      lead.leadSources = ["osm", "overture"];
+      lead.sourceUpdatedAt = matchedOv.updated_at || lead.sourceUpdatedAt;
+
+      const attr = lead.fieldAttribution || { name: "osm" };
+
+      // Merge rule: Prefer Overpass (fresher) value for phone/website, keep union of emails
+      // 1. Phone merge
+      if (!lead.phone && matchedOv.phones && matchedOv.phones.length > 0) {
+        const rawOvPhone = matchedOv.phones[0];
+        const ovPhoneRes = validatePhone(rawOvPhone, cCode);
+        if (ovPhoneRes.isSuspicious && !lead.phoneWarning) {
+          lead.phoneWarning = "Suspicious number — verify before use";
+        }
+        // Only accept libphonenumber-valid numbers as "Format valid" (same rule as the OSM path).
+        if (ovPhoneRes.phoneStatus === "Valid" && ovPhoneRes.phone) {
+          lead.phone = ovPhoneRes.phone;
+          lead.phoneE164 = ovPhoneRes.phoneE164;
+          lead.phoneStatus = "Format valid";
+          lead.canWhatsApp = ovPhoneRes.canWhatsApp;
+          attr.phone = "overture";
+        }
+      } else if (lead.phone) {
+        attr.phone = "osm";
+      }
+
+      // 2. Website merge
+      if (!lead.website && matchedOv.websites && matchedOv.websites.length > 0) {
+        const rawOvWeb = matchedOv.websites[0];
+        const webRes = classifyWebsite(rawOvWeb);
+        if (webRes.website) {
+          lead.website = webRes.website;
+          lead.websiteStatus = webRes.websiteStatus;
+          lead.hasWebsite = webRes.websiteStatus === "Has Website";
+          attr.website = "overture";
+        }
+      } else if (lead.website) {
+        attr.website = "osm";
+      }
+
+      // 3. Email merge: keep union of fields / both emails
+      if (!lead.email && matchedOv.emails && matchedOv.emails.length > 0) {
+        const ovEmail = matchedOv.emails[0];
+        const eRes = validateEmail(ovEmail, lead.website);
+        if (eRes.email) {
+          lead.email = eRes.email;
+          lead.emailStatus = "OpenStreetMap";
+          lead.emailProvenance = "overture";
+          attr.email = "overture";
+        }
+      } else if (lead.email) {
+        attr.email = "osm";
+      }
+
+      // 4. Socials & Facebook: keep the Facebook URL and Instagram URL from Overture (Phase 6 Step 2)
+      if (matchedOv.socials && matchedOv.socials.length > 0) {
+        const socialObjs = overtureSocialObjects(matchedOv.socials);
+
+        if (socialObjs.length > 0) {
+          lead.socials = socialObjs;
+          const fb = socialObjs.find((s: any) => s.platform === "Facebook");
+          if (fb && !lead.facebookUrl) {
+            lead.facebookUrl = fb.url;
+            lead.facebookSource = "overture";
+          }
+          const insta = socialObjs.find((s: any) => s.platform === "Instagram");
+          if (insta && !lead.instagramUrl) {
+            lead.instagramUrl = insta.url;
+            lead.instagramSource = "overture";
+          }
+          attr.socials = "overture";
+        }
+      }
+
+      if (matchedOv.facebook_url && !lead.facebookUrl) {
+        const ovFb = validatePlatformUrl(matchedOv.facebook_url, "facebook");
+        if (ovFb) {
+          lead.facebookUrl = ovFb;
+          lead.facebookSource = "overture";
+        }
+      }
+
+      lead.fieldAttribution = attr;
+
+      // Recompute Lead Score using real signals (Phase 3 Part C)
+      const reScore = calculateLeadScore({
+        websiteStatus: lead.websiteStatus,
+        phoneStatus: lead.phoneStatus,
+        phone: lead.phone,
+        canWhatsApp: lead.canWhatsApp,
+        email: lead.email,
+        emailStatus: lead.emailStatus,
+        socials: lead.socials,
+        facebookUrl: lead.facebookUrl,
+        instagramUrl: lead.instagramUrl,
+        sourceUpdatedAt: lead.sourceUpdatedAt,
+        fetchedAt: lead.fetchedAt,
+      });
+
+      lead.leadScore = reScore.score;
+      lead.leadScoreTier = reScore.tier;
+      lead.scoreReasons = reScore.reasons;
+
+      // Recompute any-channel contactability & best channel (Phase 6 Step 6)
+      const reContact = computeLeadContactability(lead);
+      lead.isContactable = reContact.isContactable;
+      lead.bestChannel = reContact.bestChannel;
+      lead.bestChannelValue = reContact.bestChannelValue;
+      lead.bestChannelLabel = reContact.bestChannelLabel;
+
+      console.log(
+        `[Merged Lead] "${lead.name}" successfully merged with Overture record "${matchedOv.name}" (ID: ${matchedOv.id}). Attribution:`,
+        attr
+      );
+    }
+  }
+
+
+  // Round 6: spatial grid over the leads (built AFTER enrichment, so it
+  // sees final phone values) + each lead's normalized name and phone digits
+  // precomputed once. New Overture-only leads are inserted as they are
+  // pushed below, so the dedupe check sees exactly the list the old
+  // full-scan .some() saw.
+  const leadGrid = createMergeGrid(centerLat);
+  const leadNormNames: string[] = [];
+  const leadPhoneDigits: string[] = [];
+  for (let i = 0; i < leads.length; i++) {
+    leadNormNames.push(normalizeBusinessName(leads[i].name || ""));
+    leadPhoneDigits.push(phoneDigitsForLead(leads[i]));
+    if (leads[i].lat && leads[i].lon) gridInsert(leadGrid, leads[i].lat!, leads[i].lon!, i);
+  }
+
+  // Also include unmatched Overture places within area radius that match category or keywords
+  for (const ov of overturePlaces) {
+    if (matchedOvertureIds.has(ov.id)) continue;
+    const distToCenter = haversineDistanceMeters(centerLat, centerLon, ov.lat, ov.lon);
+    if (distToCenter > radiusMeters) continue;
+
+    const cleanName = (ov.name || "").trim();
+    if (!cleanName || cleanName.length < 2) continue;
+
+    // Postcode-boundary gate (round 3): same rule as the OSM path — an
+    // Overture record asserting a different Paris postcode belongs to
+    // another arrondissement.
+    const ovPostcode = ov.addresses?.[0]?.postcode || null;
+    if (postcodeConflicts(areaConfig.postcode, ovPostcode)) continue;
+
+    // Dedupe guard: never add an Overture row that duplicates an existing lead
+    // (same normalised name + coords within 50m, or same normalised phone + coords
+    // within 50m). Without this, a business present in both OSM and Overture but
+    // failing the name-similarity merge above would appear twice in the results.
+    const ovNormName = normalizeBusinessName(cleanName);
+    const ovPhoneDigits = (ov.phones?.[0] || "").replace(/[^0-9]/g, "");
+    // Round 6: grid candidates only (own cell + 8 neighbours provably cover
+    // every point within 50 m); names/phone digits are precomputed per lead.
+    let duplicatesExisting = false;
+    for (const leadIndex of gridCandidates(leadGrid, ov.lat, ov.lon)) {
+      const existing = leads[leadIndex];
+      if (!existing.lat || !existing.lon) continue;
+      const d = haversineDistanceMeters(existing.lat, existing.lon, ov.lat, ov.lon);
+      if (d > 50) continue;
+      if (ovNormName && leadNormNames[leadIndex] === ovNormName) {
+        duplicatesExisting = true;
+        break;
+      }
+      if (ovPhoneDigits) {
+        const exDigits = leadPhoneDigits[leadIndex];
+        if (exDigits && exDigits === ovPhoneDigits) {
+          duplicatesExisting = true;
+          break;
+        }
+      }
+    }
+    if (duplicatesExisting) continue;
+
+    // Tight relevance gate: the Overture categories must contain a
+    // per-category keyword as a whole word/phrase. The previous loose
+    // substring check let unrelated trades through (e.g. an events business
+    // under Restaurant). Food categories also apply the name blocklist.
+    const ovCats = (ov.categories || []).map((c: string) => String(c));
+    if (!overtureCategoriesMatch(category, ovCats)) continue;
+
+    // Food categories also apply the name blocklist (an interiors firm or a
+    // documents-clearing office is not a restaurant, however it is tagged).
+    const isFoodTarget = ["restaurant", "cafe", "fast_food", "bakery", "catering", "bar_pub"].includes(
+      category.toLowerCase().trim()
+    );
+    if (isFoodTarget && nameMatchesFoodBlocklist(cleanName)) {
+      continue;
+    }
+
+    let phone: string | null = null;
+    let phoneE164: string | null = null;
+    let phoneStatus: "Valid" | "Format valid" | "Phone format unverified" | "Missing" = "Missing";
+    let canWhatsApp = false;
+    let phoneWarning: string | null = null;
+
+    if (ov.phones && ov.phones.length > 0) {
+      const pRes = validatePhone(ov.phones[0], cCode);
+      if (pRes.isSuspicious) {
+        phoneWarning = "Suspicious number — verify before use";
+      }
+      // Only accept libphonenumber-valid numbers as "Format valid" (same rule as the OSM path).
+      if (pRes.phoneStatus === "Valid" && pRes.phone) {
+        phone = pRes.phone;
+        phoneE164 = pRes.phoneE164;
+        phoneStatus = "Format valid";
+        canWhatsApp = pRes.canWhatsApp;
+      }
+    }
+
+    const rawWeb = ov.websites?.[0] || null;
+    const webRes = classifyWebsite(rawWeb);
+
+    let email: string | null = null;
+    let emailStatus: "OpenStreetMap" | "Missing" = "Missing";
+    if (ov.emails && ov.emails.length > 0) {
+      const eRes = validateEmail(ov.emails[0], webRes.website);
+      if (eRes.email) {
+        email = eRes.email;
+        emailStatus = "OpenStreetMap";
+      }
+    }
+
+    const socialObjs = overtureSocialObjects(ov.socials || []);
+    const facebookUrl = socialObjs.find((s: any) => s.platform === "Facebook")?.url || null;
+    const instagramUrl = socialObjs.find((s: any) => s.platform === "Instagram")?.url || null;
+
+    const fullAddress =
+      ov.addresses?.[0]?.freeform ||
+      `${areaConfig.name}, ${areaConfig.city}`;
+
+    const scoreResult = calculateLeadScore({
+      websiteStatus: webRes.websiteStatus,
+      phoneStatus,
+      phone,
+      canWhatsApp,
+      email,
+      emailStatus,
+      socials: socialObjs,
+      facebookUrl,
+      instagramUrl,
+      sourceUpdatedAt: ov.updated_at,
+      fetchedAt: now,
+    });
+
+    const googleMapsUri = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      `${cleanName}, ${areaConfig.name}, ${areaConfig.city}`
+    )}`;
+
+    const ovLead: BusinessLead = {
+      id: `ov_${ov.id.replace(/[^a-zA-Z0-9]/g, "_")}`,
+      placeId: `ov_${ov.id}`,
+      source: "free_directory",
+      leadSources: ["overture"],
+      fieldAttribution: {
+        name: "overture",
+        phone: phone ? "overture" : undefined,
+        email: email ? "overture" : undefined,
+        website: webRes.website ? "overture" : undefined,
+        socials: socialObjs.length > 0 ? "overture" : undefined,
+        address: "overture",
+      },
+      name: cleanName,
+      category: categoryLabel,
+      primaryType: ov.categories?.[0] || category,
+      address: fullAddress,
+      lat: ov.lat,
+      lon: ov.lon,
+      phone,
+      phoneE164,
+      phoneStatus,
+      canWhatsApp,
+      phoneWarning,
+      matchType: "overture",
+      whatsapp: null,
+      whatsappNumber: null,
+      whatsappLink: null,
+      whatsappConfirmed: false,
+      whatsappStatus: canWhatsApp ? "Mobile number — WhatsApp not confirmed" : "Not listed as WhatsApp",
+      whatsappSource: null,
+      email,
+      emailProvenance: email ? "overture" : undefined,
+      emailStatus,
+      website: webRes.website,
+      websiteStatus: webRes.websiteStatus,
+      hasWebsite: webRes.websiteStatus === "Has Website",
+      socials: socialObjs,
+      facebookUrl,
+      facebookSource: facebookUrl ? "overture" : null,
+      instagramUrl,
+      instagramSource: instagramUrl ? "overture" : null,
+      rating: null,
+      userRatingCount: null,
+      googleMapsUri,
+      googleMapsUrl: googleMapsUri,
+      businessStatus: "OPERATIONAL",
+      dataQuality: assessDataQuality({ phoneStatus, email, emailStatus, websiteStatus: webRes.websiteStatus }),
+      leadScore: scoreResult.score,
+      leadScoreTier: scoreResult.tier,
+      scoreReasons: scoreResult.reasons,
+      sourceUpdatedAt: ov.updated_at,
+      fetchedAt: now,
+      contactTagSource: {},
+    };
+
+    computeLeadContactability(ovLead);
+    leads.push(ovLead);
+    // Round 6: keep the dedupe grid in step with the growing leads list.
+    leadNormNames.push(normalizeBusinessName(ovLead.name));
+    leadPhoneDigits.push(phoneDigitsForLead(ovLead));
+    gridInsert(leadGrid, ovLead.lat!, ovLead.lon!, leads.length - 1);
+  }
 }
 
 /**
@@ -1300,309 +1743,19 @@ export async function searchFreeLiveDirectory(
     console.warn("[Overture Query Warning]:", err.message);
   }
 
-  const matchedOvertureIds = new Set<string>();
+  // 7. Overture Maps Integration & Merge (Phase 3 Part A) — extracted to
+  // mergeOverturePlaces() (round 6: spatial grid index, same match rules).
+  mergeOverturePlaces(leads, rawOverturePlaces, {
+    centerLat,
+    centerLon,
+    radiusMeters,
+    areaConfig,
+    category,
+    categoryLabel,
+    cCode,
+    now,
+  });
 
-  // Merge Overture records with Overpass results (match when normalized names are similar AND coordinates <= 100m)
-  for (const lead of leads) {
-    if (!lead.lat || !lead.lon) continue;
-
-    const matchedOv = rawOverturePlaces.find((ov) => {
-      if (matchedOvertureIds.has(ov.id)) return false;
-      const dist = haversineDistanceMeters(lead.lat!, lead.lon!, ov.lat, ov.lon);
-      if (dist > 100) return false;
-      return isSimilarBusinessName(lead.name, ov.name);
-    });
-
-    if (matchedOv) {
-      matchedOvertureIds.add(matchedOv.id);
-      lead.leadSources = ["osm", "overture"];
-      lead.sourceUpdatedAt = matchedOv.updated_at || lead.sourceUpdatedAt;
-
-      const attr = lead.fieldAttribution || { name: "osm" };
-
-      // Merge rule: Prefer Overpass (fresher) value for phone/website, keep union of emails
-      // 1. Phone merge
-      if (!lead.phone && matchedOv.phones && matchedOv.phones.length > 0) {
-        const rawOvPhone = matchedOv.phones[0];
-        const ovPhoneRes = validatePhone(rawOvPhone, cCode);
-        if (ovPhoneRes.isSuspicious && !lead.phoneWarning) {
-          lead.phoneWarning = "Suspicious number — verify before use";
-        }
-        // Only accept libphonenumber-valid numbers as "Format valid" (same rule as the OSM path).
-        if (ovPhoneRes.phoneStatus === "Valid" && ovPhoneRes.phone) {
-          lead.phone = ovPhoneRes.phone;
-          lead.phoneE164 = ovPhoneRes.phoneE164;
-          lead.phoneStatus = "Format valid";
-          lead.canWhatsApp = ovPhoneRes.canWhatsApp;
-          attr.phone = "overture";
-        }
-      } else if (lead.phone) {
-        attr.phone = "osm";
-      }
-
-      // 2. Website merge
-      if (!lead.website && matchedOv.websites && matchedOv.websites.length > 0) {
-        const rawOvWeb = matchedOv.websites[0];
-        const webRes = classifyWebsite(rawOvWeb);
-        if (webRes.website) {
-          lead.website = webRes.website;
-          lead.websiteStatus = webRes.websiteStatus;
-          lead.hasWebsite = webRes.websiteStatus === "Has Website";
-          attr.website = "overture";
-        }
-      } else if (lead.website) {
-        attr.website = "osm";
-      }
-
-      // 3. Email merge: keep union of fields / both emails
-      if (!lead.email && matchedOv.emails && matchedOv.emails.length > 0) {
-        const ovEmail = matchedOv.emails[0];
-        const eRes = validateEmail(ovEmail, lead.website);
-        if (eRes.email) {
-          lead.email = eRes.email;
-          lead.emailStatus = "OpenStreetMap";
-          lead.emailProvenance = "overture";
-          attr.email = "overture";
-        }
-      } else if (lead.email) {
-        attr.email = "osm";
-      }
-
-      // 4. Socials & Facebook: keep the Facebook URL and Instagram URL from Overture (Phase 6 Step 2)
-      if (matchedOv.socials && matchedOv.socials.length > 0) {
-        const socialObjs = overtureSocialObjects(matchedOv.socials);
-
-        if (socialObjs.length > 0) {
-          lead.socials = socialObjs;
-          const fb = socialObjs.find((s: any) => s.platform === "Facebook");
-          if (fb && !lead.facebookUrl) {
-            lead.facebookUrl = fb.url;
-            lead.facebookSource = "overture";
-          }
-          const insta = socialObjs.find((s: any) => s.platform === "Instagram");
-          if (insta && !lead.instagramUrl) {
-            lead.instagramUrl = insta.url;
-            lead.instagramSource = "overture";
-          }
-          attr.socials = "overture";
-        }
-      }
-
-      if (matchedOv.facebook_url && !lead.facebookUrl) {
-        const ovFb = validatePlatformUrl(matchedOv.facebook_url, "facebook");
-        if (ovFb) {
-          lead.facebookUrl = ovFb;
-          lead.facebookSource = "overture";
-        }
-      }
-
-      lead.fieldAttribution = attr;
-
-      // Recompute Lead Score using real signals (Phase 3 Part C)
-      const reScore = calculateLeadScore({
-        websiteStatus: lead.websiteStatus,
-        phoneStatus: lead.phoneStatus,
-        phone: lead.phone,
-        canWhatsApp: lead.canWhatsApp,
-        email: lead.email,
-        emailStatus: lead.emailStatus,
-        socials: lead.socials,
-        facebookUrl: lead.facebookUrl,
-        instagramUrl: lead.instagramUrl,
-        sourceUpdatedAt: lead.sourceUpdatedAt,
-        fetchedAt: lead.fetchedAt,
-      });
-
-      lead.leadScore = reScore.score;
-      lead.leadScoreTier = reScore.tier;
-      lead.scoreReasons = reScore.reasons;
-
-      // Recompute any-channel contactability & best channel (Phase 6 Step 6)
-      const reContact = computeLeadContactability(lead);
-      lead.isContactable = reContact.isContactable;
-      lead.bestChannel = reContact.bestChannel;
-      lead.bestChannelValue = reContact.bestChannelValue;
-      lead.bestChannelLabel = reContact.bestChannelLabel;
-
-      console.log(
-        `[Merged Lead] "${lead.name}" successfully merged with Overture record "${matchedOv.name}" (ID: ${matchedOv.id}). Attribution:`,
-        attr
-      );
-    }
-  }
-
-  // Also include unmatched Overture places within area radius that match category or keywords
-  for (const ov of rawOverturePlaces) {
-    if (matchedOvertureIds.has(ov.id)) continue;
-    const distToCenter = haversineDistanceMeters(centerLat, centerLon, ov.lat, ov.lon);
-    if (distToCenter > radiusMeters) continue;
-
-    const cleanName = (ov.name || "").trim();
-    if (!cleanName || cleanName.length < 2) continue;
-
-    // Postcode-boundary gate (round 3): same rule as the OSM path — an
-    // Overture record asserting a different Paris postcode belongs to
-    // another arrondissement.
-    const ovPostcode = ov.addresses?.[0]?.postcode || null;
-    if (postcodeConflicts(areaConfig.postcode, ovPostcode)) continue;
-
-    // Dedupe guard: never add an Overture row that duplicates an existing lead
-    // (same normalised name + coords within 50m, or same normalised phone + coords
-    // within 50m). Without this, a business present in both OSM and Overture but
-    // failing the name-similarity merge above would appear twice in the results.
-    const ovNormName = normalizeBusinessName(cleanName);
-    const ovPhoneDigits = (ov.phones?.[0] || "").replace(/[^0-9]/g, "");
-    const duplicatesExisting = leads.some((existing) => {
-      if (!existing.lat || !existing.lon) return false;
-      const d = haversineDistanceMeters(existing.lat, existing.lon, ov.lat, ov.lon);
-      if (d > 50) return false;
-      if (ovNormName && normalizeBusinessName(existing.name) === ovNormName) return true;
-      if (ovPhoneDigits) {
-        const exDigits = existing.phoneE164
-          ? existing.phoneE164.replace(/[^0-9]/g, "")
-          : existing.phone
-          ? existing.phone.replace(/[^0-9]/g, "")
-          : "";
-        if (exDigits && exDigits === ovPhoneDigits) return true;
-      }
-      return false;
-    });
-    if (duplicatesExisting) continue;
-
-    // Tight relevance gate: the Overture categories must contain a
-    // per-category keyword as a whole word/phrase. The previous loose
-    // substring check let unrelated trades through (e.g. an events business
-    // under Restaurant). Food categories also apply the name blocklist.
-    const ovCats = (ov.categories || []).map((c: string) => String(c));
-    if (!overtureCategoriesMatch(category, ovCats)) continue;
-
-    // Food categories also apply the name blocklist (an interiors firm or a
-    // documents-clearing office is not a restaurant, however it is tagged).
-    const isFoodTarget = ["restaurant", "cafe", "fast_food", "bakery", "catering", "bar_pub"].includes(
-      category.toLowerCase().trim()
-    );
-    if (isFoodTarget && nameMatchesFoodBlocklist(cleanName)) {
-      continue;
-    }
-
-    let phone: string | null = null;
-    let phoneE164: string | null = null;
-    let phoneStatus: "Valid" | "Format valid" | "Phone format unverified" | "Missing" = "Missing";
-    let canWhatsApp = false;
-    let phoneWarning: string | null = null;
-
-    if (ov.phones && ov.phones.length > 0) {
-      const pRes = validatePhone(ov.phones[0], cCode);
-      if (pRes.isSuspicious) {
-        phoneWarning = "Suspicious number — verify before use";
-      }
-      // Only accept libphonenumber-valid numbers as "Format valid" (same rule as the OSM path).
-      if (pRes.phoneStatus === "Valid" && pRes.phone) {
-        phone = pRes.phone;
-        phoneE164 = pRes.phoneE164;
-        phoneStatus = "Format valid";
-        canWhatsApp = pRes.canWhatsApp;
-      }
-    }
-
-    const rawWeb = ov.websites?.[0] || null;
-    const webRes = classifyWebsite(rawWeb);
-
-    let email: string | null = null;
-    let emailStatus: "OpenStreetMap" | "Missing" = "Missing";
-    if (ov.emails && ov.emails.length > 0) {
-      const eRes = validateEmail(ov.emails[0], webRes.website);
-      if (eRes.email) {
-        email = eRes.email;
-        emailStatus = "OpenStreetMap";
-      }
-    }
-
-    const socialObjs = overtureSocialObjects(ov.socials || []);
-    const facebookUrl = socialObjs.find((s: any) => s.platform === "Facebook")?.url || null;
-    const instagramUrl = socialObjs.find((s: any) => s.platform === "Instagram")?.url || null;
-
-    const fullAddress =
-      ov.addresses?.[0]?.freeform ||
-      `${areaConfig.name}, ${areaConfig.city}`;
-
-    const scoreResult = calculateLeadScore({
-      websiteStatus: webRes.websiteStatus,
-      phoneStatus,
-      phone,
-      canWhatsApp,
-      email,
-      emailStatus,
-      socials: socialObjs,
-      facebookUrl,
-      instagramUrl,
-      sourceUpdatedAt: ov.updated_at,
-      fetchedAt: now,
-    });
-
-    const googleMapsUri = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      `${cleanName}, ${areaConfig.name}, ${areaConfig.city}`
-    )}`;
-
-    const ovLead: BusinessLead = {
-      id: `ov_${ov.id.replace(/[^a-zA-Z0-9]/g, "_")}`,
-      placeId: `ov_${ov.id}`,
-      source: "free_directory",
-      leadSources: ["overture"],
-      fieldAttribution: {
-        name: "overture",
-        phone: phone ? "overture" : undefined,
-        email: email ? "overture" : undefined,
-        website: webRes.website ? "overture" : undefined,
-        socials: socialObjs.length > 0 ? "overture" : undefined,
-        address: "overture",
-      },
-      name: cleanName,
-      category: categoryLabel,
-      primaryType: ov.categories?.[0] || category,
-      address: fullAddress,
-      lat: ov.lat,
-      lon: ov.lon,
-      phone,
-      phoneE164,
-      phoneStatus,
-      canWhatsApp,
-      phoneWarning,
-      matchType: "overture",
-      whatsapp: null,
-      whatsappNumber: null,
-      whatsappLink: null,
-      whatsappConfirmed: false,
-      whatsappStatus: canWhatsApp ? "Mobile number — WhatsApp not confirmed" : "Not listed as WhatsApp",
-      whatsappSource: null,
-      email,
-      emailProvenance: email ? "overture" : undefined,
-      emailStatus,
-      website: webRes.website,
-      websiteStatus: webRes.websiteStatus,
-      hasWebsite: webRes.websiteStatus === "Has Website",
-      socials: socialObjs,
-      facebookUrl,
-      facebookSource: facebookUrl ? "overture" : null,
-      instagramUrl,
-      instagramSource: instagramUrl ? "overture" : null,
-      rating: null,
-      userRatingCount: null,
-      googleMapsUri,
-      googleMapsUrl: googleMapsUri,
-      businessStatus: "OPERATIONAL",
-      dataQuality: assessDataQuality({ phoneStatus, email, emailStatus, websiteStatus: webRes.websiteStatus }),
-      leadScore: scoreResult.score,
-      leadScoreTier: scoreResult.tier,
-      scoreReasons: scoreResult.reasons,
-      sourceUpdatedAt: ov.updated_at,
-      fetchedAt: now,
-      contactTagSource: {},
-    };
-
-    computeLeadContactability(ovLead);
-    leads.push(ovLead);
-  }
 
   // 8. FINAL MANDATORY HAVERSINE POST-FILTER ON THE COMPLETED RESULT LIST:
   // Must run on the FINAL result list on EVERY element type (node, way, relation).

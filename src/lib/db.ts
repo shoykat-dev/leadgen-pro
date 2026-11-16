@@ -880,9 +880,17 @@ export async function getOverturePlacesInBBox(
   maxLon: number
 ): Promise<OverturePlaceRecord[]> {
   const db = await getDriver();
+  // Round 6: select only the columns the row mapping below reads. SELECT *
+  // also shipped sources_json (~729 B/row, never read by the app) plus
+  // gers_id/category/operating_status/confidence/release_tag/imported_at/
+  // last_seen_release — ~32 MB of wire transfer for a dense bbox. No LIMIT:
+  // the merge must see every row in the bbox.
   const rows = await db.all<any>(
     `
-    SELECT * FROM overture_places
+    SELECT id, name, categories, lat, lon, phones, emails, websites, socials,
+      facebook_url, address_freeform, locality, region, postcode, country,
+      sources, release_version, updated_at
+    FROM overture_places
     WHERE lat BETWEEN ? AND ?
       AND lon BETWEEN ? AND ?
   `,
