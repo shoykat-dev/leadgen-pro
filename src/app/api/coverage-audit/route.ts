@@ -60,7 +60,8 @@ export async function POST(req: NextRequest) {
             areaConfig.radiusMeters,
             areaConfig.centerLat,
             areaConfig.centerLon,
-            PER_CATEGORY_BUDGET_MS
+            PER_CATEGORY_BUDGET_MS,
+            areaConfig.osmAreaId
           )
         )
       );

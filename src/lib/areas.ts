@@ -17,6 +17,17 @@ export interface AreaConfig {
    * unaffected (the circle rules apply to them).
    */
   postcode?: string;
+  /**
+   * The OSM area id of the area's administrative boundary (3600000000 +
+   * relation id), when the area maps 1:1 to one (Paris arrondissements).
+   * When set, searches use Overpass area() polygon membership instead of a
+   * distance circle for OSM-sourced leads: a circle can never follow a
+   * boundary, so members outside the circle are kept and non-members inside
+   * it are dropped. The radius is still used as the fallback when the area
+   * query fails, and for Overture-only leads (polygon membership cannot be
+   * tested for coordinates that come from outside OSM).
+   */
+  osmAreaId?: number;
 }
 
 /**
@@ -62,10 +73,10 @@ export const AREAS: Record<string, AreaConfig> = {
   newyorkcitymidtown: { name: "Midtown", city: "New York", centerLat: 40.7549, centerLon: -73.9840, radiusMeters: 1800 },
   newyorkcitymanhattanmidtown: { name: "Midtown", city: "New York", centerLat: 40.7549, centerLon: -73.9840, radiusMeters: 1800 },
   manhattanmidtown: { name: "Midtown", city: "New York", centerLat: 40.7549, centerLon: -73.9840, radiusMeters: 1800 },
-  paris1st: { name: "1st Arrondissement", city: "Paris", centerLat: 48.8622, centerLon: 2.3365, radiusMeters: 900, postcode: "75001" },
-  paris1starrondissement: { name: "1st Arrondissement", city: "Paris", centerLat: 48.8622, centerLon: 2.3365, radiusMeters: 900, postcode: "75001" },
-  paris1erarrondissement: { name: "1st Arrondissement", city: "Paris", centerLat: 48.8622, centerLon: 2.3365, radiusMeters: 900, postcode: "75001" },
-  paris1stlouvrepalaisroyal: { name: "1st (Louvre / Palais-Royal)", city: "Paris", centerLat: 48.8622, centerLon: 2.3365, radiusMeters: 900, postcode: "75001" },
+  paris1st: { name: "1st Arrondissement", city: "Paris", centerLat: 48.8622, centerLon: 2.3365, radiusMeters: 900, postcode: "75001", osmAreaId: 3600020727 },
+  paris1starrondissement: { name: "1st Arrondissement", city: "Paris", centerLat: 48.8622, centerLon: 2.3365, radiusMeters: 900, postcode: "75001", osmAreaId: 3600020727 },
+  paris1erarrondissement: { name: "1st Arrondissement", city: "Paris", centerLat: 48.8622, centerLon: 2.3365, radiusMeters: 900, postcode: "75001", osmAreaId: 3600020727 },
+  paris1stlouvrepalaisroyal: { name: "1st (Louvre / Palais-Royal)", city: "Paris", centerLat: 48.8622, centerLon: 2.3365, radiusMeters: 900, postcode: "75001", osmAreaId: 3600020727 },
 };
 
 export interface CityBoundingBox {
@@ -82,18 +93,22 @@ export interface CityBoundingBox {
 /**
  * Authoritative city bounding boxes for major curated worldwide cities (Phase 5 Bug 1).
  * Used to validate resolved area centers and ensure area geocoding never resolves to the wrong city.
+ * Two edges were widened in round 4 for verified-correct centres that sat
+ * just outside: Dhaka minLon 90.320 -> 90.250 (Savar, 90.2583, verified by
+ * reverse-geocode) and Mumbai maxLon 73.000 -> 73.030 (Navi Mumbai / Nerul,
+ * 73.0158, verified by reverse-geocode).
  */
 export const CITY_BOUNDING_BOXES: Record<string, CityBoundingBox> = {
   berlin: { cityName: "Berlin", countryCode: "DE", minLat: 52.338, maxLat: 52.675, minLon: 13.088, maxLon: 13.761, defaultCenterLat: 52.5200, defaultCenterLon: 13.4050 },
   madrid: { cityName: "Madrid", countryCode: "ES", minLat: 40.311, maxLat: 40.563, minLon: -3.834, maxLon: -3.524, defaultCenterLat: 40.4168, defaultCenterLon: -3.7038 },
   sydney: { cityName: "Sydney", countryCode: "AU", minLat: -34.118, maxLat: -33.578, minLon: 150.628, maxLon: 151.343, defaultCenterLat: -33.8688, defaultCenterLon: 151.2093 },
   dubai: { cityName: "Dubai", countryCode: "AE", minLat: 24.950, maxLat: 25.350, minLon: 55.050, maxLon: 55.500, defaultCenterLat: 25.2048, defaultCenterLon: 55.2708 },
-  mumbai: { cityName: "Mumbai", countryCode: "IN", minLat: 18.890, maxLat: 19.300, minLon: 72.770, maxLon: 73.000, defaultCenterLat: 19.0760, defaultCenterLon: 72.8777 },
+  mumbai: { cityName: "Mumbai", countryCode: "IN", minLat: 18.890, maxLat: 19.300, minLon: 72.770, maxLon: 73.030, defaultCenterLat: 19.0760, defaultCenterLon: 72.8777 },
   newyork: { cityName: "New York", countryCode: "US", minLat: 40.477, maxLat: 40.917, minLon: -74.259, maxLon: -73.700, defaultCenterLat: 40.7128, defaultCenterLon: -74.0060 },
   newyorkcity: { cityName: "New York", countryCode: "US", minLat: 40.477, maxLat: 40.917, minLon: -74.259, maxLon: -73.700, defaultCenterLat: 40.7128, defaultCenterLon: -74.0060 },
   paris: { cityName: "Paris", countryCode: "FR", minLat: 48.815, maxLat: 48.902, minLon: 2.224, maxLon: 2.469, defaultCenterLat: 48.8566, defaultCenterLon: 2.3522 },
   london: { cityName: "London", countryCode: "GB", minLat: 51.286, maxLat: 51.691, minLon: -0.510, maxLon: 0.334, defaultCenterLat: 51.5074, defaultCenterLon: -0.1278 },
-  dhaka: { cityName: "Dhaka", countryCode: "BD", minLat: 23.680, maxLat: 23.900, minLon: 90.320, maxLon: 90.520, defaultCenterLat: 23.8103, defaultCenterLon: 90.4125 },
+  dhaka: { cityName: "Dhaka", countryCode: "BD", minLat: 23.680, maxLat: 23.900, minLon: 90.250, maxLon: 90.520, defaultCenterLat: 23.8103, defaultCenterLon: 90.4125 },
   amsterdam: { cityName: "Amsterdam", countryCode: "NL", minLat: 52.278, maxLat: 52.431, minLon: 4.728, maxLon: 5.079, defaultCenterLat: 52.3676, defaultCenterLon: 4.9041 },
   rotterdam: { cityName: "Rotterdam", countryCode: "NL", minLat: 51.850, maxLat: 51.980, minLon: 4.350, maxLon: 4.600, defaultCenterLat: 51.9244, defaultCenterLon: 4.4777 },
   barcelona: { cityName: "Barcelona", countryCode: "ES", minLat: 41.320, maxLat: 41.470, minLon: 2.050, maxLon: 2.230, defaultCenterLat: 41.3879, defaultCenterLon: 2.1699 },

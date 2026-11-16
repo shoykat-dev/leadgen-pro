@@ -116,7 +116,8 @@ async function runPhase5Tests() {
   // ACCEPTANCE TEST 2: NYC Midtown + Restaurant AND Paris 1st + Cafe
   // - Each completes within 60s or returns graceful retryable response
   // - Never hangs indefinitely
-  // - Distances <= stated radius
+  // - NYC distances <= stated radius; Paris 1st is polygon mode (boundary
+  //   membership, sane 1500m bound) with known out-of-boundary records absent
   // -------------------------------------------------------------------------
   console.log("--------------------------------------------------------------------------------");
   console.log("▶ ACCEPTANCE TEST 2: Dense-City Fast Response (NYC Midtown & Paris 1st Arrondissement)");
@@ -161,10 +162,19 @@ async function runPhase5Tests() {
   assert.ok(parisDuration < 60000, `Paris search took ${parisDuration}ms, must complete under 60s`);
 
   const parisConfig = getAreaConfig("1st - Louvre / Palais-Royal", "Paris");
+  assert.ok(parisConfig.osmAreaId, "Paris 1st must carry an OSM area id (polygon mode)");
+  // Polygon mode: members outside the 900m circle are genuine 1st-arr results
+  // (the farthest member is ~1100m from the centroid), so the check is a sane
+  // bound (1500m) plus absence of the known out-of-boundary records.
+  const parisOffenders = ["les deux magots", "le hibou", "blitz society", "café de la gare", "good news", "maison fleuret", "galette café"];
+  for (const name of parisOffenders) {
+    const found = parisSearch.leads.find((l) => (l.name || "").toLowerCase().includes(name));
+    assert.ok(!found, `offender "${name}" must not appear in Paris 1st results`);
+  }
   for (const lead of parisSearch.leads.slice(0, 30)) {
     if (lead.lat && lead.lon) {
       const dist = haversineDistanceMeters(parisConfig.centerLat, parisConfig.centerLon, lead.lat, lead.lon);
-      assert.ok(dist <= parisConfig.radiusMeters, `Paris lead ${lead.name} at ${dist}m > ${parisConfig.radiusMeters}m`);
+      assert.ok(dist <= 1500, `Paris lead ${lead.name} at ${dist}m > 1500m sane bound for the 1st`);
     }
   }
 

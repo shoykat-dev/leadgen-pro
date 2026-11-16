@@ -283,15 +283,23 @@ async function runTests() {
     const cfg = getAreaConfig("1st - Louvre / Palais-Royal", "Paris");
     assert.equal(cfg.postcode, "75001", "Paris 1st must carry postcode 75001");
     assert.equal(cfg.radiusMeters, 900, "Paris 1st radius must be 900m (centroid)");
-    console.log(`[Config] Paris 1st: centre (${cfg.centerLat}, ${cfg.centerLon}), ${cfg.radiusMeters}m, postcode ${cfg.postcode}`);
+    assert.equal(cfg.osmAreaId, 3600020727, "Paris 1st must carry OSM area id 3600020727 (polygon mode)");
+    const cfg2 = getAreaConfig("2nd - Bourse / Sentier", "Paris");
+    assert.equal(cfg2.postcode, "75002", "Paris 2nd must carry postcode 75002");
+    assert.equal(cfg2.osmAreaId, 3600009542, "Paris 2nd must carry OSM area id 3600009542");
+    assert.ok(cfg2.radiusMeters <= 1200, "Paris 2nd radius must be tight (<=1200m), not city-wide");
+    console.log(`[Config] Paris 1st: centre (${cfg.centerLat}, ${cfg.centerLon}), ${cfg.radiusMeters}m, postcode ${cfg.postcode}, area ${cfg.osmAreaId}`);
+    console.log(`[Config] Paris 2nd: centre (${cfg2.centerLat}, ${cfg2.centerLon}), ${cfg2.radiusMeters}m, postcode ${cfg2.postcode}, area ${cfg2.osmAreaId}`);
   });
 
   // ---------------------------------------------------------------------------
-  // LIVE 4: Paris 1st Cafe — the round-3 offenders are gone (postcode gate +
-  // centroid re-centre) and nothing is beyond the 900m radius.
+  // LIVE 4: Paris 1st Cafe — polygon mode: the round-3 offenders AND the 3
+  // no-postcode residuals are gone, and members outside the 900m circle are
+  // kept (boundary membership, not distance, is the test — sane 1500m bound).
   // ---------------------------------------------------------------------------
   await test("LIVE 4: Paris 1st Cafe excludes 6th/7th-arrondissement records", async () => {
     const config = getAreaConfig("1st - Louvre / Palais-Royal", "Paris");
+    assert.ok(config.osmAreaId, "Paris 1st must carry an OSM area id (polygon mode)");
     const result = await searchFreeLiveDirectory({
       category: "cafe",
       categoryLabel: "Cafe",
@@ -301,23 +309,28 @@ async function runTests() {
       area: "1st - Louvre / Palais-Royal",
       bypassCache: true,
     });
-    console.log(`[Paris 1st] ${result.leads.length} leads, radius ${config.radiusMeters}m`);
+    console.log(`[Paris 1st] ${result.leads.length} leads, radius ${config.radiusMeters}m, polygon area ${config.osmAreaId}`);
     assert.ok(result.leads.length > 0, "Paris 1st Cafe must return leads");
     let maxD = 0;
+    let outsideCircle = 0;
     for (const lead of result.leads) {
       assert.ok(lead.lat != null && lead.lon != null, `lead ${lead.name} must have coordinates`);
       const d = haversineDistanceMeters(config.centerLat, config.centerLon, lead.lat, lead.lon);
       if (d > maxD) maxD = d;
-      assert.ok(d <= config.radiusMeters, `Paris lead ${lead.name} at ${Math.round(d)}m > ${config.radiusMeters}m`);
+      if (d > config.radiusMeters) outsideCircle++;
+      assert.ok(d <= 1500, `Paris lead ${lead.name} at ${Math.round(d)}m > 1500m sane bound for the 1st`);
     }
-    console.log(`[Paris 1st] max distance ${Math.round(maxD)}m (limit ${config.radiusMeters}m)`);
-    // Known 6th/7th records (verified in OSM with postcodes 75006/75007) must be gone.
-    const offenders = ["les deux magots", "le hibou", "blitz society", "café de la gare"];
+    console.log(`[Paris 1st] max distance ${Math.round(maxD)}m; ${outsideCircle} genuine members outside the 900m circle`);
+    assert.ok(outsideCircle > 0, "polygon mode must keep genuine 1st-arr members outside the 900m circle");
+    // Known 6th/7th records (verified in OSM) must be gone — the 4 postcoded
+    // offenders from round 3 plus the 3 no-postcode residuals only the
+    // boundary removes.
+    const offenders = ["les deux magots", "le hibou", "blitz society", "café de la gare", "good news", "maison fleuret", "galette café"];
     for (const name of offenders) {
       const found = result.leads.find((l) => (l.name || "").toLowerCase().includes(name));
       assert.ok(!found, `offender "${name}" must not appear in Paris 1st results`);
     }
-    console.log("[Paris 1st] known 6th/7th offenders absent (Deux Magots, Le Hibou, Blitz Society, Café de la Gare).");
+    console.log("[Paris 1st] known 6th/7th offenders absent (Deux Magots, Le Hibou, Blitz Society, Café de la Gare) and 3 residuals absent (Good News, Maison Fleuret, Galette Café).");
   });
 
   console.log("================================================================================");

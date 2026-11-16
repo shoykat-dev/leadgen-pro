@@ -130,19 +130,25 @@ function isSimilarBusinessName(nameA: string, nameB: string): boolean {
 }
 
 /**
- * Builds the Overpass QL query string with nwr and (around:radius, lat, lon)
+ * Builds the Overpass QL query string with nwr and (around:radius, lat, lon).
+ * When an OSM area id is given, the statements use (area:ID) polygon
+ * membership instead of the distance circle — the area boundary is the
+ * membership test, so members outside the circle are kept and non-members
+ * inside it are dropped (Paris arrondissements).
  */
 function buildOverpassQuery(
   tags: OsmTagCriteria[],
   radiusMeters: number,
   lat: number,
   lon: number,
-  timeoutSeconds = 60
+  timeoutSeconds = 60,
+  osmAreaId?: number
 ): string {
+  const scope = osmAreaId ? `(area:${osmAreaId})` : `(around:${radiusMeters}, ${lat}, ${lon})`;
   const statements = tags
     .map(
       (t) =>
-        `nwr["${t.key}"="${t.value}"](around:${radiusMeters}, ${lat}, ${lon});`
+        `nwr["${t.key}"="${t.value}"]${scope};`
     )
     .join("\n  ");
 
@@ -279,9 +285,10 @@ async function fetchOverpassWithFailover(
   lat: number,
   lon: number,
   deadlineMs: number,
-  simulateMirror1Failure = false
+  simulateMirror1Failure = false,
+  osmAreaId?: number
 ): Promise<OverpassFetchOutcome> {
-  const query = buildOverpassQuery(tags, radiusMeters, lat, lon, 60);
+  const query = buildOverpassQuery(tags, radiusMeters, lat, lon, 60, osmAreaId);
 
   try {
     const elements = await fetchOverpassQueryWithFailover(query, deadlineMs, simulateMirror1Failure);
@@ -310,7 +317,7 @@ async function fetchOverpassWithFailover(
         break;
       }
       tagsAttempted++;
-      const splitQuery = buildOverpassQuery([singleTag], radiusMeters, lat, lon, 60);
+      const splitQuery = buildOverpassQuery([singleTag], radiusMeters, lat, lon, 60, osmAreaId);
 
       for (const mirrorUrl of OVERPASS_MIRRORS) {
         const remaining = deadlineMs - Date.now();
@@ -418,18 +425,20 @@ function bboxForRadius(
  *
  * The indexed tag filter comes FIRST in each statement and the area filter is
  * a bbox (see bboxForRadius) — both measured faster than the regex-first /
- * `around:` form for dense areas.
+ * `around:` form for dense areas. When an OSM area id is given, the area
+ * filter is (area:ID) polygon membership instead of the bbox.
  */
 function buildNameMatchQuery(
   keywords: string[],
   radiusMeters: number,
   lat: number,
   lon: number,
-  timeoutSeconds = 60
+  timeoutSeconds = 60,
+  osmAreaId?: number
 ): string {
   const pattern = keywords.map(escapeOverpassRegex).join("|");
   const [south, west, north, east] = bboxForRadius(radiusMeters, lat, lon);
-  const bbox = `(${south},${west},${north},${east})`;
+  const bbox = osmAreaId ? `(area:${osmAreaId})` : `(${south},${west},${north},${east})`;
   const statements: string[] = [];
   for (const key of COMMERCIAL_TAG_KEYS) {
     statements.push(`nwr["${key}"]["name"~"${pattern}",i]${bbox};`);
@@ -490,7 +499,8 @@ async function fetchNameMatches(
   radiusMeters: number,
   lat: number,
   lon: number,
-  deadlineMs: number
+  deadlineMs: number,
+  osmAreaId?: number
 ): Promise<OverpassElement[]> {
   if (keywords.length === 0) return [];
   const remaining = deadlineMs - Date.now();
@@ -498,7 +508,7 @@ async function fetchNameMatches(
     console.warn("[Name Fallback] Skipped: less than 10s left in the search budget.");
     return [];
   }
-  const query = buildNameMatchQuery(keywords, radiusMeters, lat, lon, 60);
+  const query = buildNameMatchQuery(keywords, radiusMeters, lat, lon, 60, osmAreaId);
   try {
     // Name-regex queries are slow in dense areas (measured ~37s for a 2km
     // central-London radius), so they get a 40s per-mirror ceiling instead of
@@ -558,10 +568,12 @@ function buildIdsQuery(
   tags: OsmTagCriteria[],
   radiusMeters: number,
   lat: number,
-  lon: number
+  lon: number,
+  osmAreaId?: number
 ): string {
+  const scope = osmAreaId ? `(area:${osmAreaId})` : `(around:${radiusMeters}, ${lat}, ${lon})`;
   const statements = tags
-    .map((t) => `nwr["${t.key}"="${t.value}"](around:${radiusMeters}, ${lat}, ${lon});`)
+    .map((t) => `nwr["${t.key}"="${t.value}"]${scope};`)
     .join("\n  ");
   return `[out:json][timeout:30];
 (
@@ -574,11 +586,12 @@ function buildNameTagsQuery(
   keywords: string[],
   radiusMeters: number,
   lat: number,
-  lon: number
+  lon: number,
+  osmAreaId?: number
 ): string {
   const pattern = keywords.map(escapeOverpassRegex).join("|");
   const [south, west, north, east] = bboxForRadius(radiusMeters, lat, lon);
-  const bbox = `(${south},${west},${north},${east})`;
+  const bbox = osmAreaId ? `(area:${osmAreaId})` : `(${south},${west},${north},${east})`;
   const statements: string[] = [];
   for (const key of COMMERCIAL_TAG_KEYS) {
     statements.push(`nwr["${key}"]["name"~"${pattern}",i]${bbox};`);
@@ -604,7 +617,8 @@ export async function countCategoryCoverage(
   radiusMeters: number,
   lat: number,
   lon: number,
-  budgetMs = 25000
+  budgetMs = 25000,
+  osmAreaId?: number
 ): Promise<CategoryCoverageCounts> {
   const tagSpecs = getCategoryOsmTags(categoryId);
   const keywords = getCategoryNameKeywords(categoryId);
@@ -612,17 +626,30 @@ export async function countCategoryCoverage(
 
   const tagIds = new Set<string>();
   try {
-    const tagQuery = buildIdsQuery(tagSpecs, radiusMeters, lat, lon);
+    const tagQuery = buildIdsQuery(tagSpecs, radiusMeters, lat, lon, osmAreaId);
     const tagElements = await fetchOverpassQueryWithFailover(tagQuery, deadlineMs);
     for (const el of tagElements) tagIds.add(`${el.type}/${el.id}`);
   } catch (err: any) {
-    console.warn(`[Coverage Audit] Tag count failed for ${categoryId}: ${err.message}`);
+    // Polygon mode: a failed area query falls back to the circle once, so a
+    // transient area failure does not zero the count for the category.
+    if (osmAreaId && Date.now() < deadlineMs - 2000) {
+      try {
+        console.warn(`[Coverage Audit] Area query failed for ${categoryId}, retrying as circle.`);
+        const circleQuery = buildIdsQuery(tagSpecs, radiusMeters, lat, lon);
+        const tagElements = await fetchOverpassQueryWithFailover(circleQuery, deadlineMs);
+        for (const el of tagElements) tagIds.add(`${el.type}/${el.id}`);
+      } catch (retryErr: any) {
+        console.warn(`[Coverage Audit] Tag count failed for ${categoryId}: ${retryErr.message}`);
+      }
+    } else {
+      console.warn(`[Coverage Audit] Tag count failed for ${categoryId}: ${err.message}`);
+    }
   }
 
   const nameIds = new Set<string>();
   if (keywords.length > 0) {
     try {
-      const nameQuery = buildNameTagsQuery(keywords, radiusMeters, lat, lon);
+      const nameQuery = buildNameTagsQuery(keywords, radiusMeters, lat, lon, osmAreaId);
       // The name query may use the whole remaining budget (name-regex scans
       // are slow in dense areas); the shared deadline still caps total time.
       const nameElements = await fetchOverpassQueryWithFailover(nameQuery, deadlineMs, false, budgetMs);
@@ -658,7 +685,9 @@ export async function countCategoryCoverage(
  * 2. Name-keyword fallback for service trades (union with the tag set, badged "Matched by name").
  * 3. High reliability mirror rotation across overpass-api.de, overpass.kumi.systems, overpass.private.coffee.
  * 4. Two-tier deduplication: by OSM type+id, then by normalized name + coordinates within 50m.
- * 5. Mandatory Haversine post-filtering <= radiusMeters.
+ * 5. Mandatory Haversine post-filtering <= radiusMeters — except in polygon
+ *    mode (areas with an OSM area id, e.g. Paris arrondissements), where the
+ *    area boundary is the membership test for OSM-sourced leads.
  * 6. Server-side caching keyed by areaId + categoryId (TTL: 7 days) returning "Last updated" date.
  * 7. Hard data honesty: 0 fake emails, phones, ratings, or websites.
  */
@@ -691,13 +720,27 @@ export async function searchFreeLiveDirectory(
   const { centerLat, centerLon, radiusMeters } = areaConfig;
   const areaId = `${cCode}_${areaConfig.city}_${areaConfig.name}`.toLowerCase();
 
+  // Polygon mode: the area maps 1:1 to an OSM administrative boundary
+  // (Paris arrondissements). OSM queries use area() membership instead of a
+  // distance circle, and the Haversine checks below are skipped for
+  // OSM-sourced leads — the boundary is the membership test, so members
+  // outside the circle are genuine results and non-members inside it never
+  // reach the pipeline. The postcode gate still applies, and pure-Overture
+  // leads keep the circle check (their membership cannot be tested).
+  const polygonMode = !!areaConfig.osmAreaId;
+
   // 2. Check Server-Side Cache (Key: areaId + categoryId + radius, TTL: 7 days)
   if (!bypassCache) {
     const cachedEntry = getFromCache<BusinessLead[]>(areaId, category, radiusMeters);
     if (cachedEntry) {
-      // Re-verify Haversine distance on cached rows to guarantee zero area leak
+      // Re-verify Haversine distance on cached rows to guarantee zero area leak.
+      // In polygon mode the rows were boundary-verified when stored (and the
+      // cache version bump makes pre-polygon rows unreachable), so only the
+      // coordinates-validity check runs — members outside the circle are
+      // genuine results, not leaks.
       const strictlyWithinLeads = cachedEntry.data.filter((l) => {
         if (l.lat === undefined || l.lat === null || l.lon === undefined || l.lon === null || isNaN(l.lat) || isNaN(l.lon)) return false;
+        if (polygonMode && l.leadSources?.includes("osm")) return true;
         const d = haversineDistanceMeters(centerLat, centerLon, l.lat, l.lon);
         return d <= radiusMeters;
       }).map((l) => {
@@ -706,11 +749,11 @@ export async function searchFreeLiveDirectory(
       });
 
       console.log(
-        `[ServerCache HIT] Key: (${areaId}, ${category}, ${radiusMeters}m) -> Returned ${strictlyWithinLeads.length} leads strictly within ${radiusMeters}m. Last updated: ${cachedEntry.lastUpdated}`
+        `[ServerCache HIT] Key: (${areaId}, ${category}, ${radiusMeters}m) -> Returned ${strictlyWithinLeads.length} leads${polygonMode ? " (polygon-verified)" : ` strictly within ${radiusMeters}m`}. Last updated: ${cachedEntry.lastUpdated}`
       );
       for (const l of strictlyWithinLeads) {
         const d = haversineDistanceMeters(centerLat, centerLon, l.lat!, l.lon!);
-        console.log(`[Haversine Cache Audit] ${l.name.padEnd(38)}: ${d.toFixed(1).padStart(6)}m / ${radiusMeters}m <= ${radiusMeters}m [PASS]`);
+        console.log(`[Haversine Cache Audit] ${l.name.padEnd(38)}: ${d.toFixed(1).padStart(6)}m / ${radiusMeters}m <= ${radiusMeters}m [${polygonMode && l.leadSources?.includes("osm") ? "POLYGON" : "PASS"}]`);
       }
 
       return {
@@ -737,6 +780,13 @@ export async function searchFreeLiveDirectory(
   // 4. Fetch from Overpass mirrors with automatic failover
   let tagElements: OverpassElement[] = [];
   let searchPartial = false;
+  // In polygon mode the tag query runs against the area boundary first. If
+  // it fails on every mirror (or times out against the shared deadline), the
+  // search falls back to the circle query once — never fail the whole search
+  // over a boundary lookup. A polygon query that SUCCEEDS with zero elements
+  // is a genuine empty result, not a failure: it is never retried as a
+  // circle, which would return businesses from outside the boundary.
+  let polygonActive = polygonMode;
   try {
     const tagOutcome = await fetchOverpassWithFailover(
       tagSpecs,
@@ -744,15 +794,38 @@ export async function searchFreeLiveDirectory(
       centerLat,
       centerLon,
       searchDeadlineMs,
-      simulateMirror1Failure
+      simulateMirror1Failure,
+      polygonMode ? areaConfig.osmAreaId : undefined
     );
     tagElements = tagOutcome.elements;
     searchPartial = tagOutcome.partial;
   } catch (err: any) {
-    console.error("[Overpass Execution Error]:", err.message);
-    throw new Error(
-      "Data source busy, please try again in a few moments."
-    );
+    if (polygonMode && Date.now() < searchDeadlineMs - 3000) {
+      console.warn(`[Polygon Fallback] Area query failed (${err.message}); retrying as circle.`);
+      polygonActive = false;
+      try {
+        const circleOutcome = await fetchOverpassWithFailover(
+          tagSpecs,
+          radiusMeters,
+          centerLat,
+          centerLon,
+          searchDeadlineMs,
+          simulateMirror1Failure
+        );
+        tagElements = circleOutcome.elements;
+        searchPartial = circleOutcome.partial;
+      } catch (retryErr: any) {
+        console.error("[Overpass Execution Error]:", retryErr.message);
+        throw new Error(
+          "Data source busy, please try again in a few moments."
+        );
+      }
+    } else {
+      console.error("[Overpass Execution Error]:", err.message);
+      throw new Error(
+        "Data source busy, please try again in a few moments."
+      );
+    }
   }
 
   // 4b. Name-keyword fallback: service trades are rarely category-tagged, so
@@ -762,12 +835,17 @@ export async function searchFreeLiveDirectory(
   const nameKeywords = getCategoryNameKeywords(category);
   let nameElements: OverpassElement[] = [];
   if (nameKeywords.length > 0 && tagElements.length < NAME_FALLBACK_TAG_CEILING) {
+    // Name matches use the same scope as the tag query that succeeded: the
+    // area boundary in polygon mode, the circle after a polygon fallback.
+    // A failed name query returns no name matches (tag matches only) — it is
+    // never retried as a circle, which would leak out-of-boundary names in.
     nameElements = await fetchNameMatches(
       nameKeywords,
       radiusMeters,
       centerLat,
       centerLon,
-      searchDeadlineMs
+      searchDeadlineMs,
+      polygonActive ? areaConfig.osmAreaId : undefined
     );
   } else if (nameKeywords.length > 0) {
     console.log(
@@ -882,11 +960,15 @@ export async function searchFreeLiveDirectory(
     }
 
     const cleanName = rawName.trim();
-    const isWithin = distanceToCenter <= radiusMeters;
+    // In polygon mode the area boundary is the membership test (the Overpass
+    // query only returned members), so the distance check is skipped — a
+    // member outside the circle is a genuine result. After a polygon→circle
+    // fallback, polygonActive is false and the circle check applies again.
+    const isWithin = polygonActive ? true : distanceToCenter <= radiusMeters;
 
     // Acceptance Test 1 Debug Log to prove distance adherence
     console.log(
-      `[Haversine] ${cleanName}: ${distanceToCenter.toFixed(1)}m from ${areaConfig.name} center (${centerLat}, ${centerLon}) [Within ${radiusMeters}m: ${isWithin ? "PASS" : "FAIL"}]`
+      `[Haversine] ${cleanName}: ${distanceToCenter.toFixed(1)}m from ${areaConfig.name} center (${centerLat}, ${centerLon}) [Within ${radiusMeters}m: ${isWithin ? (polygonActive ? "POLYGON" : "PASS") : "FAIL"}]`
     );
 
     if (!isWithin) {
@@ -1525,6 +1607,10 @@ export async function searchFreeLiveDirectory(
   // 8. FINAL MANDATORY HAVERSINE POST-FILTER ON THE COMPLETED RESULT LIST:
   // Must run on the FINAL result list on EVERY element type (node, way, relation).
   // Any result with missing, NaN, or unresolved coordinates is strictly EXCLUDED.
+  // In polygon mode, OSM-sourced leads skip the distance check — their
+  // membership was established by the area boundary, and members outside the
+  // circle are genuine results. Pure-Overture leads keep the circle check
+  // (polygon membership cannot be tested for them).
   let finalFilteredLeads: BusinessLead[] = [];
   for (const lead of leads) {
     if (lead.lat === undefined || lead.lat === null || lead.lon === undefined || lead.lon === null || isNaN(lead.lat) || isNaN(lead.lon)) {
@@ -1533,11 +1619,12 @@ export async function searchFreeLiveDirectory(
     }
 
     const distMeters = haversineDistanceMeters(centerLat, centerLon, lead.lat, lead.lon);
-    const isWithin = distMeters <= radiusMeters;
+    const isOsmSourced = lead.leadSources?.includes("osm") ?? false;
+    const isWithin = polygonActive && isOsmSourced ? true : distMeters <= radiusMeters;
 
     // Auditable debug log: per search, log every returned business with its computed distance in meters from area center
     console.log(
-      `[Haversine Distance Audit] ${lead.name.padEnd(38)}: ${distMeters.toFixed(1).padStart(6)}m / ${radiusMeters}m <= ${radiusMeters}m [${isWithin ? "PASS" : "EXCLUDED"}]`
+      `[Haversine Distance Audit] ${lead.name.padEnd(38)}: ${distMeters.toFixed(1).padStart(6)}m / ${radiusMeters}m <= ${radiusMeters}m [${isWithin ? (polygonActive && isOsmSourced ? "POLYGON" : "PASS") : "EXCLUDED"}]`
     );
 
     if (isWithin) {
@@ -1547,7 +1634,7 @@ export async function searchFreeLiveDirectory(
   }
 
   console.log(
-    `[Final Post-Filter] ${finalFilteredLeads.length} / ${leads.length} leads strictly confirmed within ${radiusMeters}m of ${areaConfig.name} center (${centerLat}, ${centerLon}).`
+    `[Final Post-Filter] ${finalFilteredLeads.length} / ${leads.length} leads confirmed ${polygonActive ? "by polygon membership" : `strictly within ${radiusMeters}m`} of ${areaConfig.name} center (${centerLat}, ${centerLon}).`
   );
 
   // BUG 7 Sanity Check: If major city + major category returns < 10 leads, log warning with query
