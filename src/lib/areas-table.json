@@ -366,8 +366,8 @@
   "subidbazar": {
     "name": "Subidbazar",
     "city": "Sylhet",
-    "centerLat": 24.9042,
-    "centerLon": 91.8558,
+    "centerLat": 24.90703,
+    "centerLon": 91.861,
     "radiusMeters": 2000
   },
   "shahiidgah": {
@@ -912,15 +912,15 @@
   "narayanganjbandar": {
     "name": "Bandar",
     "city": "Narayanganj",
-    "centerLat": 22,
-    "centerLon": 92.33333,
+    "centerLat": 23.6141663,
+    "centerLon": 90.5128143,
     "radiusMeters": 2500
   },
   "bandar": {
     "name": "Bandar",
     "city": "Narayanganj",
-    "centerLat": 22,
-    "centerLon": 92.33333,
+    "centerLat": 23.6141663,
+    "centerLon": 90.5128143,
     "radiusMeters": 2500
   },
   "narayanganjfatullah": {
@@ -2802,15 +2802,15 @@
   "satkhiratala": {
     "name": "Tala",
     "city": "Satkhira",
-    "centerLat": 22.71673,
-    "centerLon": 89.51194,
+    "centerLat": 22.7799543,
+    "centerLon": 89.2749012,
     "radiusMeters": 2500
   },
   "tala": {
     "name": "Tala",
     "city": "Satkhira",
-    "centerLat": 22.71673,
-    "centerLon": 89.51194,
+    "centerLat": 22.7799543,
+    "centerLon": 89.2749012,
     "radiusMeters": 2500
   },
   "maguramagurasadar": {
@@ -4307,15 +4307,15 @@
   "bandarbanlama": {
     "name": "Lama",
     "city": "Bandarban",
-    "centerLat": 23.67346,
-    "centerLon": 88.98885,
+    "centerLat": 21.7553161,
+    "centerLon": 92.2128559,
     "radiusMeters": 2500
   },
   "lama": {
     "name": "Lama",
     "city": "Bandarban",
-    "centerLat": 23.67346,
-    "centerLon": 88.98885,
+    "centerLat": 21.7553161,
+    "centerLon": 92.2128559,
     "radiusMeters": 2500
   },
   "bandarbannaikhongchhari": {
@@ -4881,15 +4881,15 @@
   "bogurasherpur": {
     "name": "Sherpur",
     "city": "Bogura",
-    "centerLat": 25.0205,
-    "centerLon": 90.0153,
+    "centerLat": 24.6648673,
+    "centerLon": 89.4202556,
     "radiusMeters": 2500
   },
   "sherpur": {
     "name": "Sherpur",
     "city": "Bogura",
-    "centerLat": 25.0205,
-    "centerLon": 90.0153,
+    "centerLat": 24.6648673,
+    "centerLon": 89.4202556,
     "radiusMeters": 2500
   },
   "bogurashibganj": {
@@ -4993,15 +4993,15 @@
   "pabnafaridpur": {
     "name": "Faridpur",
     "city": "Pabna",
-    "centerLat": 23.6071,
-    "centerLon": 89.8429,
+    "centerLat": 24.1606327,
+    "centerLon": 89.4427491,
     "radiusMeters": 2500
   },
   "faridpur": {
     "name": "Faridpur",
     "city": "Pabna",
-    "centerLat": 23.6071,
-    "centerLon": 89.8429,
+    "centerLat": 24.1606327,
+    "centerLon": 89.4427491,
     "radiusMeters": 2500
   },
   "pabnaishwardi": {
@@ -5483,8 +5483,8 @@
   "chapainawabganjshibganj": {
     "name": "Shibganj",
     "city": "Chapainawabganj",
-    "centerLat": 25.00146,
-    "centerLon": 89.32266,
+    "centerLat": 24.68544,
+    "centerLon": 88.16268,
     "radiusMeters": 2500
   },
   "joypurhatjoypurhatsadar": {
@@ -5651,8 +5651,8 @@
   "sylhetsubidbazar": {
     "name": "Subidbazar",
     "city": "Sylhet",
-    "centerLat": 24.9042,
-    "centerLon": 91.8558,
+    "centerLat": 24.90703,
+    "centerLon": 91.861,
     "radiusMeters": 2000
   },
   "sylhettilagarh": {
@@ -7436,15 +7436,15 @@
   "nilphamarikishoreganj": {
     "name": "Kishoreganj",
     "city": "Nilphamari",
-    "centerLat": 24.4449,
-    "centerLon": 90.7766,
+    "centerLat": 25.899303,
+    "centerLon": 89.0169223,
     "radiusMeters": 2500
   },
   "kishoreganj": {
     "name": "Kishoreganj",
     "city": "Nilphamari",
-    "centerLat": 24.4449,
-    "centerLon": 90.7766,
+    "centerLat": 25.899303,
+    "centerLon": 89.0169223,
     "radiusMeters": 2500
   },
   "lalmonirhatlalmonirhatsadar": {
@@ -8318,15 +8318,15 @@
   "losangelesglendale": {
     "name": "Glendale",
     "city": "Los Angeles",
-    "centerLat": 33.53865,
-    "centerLon": -112.18599,
+    "centerLat": 34.1469416,
+    "centerLon": -118.2478471,
     "radiusMeters": 2500
   },
   "glendale": {
     "name": "Glendale",
     "city": "Los Angeles",
-    "centerLat": 33.53865,
-    "centerLon": -112.18599,
+    "centerLat": 34.1469416,
+    "centerLon": -118.2478471,
     "radiusMeters": 2500
   },
   "losangelesburbank": {
@@ -8388,22 +8388,22 @@
   "sanfranciscofinancialdistrict": {
     "name": "Financial District",
     "city": "San Francisco",
-    "centerLat": 40.70789,
-    "centerLon": -74.00857,
+    "centerLat": 37.7936467,
+    "centerLon": -122.3989378,
     "radiusMeters": 2500
   },
   "sanfranciscosoma": {
     "name": "SoMa",
     "city": "San Francisco",
-    "centerLat": 40.65753,
-    "centerLon": -86.14755,
+    "centerLat": 37.7808925,
+    "centerLon": -122.4009518,
     "radiusMeters": 2500
   },
   "soma": {
     "name": "SoMa",
     "city": "San Francisco",
-    "centerLat": 40.65753,
-    "centerLon": -86.14755,
+    "centerLat": 37.7808925,
+    "centerLon": -122.4009518,
     "radiusMeters": 2500
   },
   "sanfranciscomissiondistrict": {
@@ -8437,15 +8437,15 @@
   "sanfranciscomarina": {
     "name": "Marina",
     "city": "San Francisco",
-    "centerLat": 26.76507,
-    "centerLon": -82.05092,
+    "centerLat": 37.7997929,
+    "centerLon": -122.435204,
     "radiusMeters": 2500
   },
   "marina": {
     "name": "Marina",
     "city": "San Francisco",
-    "centerLat": 26.76507,
-    "centerLon": -82.05092,
+    "centerLat": 37.7997929,
+    "centerLon": -122.435204,
     "radiusMeters": 2500
   },
   "sanfranciscofishermanswharf": {
@@ -8479,29 +8479,29 @@
   "sanfranciscocastro": {
     "name": "Castro",
     "city": "San Francisco",
-    "centerLat": 34.52996,
-    "centerLon": -102.26167,
+    "centerLat": 37.7626004,
+    "centerLon": -122.4352931,
     "radiusMeters": 2500
   },
   "castro": {
     "name": "Castro",
     "city": "San Francisco",
-    "centerLat": 34.52996,
-    "centerLon": -102.26167,
+    "centerLat": 37.7626004,
+    "centerLon": -122.4352931,
     "radiusMeters": 2500
   },
   "sanfrancisconorthbeach": {
     "name": "North Beach",
     "city": "San Francisco",
-    "centerLat": 38.70734,
-    "centerLon": -76.53107,
+    "centerLat": 37.8011749,
+    "centerLon": -122.4090021,
     "radiusMeters": 2500
   },
   "northbeach": {
     "name": "North Beach",
     "city": "San Francisco",
-    "centerLat": 38.70734,
-    "centerLon": -76.53107,
+    "centerLat": 37.8011749,
+    "centerLon": -122.4090021,
     "radiusMeters": 2500
   },
   "sanfranciscochinatown": {
@@ -8535,15 +8535,15 @@
   "sandiegodowntowngaslampquarter": {
     "name": "Downtown / Gaslamp Quarter",
     "city": "San Diego",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 32.7090712,
+    "centerLon": -117.1594771,
     "radiusMeters": 4000
   },
   "downtowngaslampquarter": {
     "name": "Downtown / Gaslamp Quarter",
     "city": "San Diego",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 32.7090712,
+    "centerLon": -117.1594771,
     "radiusMeters": 4000
   },
   "sandiegolajolla": {
@@ -8563,57 +8563,57 @@
   "sandiegopacificbeach": {
     "name": "Pacific Beach",
     "city": "San Diego",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 32.7978268,
+    "centerLon": -117.2403183,
     "radiusMeters": 4000
   },
   "pacificbeach": {
     "name": "Pacific Beach",
     "city": "San Diego",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 32.7978268,
+    "centerLon": -117.2403183,
     "radiusMeters": 4000
   },
   "sandiegonorthpark": {
     "name": "North Park",
     "city": "San Diego",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 32.7483876,
+    "centerLon": -117.1301564,
     "radiusMeters": 4000
   },
   "northpark": {
     "name": "North Park",
     "city": "San Diego",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 32.7483876,
+    "centerLon": -117.1301564,
     "radiusMeters": 4000
   },
   "sandiegolittleitaly": {
     "name": "Little Italy",
     "city": "San Diego",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 32.723274,
+    "centerLon": -117.1682733,
     "radiusMeters": 4000
   },
   "littleitaly": {
     "name": "Little Italy",
     "city": "San Diego",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 32.723274,
+    "centerLon": -117.1682733,
     "radiusMeters": 4000
   },
   "sandiegomissionvalley": {
     "name": "Mission Valley",
     "city": "San Diego",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 32.7704927,
+    "centerLon": -117.1523046,
     "radiusMeters": 4000
   },
   "missionvalley": {
     "name": "Mission Valley",
     "city": "San Diego",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 32.7704927,
+    "centerLon": -117.1523046,
     "radiusMeters": 4000
   },
   "sandiegochulavista": {
@@ -8647,71 +8647,71 @@
   "sandiegopointloma": {
     "name": "Point Loma",
     "city": "San Diego",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 32.7265255,
+    "centerLon": -117.2444542,
     "radiusMeters": 4000
   },
   "pointloma": {
     "name": "Point Loma",
     "city": "San Diego",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 32.7265255,
+    "centerLon": -117.2444542,
     "radiusMeters": 4000
   },
   "sanjosedowntownsanjose": {
     "name": "Downtown San Jose",
     "city": "San Jose",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 37.3359328,
+    "centerLon": -121.8910932,
     "radiusMeters": 4000
   },
   "downtownsanjose": {
     "name": "Downtown San Jose",
     "city": "San Jose",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 37.3359328,
+    "centerLon": -121.8910932,
     "radiusMeters": 4000
   },
   "sanjosesantanarow": {
     "name": "Santana Row",
     "city": "San Jose",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 37.3209796,
+    "centerLon": -121.9486002,
     "radiusMeters": 4000
   },
   "santanarow": {
     "name": "Santana Row",
     "city": "San Jose",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 37.3209796,
+    "centerLon": -121.9486002,
     "radiusMeters": 4000
   },
   "sanjosewillowglen": {
     "name": "Willow Glen",
     "city": "San Jose",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 37.3085937,
+    "centerLon": -121.9008874,
     "radiusMeters": 4000
   },
   "willowglen": {
     "name": "Willow Glen",
     "city": "San Jose",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 37.3085937,
+    "centerLon": -121.9008874,
     "radiusMeters": 4000
   },
   "sanjosenorthsanjose": {
     "name": "North San Jose",
     "city": "San Jose",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 37.3837359,
+    "centerLon": -121.9205071,
     "radiusMeters": 4000
   },
   "northsanjose": {
     "name": "North San Jose",
     "city": "San Jose",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 37.3837359,
+    "centerLon": -121.9205071,
     "radiusMeters": 4000
   },
   "sanjosesunnyvale": {
@@ -8731,15 +8731,15 @@
   "sanjosemountainview": {
     "name": "Mountain View",
     "city": "San Jose",
-    "centerLat": 35.86841,
-    "centerLon": -92.11765,
+    "centerLat": 37.3893889,
+    "centerLon": -122.0832101,
     "radiusMeters": 2500
   },
   "mountainview": {
     "name": "Mountain View",
     "city": "San Jose",
-    "centerLat": 35.86841,
-    "centerLon": -92.11765,
+    "centerLat": 37.3893889,
+    "centerLon": -122.0832101,
     "radiusMeters": 2500
   },
   "sanjosepaloalto": {
@@ -8787,50 +8787,50 @@
   "sacramentodowntown": {
     "name": "Downtown",
     "city": "Sacramento",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 38.576704,
+    "centerLon": -121.4968664,
     "radiusMeters": 4000
   },
   "downtown": {
     "name": "Downtown",
     "city": "Sacramento",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 38.576704,
+    "centerLon": -121.4968664,
     "radiusMeters": 4000
   },
   "sacramentomidtown": {
     "name": "Midtown",
     "city": "Sacramento",
-    "centerLat": 35.87952,
-    "centerLon": -84.5641,
+    "centerLat": 38.572858,
+    "centerLon": -121.479887,
     "radiusMeters": 2500
   },
   "sacramentoeastsacramento": {
     "name": "East Sacramento",
     "city": "Sacramento",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 38.5693745,
+    "centerLon": -121.4488794,
     "radiusMeters": 4000
   },
   "eastsacramento": {
     "name": "East Sacramento",
     "city": "Sacramento",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 38.5693745,
+    "centerLon": -121.4488794,
     "radiusMeters": 4000
   },
   "sacramentonatomas": {
     "name": "Natomas",
     "city": "Sacramento",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 38.6133432,
+    "centerLon": -121.5218521,
     "radiusMeters": 4000
   },
   "natomas": {
     "name": "Natomas",
     "city": "Sacramento",
-    "centerLat": 36.778261,
-    "centerLon": -119.4179324,
+    "centerLat": 38.6133432,
+    "centerLon": -121.5218521,
     "radiusMeters": 4000
   },
   "sacramentoardenarcade": {
@@ -9046,127 +9046,127 @@
   "buffalodowntownbuffalo": {
     "name": "Downtown Buffalo",
     "city": "Buffalo",
-    "centerLat": 40.7127753,
-    "centerLon": -74.0059728,
+    "centerLat": 42.8875204,
+    "centerLon": -78.8784365,
     "radiusMeters": 4000
   },
   "downtownbuffalo": {
     "name": "Downtown Buffalo",
     "city": "Buffalo",
-    "centerLat": 40.7127753,
-    "centerLon": -74.0059728,
+    "centerLat": 42.8875204,
+    "centerLon": -78.8784365,
     "radiusMeters": 4000
   },
   "buffaloallentown": {
     "name": "Allentown",
     "city": "Buffalo",
-    "centerLat": 40.17789,
-    "centerLon": -74.58349,
+    "centerLat": 42.8994429,
+    "centerLon": -78.8770991,
     "radiusMeters": 2500
   },
   "allentown": {
     "name": "Allentown",
     "city": "Buffalo",
-    "centerLat": 40.17789,
-    "centerLon": -74.58349,
+    "centerLat": 42.8994429,
+    "centerLon": -78.8770991,
     "radiusMeters": 2500
   },
   "buffaloelmwoodvillage": {
     "name": "Elmwood Village",
     "city": "Buffalo",
-    "centerLat": 40.7127753,
-    "centerLon": -74.0059728,
+    "centerLat": 42.9172297,
+    "centerLon": -78.8769678,
     "radiusMeters": 4000
   },
   "elmwoodvillage": {
     "name": "Elmwood Village",
     "city": "Buffalo",
-    "centerLat": 40.7127753,
-    "centerLon": -74.0059728,
+    "centerLat": 42.9172297,
+    "centerLon": -78.8769678,
     "radiusMeters": 4000
   },
   "buffalonorthbuffalo": {
     "name": "North Buffalo",
     "city": "Buffalo",
-    "centerLat": 40.7127753,
-    "centerLon": -74.0059728,
+    "centerLat": 42.9459286,
+    "centerLon": -78.8542491,
     "radiusMeters": 4000
   },
   "northbuffalo": {
     "name": "North Buffalo",
     "city": "Buffalo",
-    "centerLat": 40.7127753,
-    "centerLon": -74.0059728,
+    "centerLat": 42.9459286,
+    "centerLon": -78.8542491,
     "radiusMeters": 4000
   },
   "buffalocanalside": {
     "name": "Canalside",
     "city": "Buffalo",
-    "centerLat": 40.7127753,
-    "centerLon": -74.0059728,
+    "centerLat": 42.8766286,
+    "centerLon": -78.8786732,
     "radiusMeters": 4000
   },
   "canalside": {
     "name": "Canalside",
     "city": "Buffalo",
-    "centerLat": 40.7127753,
-    "centerLon": -74.0059728,
+    "centerLat": 42.8766286,
+    "centerLon": -78.8786732,
     "radiusMeters": 4000
   },
   "albanydowntownalbany": {
     "name": "Downtown Albany",
     "city": "Albany",
-    "centerLat": 40.7127753,
-    "centerLon": -74.0059728,
+    "centerLat": 42.6495726,
+    "centerLon": -73.7500522,
     "radiusMeters": 4000
   },
   "downtownalbany": {
     "name": "Downtown Albany",
     "city": "Albany",
-    "centerLat": 40.7127753,
-    "centerLon": -74.0059728,
+    "centerLat": 42.6495726,
+    "centerLon": -73.7500522,
     "radiusMeters": 4000
   },
   "albanycentersquare": {
     "name": "Center Square",
     "city": "Albany",
-    "centerLat": 40.7127753,
-    "centerLon": -74.0059728,
+    "centerLat": 42.6541224,
+    "centerLon": -73.7624799,
     "radiusMeters": 4000
   },
   "centersquare": {
     "name": "Center Square",
     "city": "Albany",
-    "centerLat": 40.7127753,
-    "centerLon": -74.0059728,
+    "centerLat": 42.6541224,
+    "centerLon": -73.7624799,
     "radiusMeters": 4000
   },
   "albanypinehills": {
     "name": "Pine Hills",
     "city": "Albany",
-    "centerLat": 44.00777,
-    "centerLon": -103.31546,
+    "centerLat": 42.6589473,
+    "centerLon": -73.7885732,
     "radiusMeters": 2500
   },
   "pinehills": {
     "name": "Pine Hills",
     "city": "Albany",
-    "centerLat": 44.00777,
-    "centerLon": -103.31546,
+    "centerLat": 42.6589473,
+    "centerLon": -73.7885732,
     "radiusMeters": 2500
   },
   "albanywashingtonpark": {
     "name": "Washington Park",
     "city": "Albany",
-    "centerLat": 26.13259,
-    "centerLon": -80.18116,
+    "centerLat": 42.6571906,
+    "centerLon": -73.7712872,
     "radiusMeters": 2500
   },
   "washingtonpark": {
     "name": "Washington Park",
     "city": "Albany",
-    "centerLat": 26.13259,
-    "centerLon": -80.18116,
+    "centerLat": 42.6571906,
+    "centerLon": -73.7712872,
     "radiusMeters": 2500
   },
   "houstondowntownhouston": {
@@ -9214,22 +9214,22 @@
   "houstonmontrose": {
     "name": "Montrose",
     "city": "Houston",
-    "centerLat": 34.23216,
-    "centerLon": -118.23529,
+    "centerLat": 29.7446985,
+    "centerLon": -95.391275,
     "radiusMeters": 2500
   },
   "montrose": {
     "name": "Montrose",
     "city": "Houston",
-    "centerLat": 34.23216,
-    "centerLon": -118.23529,
+    "centerLat": 29.7446985,
+    "centerLon": -95.391275,
     "radiusMeters": 2500
   },
   "houstonmidtown": {
     "name": "Midtown",
     "city": "Houston",
-    "centerLat": 35.87952,
-    "centerLon": -84.5641,
+    "centerLat": 29.7412402,
+    "centerLon": -95.3761715,
     "radiusMeters": 2500
   },
   "houstonenergycorridor": {
@@ -9263,15 +9263,15 @@
   "houstonriveroaks": {
     "name": "River Oaks",
     "city": "Houston",
-    "centerLat": 32.77707,
-    "centerLon": -97.39446,
+    "centerLat": 29.7479402,
+    "centerLon": -95.4265093,
     "radiusMeters": 2500
   },
   "riveroaks": {
     "name": "River Oaks",
     "city": "Houston",
-    "centerLat": 32.77707,
-    "centerLon": -97.39446,
+    "centerLat": 29.7479402,
+    "centerLon": -95.4265093,
     "radiusMeters": 2500
   },
   "houstonmuseumdistrict": {
@@ -9319,15 +9319,15 @@
   "dallasuptown": {
     "name": "Uptown",
     "city": "Dallas",
-    "centerLat": 41.9659,
-    "centerLon": -87.65262,
+    "centerLat": 32.8007124,
+    "centerLon": -96.7998571,
     "radiusMeters": 2500
   },
   "uptown": {
     "name": "Uptown",
     "city": "Dallas",
-    "centerLat": 41.9659,
-    "centerLon": -87.65262,
+    "centerLat": 32.8007124,
+    "centerLon": -96.7998571,
     "radiusMeters": 2500
   },
   "dallasdeepellum": {
@@ -9389,15 +9389,15 @@
   "dallasoaklawn": {
     "name": "Oak Lawn",
     "city": "Dallas",
-    "centerLat": 41.71087,
-    "centerLon": -87.75811,
+    "centerLat": 32.809111,
+    "centerLon": -96.8089492,
     "radiusMeters": 2500
   },
   "oaklawn": {
     "name": "Oak Lawn",
     "city": "Dallas",
-    "centerLat": 41.71087,
-    "centerLon": -87.75811,
+    "centerLat": 32.809111,
+    "centerLon": -96.8089492,
     "radiusMeters": 2500
   },
   "dallasprestonhollow": {
@@ -9431,155 +9431,155 @@
   "austindowntownaustin": {
     "name": "Downtown Austin",
     "city": "Austin",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 30.268082,
+    "centerLon": -97.7483738,
     "radiusMeters": 4000
   },
   "downtownaustin": {
     "name": "Downtown Austin",
     "city": "Austin",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 30.268082,
+    "centerLon": -97.7483738,
     "radiusMeters": 4000
   },
   "austinsouthcongresssoco": {
     "name": "South Congress (SoCo)",
     "city": "Austin",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 30.250603,
+    "centerLon": -97.749289,
     "radiusMeters": 4000
   },
   "southcongresssoco": {
     "name": "South Congress (SoCo)",
     "city": "Austin",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 30.250603,
+    "centerLon": -97.749289,
     "radiusMeters": 4000
   },
   "austineastaustin": {
     "name": "East Austin",
     "city": "Austin",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 30.2745499,
+    "centerLon": -97.7164851,
     "radiusMeters": 4000
   },
   "eastaustin": {
     "name": "East Austin",
     "city": "Austin",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 30.2745499,
+    "centerLon": -97.7164851,
     "radiusMeters": 4000
   },
   "austinraineystreet": {
     "name": "Rainey Street",
     "city": "Austin",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 30.2590074,
+    "centerLon": -97.7386953,
     "radiusMeters": 4000
   },
   "raineystreet": {
     "name": "Rainey Street",
     "city": "Austin",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 30.2590074,
+    "centerLon": -97.7386953,
     "radiusMeters": 4000
   },
   "austindomainnorthaustin": {
     "name": "Domain / North Austin",
     "city": "Austin",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 30.4316078,
+    "centerLon": -97.6987352,
     "radiusMeters": 4000
   },
   "domainnorthaustin": {
     "name": "Domain / North Austin",
     "city": "Austin",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 30.4316078,
+    "centerLon": -97.6987352,
     "radiusMeters": 4000
   },
   "austinzilker": {
     "name": "Zilker",
     "city": "Austin",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 30.2542361,
+    "centerLon": -97.7695806,
     "radiusMeters": 4000
   },
   "zilker": {
     "name": "Zilker",
     "city": "Austin",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 30.2542361,
+    "centerLon": -97.7695806,
     "radiusMeters": 4000
   },
   "austinbartonhills": {
     "name": "Barton Hills",
     "city": "Austin",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 30.2533664,
+    "centerLon": -97.7829802,
     "radiusMeters": 4000
   },
   "bartonhills": {
     "name": "Barton Hills",
     "city": "Austin",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 30.2533664,
+    "centerLon": -97.7829802,
     "radiusMeters": 4000
   },
   "austinmueller": {
     "name": "Mueller",
     "city": "Austin",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 30.2965242,
+    "centerLon": -97.7002032,
     "radiusMeters": 4000
   },
   "mueller": {
     "name": "Mueller",
     "city": "Austin",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 30.2965242,
+    "centerLon": -97.7002032,
     "radiusMeters": 4000
   },
   "sanantoniodowntownriverwalk": {
     "name": "Downtown / River Walk",
     "city": "San Antonio",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 29.4167356,
+    "centerLon": -98.4946892,
     "radiusMeters": 4000
   },
   "downtownriverwalk": {
     "name": "Downtown / River Walk",
     "city": "San Antonio",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 29.4167356,
+    "centerLon": -98.4946892,
     "radiusMeters": 4000
   },
   "sanantoniopearldistrict": {
     "name": "Pearl District",
     "city": "San Antonio",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 29.43989,
+    "centerLon": -98.48452,
     "radiusMeters": 4000
   },
   "pearldistrict": {
     "name": "Pearl District",
     "city": "San Antonio",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 29.43989,
+    "centerLon": -98.48452,
     "radiusMeters": 4000
   },
   "sanantoniosouthtown": {
     "name": "Southtown",
     "city": "San Antonio",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 29.4102053,
+    "centerLon": -98.4911786,
     "radiusMeters": 4000
   },
   "southtown": {
     "name": "Southtown",
     "city": "San Antonio",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 29.4102053,
+    "centerLon": -98.4911786,
     "radiusMeters": 4000
   },
   "sanantonioalamoheights": {
@@ -9599,15 +9599,15 @@
   "sanantoniostoneoak": {
     "name": "Stone Oak",
     "city": "San Antonio",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 29.6493885,
+    "centerLon": -98.4513456,
     "radiusMeters": 4000
   },
   "stoneoak": {
     "name": "Stone Oak",
     "city": "San Antonio",
-    "centerLat": 31.9685988,
-    "centerLon": -99.9018131,
+    "centerLat": 29.6493885,
+    "centerLon": -98.4513456,
     "radiusMeters": 4000
   },
   "miamidowntownmiami": {
@@ -9641,15 +9641,15 @@
   "miamisouthbeach": {
     "name": "South Beach",
     "city": "Miami",
-    "centerLat": 27.59115,
-    "centerLon": -80.34422,
+    "centerLat": 25.7744291,
+    "centerLon": -80.1332415,
     "radiusMeters": 2500
   },
   "southbeach": {
     "name": "South Beach",
     "city": "Miami",
-    "centerLat": 27.59115,
-    "centerLon": -80.34422,
+    "centerLat": 25.7744291,
+    "centerLon": -80.1332415,
     "radiusMeters": 2500
   },
   "miamiwynwoodartsdistrict": {
@@ -9753,15 +9753,15 @@
   "orlandodowntownorlando": {
     "name": "Downtown Orlando",
     "city": "Orlando",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 28.5467144,
+    "centerLon": -81.3857984,
     "radiusMeters": 4000
   },
   "downtownorlando": {
     "name": "Downtown Orlando",
     "city": "Orlando",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 28.5467144,
+    "centerLon": -81.3857984,
     "radiusMeters": 4000
   },
   "orlandowinterpark": {
@@ -9781,218 +9781,218 @@
   "orlandointernationaldrive": {
     "name": "International Drive",
     "city": "Orlando",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 28.4649835,
+    "centerLon": -81.4503652,
     "radiusMeters": 4000
   },
   "internationaldrive": {
     "name": "International Drive",
     "city": "Orlando",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 28.4649835,
+    "centerLon": -81.4503652,
     "radiusMeters": 4000
   },
   "orlandolakeeolaheights": {
     "name": "Lake Eola Heights",
     "city": "Orlando",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 28.5494251,
+    "centerLon": -81.3706239,
     "radiusMeters": 4000
   },
   "lakeeolaheights": {
     "name": "Lake Eola Heights",
     "city": "Orlando",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 28.5494251,
+    "centerLon": -81.3706239,
     "radiusMeters": 4000
   },
   "orlandothorntonpark": {
     "name": "Thornton Park",
     "city": "Orlando",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 28.5403224,
+    "centerLon": -81.3675009,
     "radiusMeters": 4000
   },
   "thorntonpark": {
     "name": "Thornton Park",
     "city": "Orlando",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 28.5403224,
+    "centerLon": -81.3675009,
     "radiusMeters": 4000
   },
   "orlandodrphillips": {
     "name": "Dr. Phillips",
     "city": "Orlando",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 28.48836,
+    "centerLon": -81.49157,
     "radiusMeters": 4000
   },
   "drphillips": {
     "name": "Dr. Phillips",
     "city": "Orlando",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 28.48836,
+    "centerLon": -81.49157,
     "radiusMeters": 4000
   },
   "orlandolakenona": {
     "name": "Lake Nona",
     "city": "Orlando",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 28.3976142,
+    "centerLon": -81.2639123,
     "radiusMeters": 4000
   },
   "lakenona": {
     "name": "Lake Nona",
     "city": "Orlando",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 28.3976142,
+    "centerLon": -81.2639123,
     "radiusMeters": 4000
   },
   "tampadowntowntampa": {
     "name": "Downtown Tampa",
     "city": "Tampa",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 27.9452787,
+    "centerLon": -82.4567888,
     "radiusMeters": 4000
   },
   "downtowntampa": {
     "name": "Downtown Tampa",
     "city": "Tampa",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 27.9452787,
+    "centerLon": -82.4567888,
     "radiusMeters": 4000
   },
   "tampayborcity": {
     "name": "Ybor City",
     "city": "Tampa",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 27.9600475,
+    "centerLon": -82.4411596,
     "radiusMeters": 4000
   },
   "yborcity": {
     "name": "Ybor City",
     "city": "Tampa",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 27.9600475,
+    "centerLon": -82.4411596,
     "radiusMeters": 4000
   },
   "tampahydeparksoho": {
     "name": "Hyde Park / SoHo",
     "city": "Tampa",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 27.9353426,
+    "centerLon": -82.4732361,
     "radiusMeters": 4000
   },
   "hydeparksoho": {
     "name": "Hyde Park / SoHo",
     "city": "Tampa",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 27.9353426,
+    "centerLon": -82.4732361,
     "radiusMeters": 4000
   },
   "tampachannelside": {
     "name": "Channelside",
     "city": "Tampa",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 27.9438502,
+    "centerLon": -82.4472225,
     "radiusMeters": 4000
   },
   "channelside": {
     "name": "Channelside",
     "city": "Tampa",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 27.9438502,
+    "centerLon": -82.4472225,
     "radiusMeters": 4000
   },
   "tampawestshore": {
     "name": "Westshore",
     "city": "Tampa",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 27.9472623,
+    "centerLon": -82.5274144,
     "radiusMeters": 4000
   },
   "westshore": {
     "name": "Westshore",
     "city": "Tampa",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 27.9472623,
+    "centerLon": -82.5274144,
     "radiusMeters": 4000
   },
   "tampatampaheights": {
     "name": "Tampa Heights",
     "city": "Tampa",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 27.9651611,
+    "centerLon": -82.4570404,
     "radiusMeters": 4000
   },
   "tampaheights": {
     "name": "Tampa Heights",
     "city": "Tampa",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 27.9651611,
+    "centerLon": -82.4570404,
     "radiusMeters": 4000
   },
   "fortlauderdalelasolasboulevard": {
     "name": "Las Olas Boulevard",
     "city": "Fort Lauderdale",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 26.1194668,
+    "centerLon": -80.1432639,
     "radiusMeters": 4000
   },
   "lasolasboulevard": {
     "name": "Las Olas Boulevard",
     "city": "Fort Lauderdale",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 26.1194668,
+    "centerLon": -80.1432639,
     "radiusMeters": 4000
   },
   "fortlauderdaledowntown": {
     "name": "Downtown",
     "city": "Fort Lauderdale",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 26.1326817,
+    "centerLon": -80.1378803,
     "radiusMeters": 4000
   },
   "fortlauderdaleharborbeach": {
     "name": "Harbor Beach",
     "city": "Fort Lauderdale",
-    "centerLat": 43.84474,
-    "centerLon": -82.65132,
+    "centerLat": 26.1059391,
+    "centerLon": -80.1155114,
     "radiusMeters": 2500
   },
   "harborbeach": {
     "name": "Harbor Beach",
     "city": "Fort Lauderdale",
-    "centerLat": 43.84474,
-    "centerLon": -82.65132,
+    "centerLat": 26.1059391,
+    "centerLon": -80.1155114,
     "radiusMeters": 2500
   },
   "fortlauderdalevictoriapark": {
     "name": "Victoria Park",
     "city": "Fort Lauderdale",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 26.1232395,
+    "centerLon": -80.1245515,
     "radiusMeters": 4000
   },
   "victoriapark": {
     "name": "Victoria Park",
     "city": "Fort Lauderdale",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 26.1232395,
+    "centerLon": -80.1245515,
     "radiusMeters": 4000
   },
   "fortlauderdaleflaglervillage": {
     "name": "Flagler Village",
     "city": "Fort Lauderdale",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 26.1308631,
+    "centerLon": -80.1410912,
     "radiusMeters": 4000
   },
   "flaglervillage": {
     "name": "Flagler Village",
     "city": "Fort Lauderdale",
-    "centerLat": 27.6648274,
-    "centerLon": -81.5157535,
+    "centerLat": 26.1308631,
+    "centerLon": -80.1410912,
     "radiusMeters": 4000
   },
   "chicagotheloopdowntown": {
@@ -10040,15 +10040,15 @@
   "chicagolincolnpark": {
     "name": "Lincoln Park",
     "city": "Chicago",
-    "centerLat": 38.42916,
-    "centerLon": -105.21999,
+    "centerLat": 41.9216992,
+    "centerLon": -87.647832,
     "radiusMeters": 2500
   },
   "lincolnpark": {
     "name": "Lincoln Park",
     "city": "Chicago",
-    "centerLat": 38.42916,
-    "centerLon": -105.21999,
+    "centerLat": 41.9216992,
+    "centerLon": -87.647832,
     "radiusMeters": 2500
   },
   "chicagowickerpark": {
@@ -10138,43 +10138,43 @@
   "napervilledowntownnaperville": {
     "name": "Downtown Naperville",
     "city": "Naperville",
-    "centerLat": 40.6331249,
-    "centerLon": -89.3985283,
+    "centerLat": 41.7729549,
+    "centerLon": -88.1486005,
     "radiusMeters": 4000
   },
   "downtownnaperville": {
     "name": "Downtown Naperville",
     "city": "Naperville",
-    "centerLat": 40.6331249,
-    "centerLon": -89.3985283,
+    "centerLat": 41.7729549,
+    "centerLon": -88.1486005,
     "radiusMeters": 4000
   },
   "napervillenorthnaperville": {
     "name": "North Naperville",
     "city": "Naperville",
-    "centerLat": 40.6331249,
-    "centerLon": -89.3985283,
+    "centerLat": 41.7829262,
+    "centerLon": -88.1571595,
     "radiusMeters": 4000
   },
   "northnaperville": {
     "name": "North Naperville",
     "city": "Naperville",
-    "centerLat": 40.6331249,
-    "centerLon": -89.3985283,
+    "centerLat": 41.7829262,
+    "centerLon": -88.1571595,
     "radiusMeters": 4000
   },
   "napervillesouthnaperville": {
     "name": "South Naperville",
     "city": "Naperville",
-    "centerLat": 40.6331249,
-    "centerLon": -89.3985283,
+    "centerLat": 41.7531768,
+    "centerLon": -88.1664367,
     "radiusMeters": 4000
   },
   "southnaperville": {
     "name": "South Naperville",
     "city": "Naperville",
-    "centerLat": 40.6331249,
-    "centerLon": -89.3985283,
+    "centerLat": 41.7531768,
+    "centerLon": -88.1664367,
     "radiusMeters": 4000
   },
   "seattledowntownseattle": {
@@ -10222,43 +10222,43 @@
   "seattleballard": {
     "name": "Ballard",
     "city": "Seattle",
-    "centerLat": 40.2894,
-    "centerLon": -109.9432,
+    "centerLat": 47.6765073,
+    "centerLon": -122.3862233,
     "radiusMeters": 2500
   },
   "ballard": {
     "name": "Ballard",
     "city": "Seattle",
-    "centerLat": 40.2894,
-    "centerLon": -109.9432,
+    "centerLat": 47.6765073,
+    "centerLon": -122.3862233,
     "radiusMeters": 2500
   },
   "seattlefremont": {
     "name": "Fremont",
     "city": "Seattle",
-    "centerLat": 37.54827,
-    "centerLon": -121.98857,
+    "centerLat": 47.6504529,
+    "centerLon": -122.3499861,
     "radiusMeters": 2500
   },
   "fremont": {
     "name": "Fremont",
     "city": "Seattle",
-    "centerLat": 37.54827,
-    "centerLon": -121.98857,
+    "centerLat": 47.6504529,
+    "centerLon": -122.3499861,
     "radiusMeters": 2500
   },
   "seattlequeenanne": {
     "name": "Queen Anne",
     "city": "Seattle",
-    "centerLat": 38.89872,
-    "centerLon": -76.6783,
+    "centerLat": 47.6394805,
+    "centerLon": -122.3607453,
     "radiusMeters": 2500
   },
   "queenanne": {
     "name": "Queen Anne",
     "city": "Seattle",
-    "centerLat": 38.89872,
-    "centerLon": -76.6783,
+    "centerLat": 47.6394805,
+    "centerLon": -122.3607453,
     "radiusMeters": 2500
   },
   "seattlepioneersquare": {
@@ -10278,15 +10278,15 @@
   "seattlebelltown": {
     "name": "Belltown",
     "city": "Seattle",
-    "centerLat": 40.27759,
-    "centerLon": -76.58525,
+    "centerLat": 47.6132311,
+    "centerLon": -122.3453607,
     "radiusMeters": 2500
   },
   "belltown": {
     "name": "Belltown",
     "city": "Seattle",
-    "centerLat": 40.27759,
-    "centerLon": -76.58525,
+    "centerLat": 47.6132311,
+    "centerLon": -122.3453607,
     "radiusMeters": 2500
   },
   "seattleuniversitydistrict": {
@@ -10306,57 +10306,57 @@
   "bellevuedowntownbellevue": {
     "name": "Downtown Bellevue",
     "city": "Bellevue",
-    "centerLat": 47.7510741,
-    "centerLon": -120.7401385,
+    "centerLat": 47.6124709,
+    "centerLon": -122.2045589,
     "radiusMeters": 4000
   },
   "downtownbellevue": {
     "name": "Downtown Bellevue",
     "city": "Bellevue",
-    "centerLat": 47.7510741,
-    "centerLon": -120.7401385,
+    "centerLat": 47.6124709,
+    "centerLon": -122.2045589,
     "radiusMeters": 4000
   },
   "bellevuewestbellevue": {
     "name": "West Bellevue",
     "city": "Bellevue",
-    "centerLat": 47.7510741,
-    "centerLon": -120.7401385,
+    "centerLat": 47.6250008,
+    "centerLon": -122.1380844,
     "radiusMeters": 4000
   },
   "westbellevue": {
     "name": "West Bellevue",
     "city": "Bellevue",
-    "centerLat": 47.7510741,
-    "centerLon": -120.7401385,
+    "centerLat": 47.6250008,
+    "centerLon": -122.1380844,
     "radiusMeters": 4000
   },
   "bellevuefactoria": {
     "name": "Factoria",
     "city": "Bellevue",
-    "centerLat": 47.7510741,
-    "centerLon": -120.7401385,
+    "centerLat": 47.5772408,
+    "centerLon": -122.1684296,
     "radiusMeters": 4000
   },
   "factoria": {
     "name": "Factoria",
     "city": "Bellevue",
-    "centerLat": 47.7510741,
-    "centerLon": -120.7401385,
+    "centerLat": 47.5772408,
+    "centerLon": -122.1684296,
     "radiusMeters": 4000
   },
   "bellevuecrossroads": {
     "name": "Crossroads",
     "city": "Bellevue",
-    "centerLat": 38.85039,
-    "centerLon": -77.1297,
+    "centerLat": 47.6195207,
+    "centerLon": -122.130234,
     "radiusMeters": 2500
   },
   "crossroads": {
     "name": "Crossroads",
     "city": "Bellevue",
-    "centerLat": 38.85039,
-    "centerLon": -77.1297,
+    "centerLat": 47.6195207,
+    "centerLon": -122.130234,
     "radiusMeters": 2500
   },
   "atlantadowntownatlanta": {
@@ -10376,22 +10376,22 @@
   "atlantamidtown": {
     "name": "Midtown",
     "city": "Atlanta",
-    "centerLat": 35.87952,
-    "centerLon": -84.5641,
+    "centerLat": 33.7816556,
+    "centerLon": -84.3840713,
     "radiusMeters": 2500
   },
   "atlantabuckhead": {
     "name": "Buckhead",
     "city": "Atlanta",
-    "centerLat": 27.13033,
-    "centerLon": -80.89367,
+    "centerLat": 33.8398137,
+    "centerLon": -84.3795589,
     "radiusMeters": 2500
   },
   "buckhead": {
     "name": "Buckhead",
     "city": "Atlanta",
-    "centerLat": 27.13033,
-    "centerLon": -80.89367,
+    "centerLat": 33.8398137,
+    "centerLon": -84.3795589,
     "radiusMeters": 2500
   },
   "atlantaoldfourthwardo4w": {
@@ -10439,15 +10439,15 @@
   "atlantawestend": {
     "name": "West End",
     "city": "Atlanta",
-    "centerLat": 42.46869,
-    "centerLon": -75.09378,
+    "centerLat": 33.7360535,
+    "centerLon": -84.4136642,
     "radiusMeters": 2500
   },
   "westend": {
     "name": "West End",
     "city": "Atlanta",
-    "centerLat": 42.46869,
-    "centerLon": -75.09378,
+    "centerLat": 33.7360535,
+    "centerLon": -84.4136642,
     "radiusMeters": 2500
   },
   "atlantaatlanticstation": {
@@ -10467,15 +10467,15 @@
   "atlantadecatur": {
     "name": "Decatur",
     "city": "Atlanta",
-    "centerLat": 34.60593,
-    "centerLon": -86.98334,
+    "centerLat": 33.77437,
+    "centerLon": -84.29658,
     "radiusMeters": 2500
   },
   "decatur": {
     "name": "Decatur",
     "city": "Atlanta",
-    "centerLat": 34.60593,
-    "centerLon": -86.98334,
+    "centerLat": 33.77437,
+    "centerLon": -84.29658,
     "radiusMeters": 2500
   },
   "londoncityoflondon": {
@@ -10817,15 +10817,15 @@
   "manchesterchorlton": {
     "name": "Chorlton",
     "city": "Manchester",
-    "centerLat": 53.05029,
-    "centerLon": -2.40541,
+    "centerLat": 53.4404341,
+    "centerLon": -2.2844155,
     "radiusMeters": 2500
   },
   "chorlton": {
     "name": "Chorlton",
     "city": "Manchester",
-    "centerLat": 53.05029,
-    "centerLon": -2.40541,
+    "centerLat": 53.4404341,
+    "centerLon": -2.2844155,
     "radiusMeters": 2500
   },
   "manchesterfallowfield": {
@@ -11090,15 +11090,15 @@
   "liverpoolallerton": {
     "name": "Allerton",
     "city": "Liverpool",
-    "centerLat": 53.82901,
-    "centerLon": -1.53834,
+    "centerLat": 53.3814112,
+    "centerLon": -2.90638,
     "radiusMeters": 2500
   },
   "allerton": {
     "name": "Allerton",
     "city": "Liverpool",
-    "centerLat": 53.82901,
-    "centerLon": -1.53834,
+    "centerLat": 53.3814112,
+    "centerLon": -2.90638,
     "radiusMeters": 2500
   },
   "edinburgholdtown": {
@@ -11118,15 +11118,15 @@
   "edinburghnewtown": {
     "name": "New Town",
     "city": "Edinburgh",
-    "centerLat": 54.70177,
-    "centerLon": -6.1977,
+    "centerLat": 55.9554575,
+    "centerLon": -3.1989995,
     "radiusMeters": 2500
   },
   "newtown": {
     "name": "New Town",
     "city": "Edinburgh",
-    "centerLat": 54.70177,
-    "centerLon": -6.1977,
+    "centerLat": 55.9554575,
+    "centerLon": -3.1989995,
     "radiusMeters": 2500
   },
   "edinburghleith": {
@@ -11209,8 +11209,8 @@
   "glasgowwestend": {
     "name": "West End",
     "city": "Glasgow",
-    "centerLat": 50.92741,
-    "centerLon": -1.33282,
+    "centerLat": 55.8782122,
+    "centerLon": -4.2957138,
     "radiusMeters": 2500
   },
   "glasgowfinnieston": {
@@ -11244,113 +11244,113 @@
   "cardiffcitycentre": {
     "name": "City Centre",
     "city": "Cardiff",
-    "centerLat": 52.1306607,
-    "centerLon": -3.7837117,
+    "centerLat": 51.4798034,
+    "centerLon": -3.1768584,
     "radiusMeters": 4000
   },
   "cardiffcardiffbay": {
     "name": "Cardiff Bay",
     "city": "Cardiff",
-    "centerLat": 52.1306607,
-    "centerLon": -3.7837117,
+    "centerLat": 51.4639553,
+    "centerLon": -3.1641374,
     "radiusMeters": 4000
   },
   "cardiffbay": {
     "name": "Cardiff Bay",
     "city": "Cardiff",
-    "centerLat": 52.1306607,
-    "centerLon": -3.7837117,
+    "centerLat": 51.4639553,
+    "centerLon": -3.1641374,
     "radiusMeters": 4000
   },
   "cardiffroath": {
     "name": "Roath",
     "city": "Cardiff",
-    "centerLat": 56.56317,
-    "centerLon": -2.58736,
+    "centerLat": 51.4937854,
+    "centerLon": -3.1642351,
     "radiusMeters": 2500
   },
   "roath": {
     "name": "Roath",
     "city": "Cardiff",
-    "centerLat": 56.56317,
-    "centerLon": -2.58736,
+    "centerLat": 51.4937854,
+    "centerLon": -3.1642351,
     "radiusMeters": 2500
   },
   "cardiffcathays": {
     "name": "Cathays",
     "city": "Cardiff",
-    "centerLat": 52.1306607,
-    "centerLon": -3.7837117,
+    "centerLat": 51.4888964,
+    "centerLon": -3.1789269,
     "radiusMeters": 4000
   },
   "cathays": {
     "name": "Cathays",
     "city": "Cardiff",
-    "centerLat": 52.1306607,
-    "centerLon": -3.7837117,
+    "centerLat": 51.4888964,
+    "centerLon": -3.1789269,
     "radiusMeters": 4000
   },
   "cardiffcanton": {
     "name": "Canton",
     "city": "Cardiff",
-    "centerLat": 51.05676,
-    "centerLon": -2.40574,
+    "centerLat": 51.4777973,
+    "centerLon": -3.2112628,
     "radiusMeters": 2500
   },
   "canton": {
     "name": "Canton",
     "city": "Cardiff",
-    "centerLat": 51.05676,
-    "centerLon": -2.40574,
+    "centerLat": 51.4777973,
+    "centerLon": -3.2112628,
     "radiusMeters": 2500
   },
   "belfastcathedralquarter": {
     "name": "Cathedral Quarter",
     "city": "Belfast",
-    "centerLat": 54.7877149,
-    "centerLon": -6.4923145,
+    "centerLat": 54.6025054,
+    "centerLon": -5.9277351,
     "radiusMeters": 4000
   },
   "cathedralquarter": {
     "name": "Cathedral Quarter",
     "city": "Belfast",
-    "centerLat": 54.7877149,
-    "centerLon": -6.4923145,
+    "centerLat": 54.6025054,
+    "centerLon": -5.9277351,
     "radiusMeters": 4000
   },
   "belfasttitanicquarter": {
     "name": "Titanic Quarter",
     "city": "Belfast",
-    "centerLat": 54.7877149,
-    "centerLon": -6.4923145,
+    "centerLat": 54.6050496,
+    "centerLon": -5.9108762,
     "radiusMeters": 4000
   },
   "titanicquarter": {
     "name": "Titanic Quarter",
     "city": "Belfast",
-    "centerLat": 54.7877149,
-    "centerLon": -6.4923145,
+    "centerLat": 54.6050496,
+    "centerLon": -5.9108762,
     "radiusMeters": 4000
   },
   "belfastqueensquarter": {
     "name": "Queen's Quarter",
     "city": "Belfast",
-    "centerLat": 54.7877149,
-    "centerLon": -6.4923145,
+    "centerLat": 54.5857761,
+    "centerLon": -5.9357142,
     "radiusMeters": 4000
   },
   "queensquarter": {
     "name": "Queen's Quarter",
     "city": "Belfast",
-    "centerLat": 54.7877149,
-    "centerLon": -6.4923145,
+    "centerLat": 54.5857761,
+    "centerLon": -5.9357142,
     "radiusMeters": 4000
   },
   "belfastcitycentre": {
     "name": "City Centre",
     "city": "Belfast",
-    "centerLat": 54.7877149,
-    "centerLon": -6.4923145,
+    "centerLat": 54.6122225,
+    "centerLon": -5.9281047,
     "radiusMeters": 4000
   },
   "dubaidowntowndubai": {
@@ -11923,120 +11923,120 @@
   "ottawadowntown": {
     "name": "Downtown",
     "city": "Ottawa",
-    "centerLat": 44.24832,
-    "centerLon": -76.95069,
+    "centerLat": 45.4324986,
+    "centerLon": -75.6884047,
     "radiusMeters": 2500
   },
   "ottawabywardmarket": {
     "name": "ByWard Market",
     "city": "Ottawa",
-    "centerLat": 51.253775,
-    "centerLon": -85.323214,
+    "centerLat": 45.4279165,
+    "centerLon": -75.6926015,
     "radiusMeters": 4000
   },
   "bywardmarket": {
     "name": "ByWard Market",
     "city": "Ottawa",
-    "centerLat": 51.253775,
-    "centerLon": -85.323214,
+    "centerLat": 45.4279165,
+    "centerLon": -75.6926015,
     "radiusMeters": 4000
   },
   "ottawatheglebe": {
     "name": "The Glebe",
     "city": "Ottawa",
-    "centerLat": 51.253775,
-    "centerLon": -85.323214,
+    "centerLat": 45.4025152,
+    "centerLon": -75.6918006,
     "radiusMeters": 4000
   },
   "theglebe": {
     "name": "The Glebe",
     "city": "Ottawa",
-    "centerLat": 51.253775,
-    "centerLon": -85.323214,
+    "centerLat": 45.4025152,
+    "centerLon": -75.6918006,
     "radiusMeters": 4000
   },
   "ottawacentretown": {
     "name": "Centretown",
     "city": "Ottawa",
-    "centerLat": 51.253775,
-    "centerLon": -85.323214,
+    "centerLat": 45.4163403,
+    "centerLon": -75.6942863,
     "radiusMeters": 4000
   },
   "centretown": {
     "name": "Centretown",
     "city": "Ottawa",
-    "centerLat": 51.253775,
-    "centerLon": -85.323214,
+    "centerLat": 45.4163403,
+    "centerLon": -75.6942863,
     "radiusMeters": 4000
   },
   "ottawakanatatechpark": {
     "name": "Kanata (Tech Park)",
     "city": "Ottawa",
-    "centerLat": 51.253775,
-    "centerLon": -85.323214,
+    "centerLat": 45.3128048,
+    "centerLon": -75.8940505,
     "radiusMeters": 4000
   },
   "kanatatechpark": {
     "name": "Kanata (Tech Park)",
     "city": "Ottawa",
-    "centerLat": 51.253775,
-    "centerLon": -85.323214,
+    "centerLat": 45.3128048,
+    "centerLon": -75.8940505,
     "radiusMeters": 4000
   },
   "mississaugacitycentresquareone": {
     "name": "City Centre / Square One",
     "city": "Mississauga",
-    "centerLat": 51.253775,
-    "centerLon": -85.323214,
+    "centerLat": 43.593737,
+    "centerLon": -79.6461983,
     "radiusMeters": 4000
   },
   "citycentresquareone": {
     "name": "City Centre / Square One",
     "city": "Mississauga",
-    "centerLat": 51.253775,
-    "centerLon": -85.323214,
+    "centerLat": 43.593737,
+    "centerLon": -79.6461983,
     "radiusMeters": 4000
   },
   "mississaugaportcredit": {
     "name": "Port Credit",
     "city": "Mississauga",
-    "centerLat": 51.253775,
-    "centerLon": -85.323214,
+    "centerLat": 43.5560546,
+    "centerLon": -79.5870828,
     "radiusMeters": 4000
   },
   "portcredit": {
     "name": "Port Credit",
     "city": "Mississauga",
-    "centerLat": 51.253775,
-    "centerLon": -85.323214,
+    "centerLat": 43.5560546,
+    "centerLon": -79.5870828,
     "radiusMeters": 4000
   },
   "mississaugastreetsville": {
     "name": "Streetsville",
     "city": "Mississauga",
-    "centerLat": 51.253775,
-    "centerLon": -85.323214,
+    "centerLat": 43.5761899,
+    "centerLon": -79.7089736,
     "radiusMeters": 4000
   },
   "streetsville": {
     "name": "Streetsville",
     "city": "Mississauga",
-    "centerLat": 51.253775,
-    "centerLon": -85.323214,
+    "centerLat": 43.5761899,
+    "centerLon": -79.7089736,
     "radiusMeters": 4000
   },
   "mississaugameadowvale": {
     "name": "Meadowvale",
     "city": "Mississauga",
-    "centerLat": 51.253775,
-    "centerLon": -85.323214,
+    "centerLat": 43.5975336,
+    "centerLon": -79.7543022,
     "radiusMeters": 4000
   },
   "meadowvale": {
     "name": "Meadowvale",
     "city": "Mississauga",
-    "centerLat": 51.253775,
-    "centerLon": -85.323214,
+    "centerLat": 43.5975336,
+    "centerLon": -79.7543022,
     "radiusMeters": 4000
   },
   "vancouverdowntownvancouver": {
@@ -12147,71 +12147,71 @@
   "vancouverfairview": {
     "name": "Fairview",
     "city": "Vancouver",
-    "centerLat": 56.06675,
-    "centerLon": -118.38606,
+    "centerLat": 49.2641128,
+    "centerLon": -123.1268352,
     "radiusMeters": 2500
   },
   "fairview": {
     "name": "Fairview",
     "city": "Vancouver",
-    "centerLat": 56.06675,
-    "centerLon": -118.38606,
+    "centerLat": 49.2641128,
+    "centerLon": -123.1268352,
     "radiusMeters": 2500
   },
   "victoriadowntownvictoria": {
     "name": "Downtown Victoria",
     "city": "Victoria",
-    "centerLat": 53.7266683,
-    "centerLon": -127.6476205,
+    "centerLat": 48.4247,
+    "centerLon": -123.3619908,
     "radiusMeters": 4000
   },
   "downtownvictoria": {
     "name": "Downtown Victoria",
     "city": "Victoria",
-    "centerLat": 53.7266683,
-    "centerLon": -127.6476205,
+    "centerLat": 48.4247,
+    "centerLon": -123.3619908,
     "radiusMeters": 4000
   },
   "victoriainnerharbour": {
     "name": "Inner Harbour",
     "city": "Victoria",
-    "centerLat": 53.7266683,
-    "centerLon": -127.6476205,
+    "centerLat": 48.42082,
+    "centerLon": -123.36932,
     "radiusMeters": 4000
   },
   "innerharbour": {
     "name": "Inner Harbour",
     "city": "Victoria",
-    "centerLat": 53.7266683,
-    "centerLon": -127.6476205,
+    "centerLat": 48.42082,
+    "centerLon": -123.36932,
     "radiusMeters": 4000
   },
   "victoriajamesbay": {
     "name": "James Bay",
     "city": "Victoria",
-    "centerLat": 53.7266683,
-    "centerLon": -127.6476205,
+    "centerLat": 48.4153671,
+    "centerLon": -123.3765632,
     "radiusMeters": 4000
   },
   "jamesbay": {
     "name": "James Bay",
     "city": "Victoria",
-    "centerLat": 53.7266683,
-    "centerLon": -127.6476205,
+    "centerLat": 48.4153671,
+    "centerLon": -123.3765632,
     "radiusMeters": 4000
   },
   "victoriacookstreetvillage": {
     "name": "Cook Street Village",
     "city": "Victoria",
-    "centerLat": 53.7266683,
-    "centerLon": -127.6476205,
+    "centerLat": 48.4145621,
+    "centerLon": -123.3563717,
     "radiusMeters": 4000
   },
   "cookstreetvillage": {
     "name": "Cook Street Village",
     "city": "Victoria",
-    "centerLat": 53.7266683,
-    "centerLon": -127.6476205,
+    "centerLat": 48.4145621,
+    "centerLon": -123.3563717,
     "radiusMeters": 4000
   },
   "montrealdowntownmontreal": {
@@ -12315,57 +12315,57 @@
   "quebeccityoldquebec": {
     "name": "Old Quebec",
     "city": "Quebec City",
-    "centerLat": 52.9399159,
-    "centerLon": -73.5491361,
+    "centerLat": 46.8138529,
+    "centerLon": -71.2071594,
     "radiusMeters": 4000
   },
   "oldquebec": {
     "name": "Old Quebec",
     "city": "Quebec City",
-    "centerLat": 52.9399159,
-    "centerLon": -73.5491361,
+    "centerLat": 46.8138529,
+    "centerLon": -71.2071594,
     "radiusMeters": 4000
   },
   "quebeccitysaintroch": {
     "name": "Saint-Roch",
     "city": "Quebec City",
-    "centerLat": 52.9399159,
-    "centerLon": -73.5491361,
+    "centerLat": 46.8154228,
+    "centerLon": -71.2266361,
     "radiusMeters": 4000
   },
   "saintroch": {
     "name": "Saint-Roch",
     "city": "Quebec City",
-    "centerLat": 52.9399159,
-    "centerLon": -73.5491361,
+    "centerLat": 46.8154228,
+    "centerLon": -71.2266361,
     "radiusMeters": 4000
   },
   "quebeccitymontcalm": {
     "name": "Montcalm",
     "city": "Quebec City",
-    "centerLat": 46.31868,
-    "centerLon": -74.22171,
+    "centerLat": 46.8017938,
+    "centerLon": -71.2325155,
     "radiusMeters": 2500
   },
   "montcalm": {
     "name": "Montcalm",
     "city": "Quebec City",
-    "centerLat": 46.31868,
-    "centerLon": -74.22171,
+    "centerLat": 46.8017938,
+    "centerLon": -71.2325155,
     "radiusMeters": 2500
   },
   "quebeccitysaintefoy": {
     "name": "Sainte-Foy",
     "city": "Quebec City",
-    "centerLat": 52.9399159,
-    "centerLon": -73.5491361,
+    "centerLat": 46.7743268,
+    "centerLon": -71.2994438,
     "radiusMeters": 4000
   },
   "saintefoy": {
     "name": "Sainte-Foy",
     "city": "Quebec City",
-    "centerLat": 52.9399159,
-    "centerLon": -73.5491361,
+    "centerLat": 46.7743268,
+    "centerLon": -71.2994438,
     "radiusMeters": 4000
   },
   "calgarydowntowncommercialcore": {
@@ -12399,8 +12399,8 @@
   "calgarykensington": {
     "name": "Kensington",
     "city": "Calgary",
-    "centerLat": 51.5014,
-    "centerLon": -0.1919,
+    "centerLat": 51.0547122,
+    "centerLon": -114.0859262,
     "radiusMeters": 2500
   },
   "calgaryinglewood": {
@@ -12434,57 +12434,57 @@
   "edmontondowntownedmonton": {
     "name": "Downtown Edmonton",
     "city": "Edmonton",
-    "centerLat": 53.9332706,
-    "centerLon": -116.5765035,
+    "centerLat": 53.5436919,
+    "centerLon": -113.4911312,
     "radiusMeters": 4000
   },
   "downtownedmonton": {
     "name": "Downtown Edmonton",
     "city": "Edmonton",
-    "centerLat": 53.9332706,
-    "centerLon": -116.5765035,
+    "centerLat": 53.5436919,
+    "centerLon": -113.4911312,
     "radiusMeters": 4000
   },
   "edmontonoldstrathconawhyteave": {
     "name": "Old Strathcona / Whyte Ave",
     "city": "Edmonton",
-    "centerLat": 53.9332706,
-    "centerLon": -116.5765035,
+    "centerLat": 53.5178737,
+    "centerLon": -113.5109598,
     "radiusMeters": 4000
   },
   "oldstrathconawhyteave": {
     "name": "Old Strathcona / Whyte Ave",
     "city": "Edmonton",
-    "centerLat": 53.9332706,
-    "centerLon": -116.5765035,
+    "centerLat": 53.5178737,
+    "centerLon": -113.5109598,
     "radiusMeters": 4000
   },
   "edmontonoliver": {
     "name": "Oliver",
     "city": "Edmonton",
-    "centerLat": 49.18306,
-    "centerLon": -119.5524,
+    "centerLat": 53.5424956,
+    "centerLon": -113.521641,
     "radiusMeters": 2500
   },
   "oliver": {
     "name": "Oliver",
     "city": "Edmonton",
-    "centerLat": 49.18306,
-    "centerLon": -119.5524,
+    "centerLat": 53.5424956,
+    "centerLon": -113.521641,
     "radiusMeters": 2500
   },
   "edmontongarneau": {
     "name": "Garneau",
     "city": "Edmonton",
-    "centerLat": 53.9332706,
-    "centerLon": -116.5765035,
+    "centerLat": 53.5196428,
+    "centerLon": -113.514252,
     "radiusMeters": 4000
   },
   "garneau": {
     "name": "Garneau",
     "city": "Edmonton",
-    "centerLat": 53.9332706,
-    "centerLon": -116.5765035,
+    "centerLat": 53.5196428,
+    "centerLon": -113.514252,
     "radiusMeters": 4000
   },
   "sydneysydneycbd": {
@@ -12546,8 +12546,8 @@
   "sydneynewtown": {
     "name": "Newtown",
     "city": "Sydney",
-    "centerLat": -42.85758,
-    "centerLon": 147.30869,
+    "centerLat": -33.89856,
+    "centerLon": 151.1763,
     "radiusMeters": 2500
   },
   "sydneyparramatta": {
@@ -12623,8 +12623,8 @@
   "sydneypaddington": {
     "name": "Paddington",
     "city": "Sydney",
-    "centerLat": 51.516,
-    "centerLon": -0.1769,
+    "centerLat": -33.88203,
+    "centerLon": 151.2289,
     "radiusMeters": 2500
   },
   "sydneyalexandria": {
@@ -12700,22 +12700,22 @@
   "melbournecarlton": {
     "name": "Carlton",
     "city": "Melbourne",
-    "centerLat": -33.97107,
-    "centerLon": 151.12136,
+    "centerLat": -37.8004228,
+    "centerLon": 144.9684343,
     "radiusMeters": 2500
   },
   "carlton": {
     "name": "Carlton",
     "city": "Melbourne",
-    "centerLat": -33.97107,
-    "centerLon": 151.12136,
+    "centerLat": -37.8004228,
+    "centerLon": 144.9684343,
     "radiusMeters": 2500
   },
   "melbournerichmond": {
     "name": "Richmond",
     "city": "Melbourne",
-    "centerLat": 51.4613,
-    "centerLon": -0.3037,
+    "centerLat": -37.81691,
+    "centerLon": 144.99947,
     "radiusMeters": 2500
   },
   "melbournebrunswick": {
@@ -12819,8 +12819,8 @@
   "brisbanesouthbank": {
     "name": "South Bank",
     "city": "Brisbane",
-    "centerLat": -37.8228,
-    "centerLon": 144.96434,
+    "centerLat": -27.4762827,
+    "centerLon": 153.0199491,
     "radiusMeters": 2500
   },
   "brisbanenewfarm": {
@@ -13015,15 +13015,15 @@
   "mumbaidadar": {
     "name": "Dadar",
     "city": "Mumbai",
-    "centerLat": 21.56666667,
-    "centerLon": 69.66666667,
+    "centerLat": 19.0173761,
+    "centerLon": 72.8430265,
     "radiusMeters": 2500
   },
   "dadar": {
     "name": "Dadar",
     "city": "Mumbai",
-    "centerLat": 21.56666667,
-    "centerLon": 69.66666667,
+    "centerLat": 19.0173761,
+    "centerLon": 72.8430265,
     "radiusMeters": 2500
   },
   "mumbainarimanpoint": {
@@ -13057,15 +13057,15 @@
   "mumbaithane": {
     "name": "Thane",
     "city": "Mumbai",
-    "centerLat": 19.33333,
-    "centerLon": 73.25,
+    "centerLat": 19.18782,
+    "centerLon": 72.97257,
     "radiusMeters": 2500
   },
   "thane": {
     "name": "Thane",
     "city": "Mumbai",
-    "centerLat": 19.33333,
-    "centerLon": 73.25,
+    "centerLat": 19.18782,
+    "centerLon": 72.97257,
     "radiusMeters": 2500
   },
   "mumbainavimumbai": {
@@ -13085,15 +13085,15 @@
   "punekoregaonpark": {
     "name": "Koregaon Park",
     "city": "Pune",
-    "centerLat": 19.7514798,
-    "centerLon": 75.7138884,
+    "centerLat": 18.5366225,
+    "centerLon": 73.8932738,
     "radiusMeters": 4000
   },
   "koregaonpark": {
     "name": "Koregaon Park",
     "city": "Pune",
-    "centerLat": 19.7514798,
-    "centerLon": 75.7138884,
+    "centerLat": 18.5366225,
+    "centerLon": 73.8932738,
     "radiusMeters": 4000
   },
   "punekalyaninagar": {
@@ -13113,29 +13113,29 @@
   "punevimannagar": {
     "name": "Viman Nagar",
     "city": "Pune",
-    "centerLat": 19.7514798,
-    "centerLon": 75.7138884,
+    "centerLat": 18.5703877,
+    "centerLon": 73.9133336,
     "radiusMeters": 4000
   },
   "vimannagar": {
     "name": "Viman Nagar",
     "city": "Pune",
-    "centerLat": 19.7514798,
-    "centerLon": 75.7138884,
+    "centerLat": 18.5703877,
+    "centerLon": 73.9133336,
     "radiusMeters": 4000
   },
   "punehinjawaditechpark": {
     "name": "Hinjawadi Tech Park",
     "city": "Pune",
-    "centerLat": 19.7514798,
-    "centerLon": 75.7138884,
+    "centerLat": 18.59149,
+    "centerLon": 73.73894,
     "radiusMeters": 4000
   },
   "hinjawaditechpark": {
     "name": "Hinjawadi Tech Park",
     "city": "Pune",
-    "centerLat": 19.7514798,
-    "centerLon": 75.7138884,
+    "centerLat": 18.59149,
+    "centerLon": 73.73894,
     "radiusMeters": 4000
   },
   "puneshivajinagar": {
@@ -13337,29 +13337,29 @@
   "newdelhidwarka": {
     "name": "Dwarka",
     "city": "New Delhi",
-    "centerLat": 22.20253,
-    "centerLon": 69.65498,
+    "centerLat": 28.59015,
+    "centerLon": 77.04019,
     "radiusMeters": 2500
   },
   "dwarka": {
     "name": "Dwarka",
     "city": "New Delhi",
-    "centerLat": 22.20253,
-    "centerLon": 69.65498,
+    "centerLat": 28.59015,
+    "centerLon": 77.04019,
     "radiusMeters": 2500
   },
   "chennaitnagar": {
     "name": "T. Nagar",
     "city": "Chennai",
-    "centerLat": 26.22383,
-    "centerLon": 80.7575,
+    "centerLat": 13.0385946,
+    "centerLon": 80.2335793,
     "radiusMeters": 2500
   },
   "tnagar": {
     "name": "T. Nagar",
     "city": "Chennai",
-    "centerLat": 26.22383,
-    "centerLon": 80.7575,
+    "centerLat": 13.0385946,
+    "centerLon": 80.2335793,
     "radiusMeters": 2500
   },
   "chennaiannanagar": {
@@ -13449,85 +13449,85 @@
   "hyderabadbanjarahills": {
     "name": "Banjara Hills",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 17.4177464,
+    "centerLon": 78.4399014,
     "radiusMeters": 3500
   },
   "banjarahills": {
     "name": "Banjara Hills",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 17.4177464,
+    "centerLon": 78.4399014,
     "radiusMeters": 3500
   },
   "hyderabadjubileehills": {
     "name": "Jubilee Hills",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 17.4308362,
+    "centerLon": 78.4102882,
     "radiusMeters": 3500
   },
   "jubileehills": {
     "name": "Jubilee Hills",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 17.4308362,
+    "centerLon": 78.4102882,
     "radiusMeters": 3500
   },
   "hyderabadhiteccity": {
     "name": "Hitec City",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 17.4490055,
+    "centerLon": 78.3831376,
     "radiusMeters": 3500
   },
   "hiteccity": {
     "name": "Hitec City",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 17.4490055,
+    "centerLon": 78.3831376,
     "radiusMeters": 3500
   },
   "hyderabadgachibowli": {
     "name": "Gachibowli",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 17.4436222,
+    "centerLon": 78.3519638,
     "radiusMeters": 3500
   },
   "gachibowli": {
     "name": "Gachibowli",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 17.4436222,
+    "centerLon": 78.3519638,
     "radiusMeters": 3500
   },
   "hyderabadmadhapur": {
     "name": "Madhapur",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 17.4408924,
+    "centerLon": 78.3916304,
     "radiusMeters": 3500
   },
   "madhapur": {
     "name": "Madhapur",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 17.4408924,
+    "centerLon": 78.3916304,
     "radiusMeters": 3500
   },
   "hyderabadbegumpet": {
     "name": "Begumpet",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 17.446195,
+    "centerLon": 78.463016,
     "radiusMeters": 3500
   },
   "begumpet": {
     "name": "Begumpet",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 17.446195,
+    "centerLon": 78.463016,
     "radiusMeters": 3500
   },
   "hyderabadsecunderabad": {
@@ -14058,169 +14058,169 @@
   "alkhobarkhobarcorniche": {
     "name": "Khobar Corniche",
     "city": "Al Khobar",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 26.2942461,
+    "centerLon": 50.2250079,
     "radiusMeters": 4000
   },
   "khobarcorniche": {
     "name": "Khobar Corniche",
     "city": "Al Khobar",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 26.2942461,
+    "centerLon": 50.2250079,
     "radiusMeters": 4000
   },
   "alkhobaralulaya": {
     "name": "Al Ulaya",
     "city": "Al Khobar",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 26.29707,
+    "centerLon": 50.17958,
     "radiusMeters": 4000
   },
   "alulaya": {
     "name": "Al Ulaya",
     "city": "Al Khobar",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 26.29707,
+    "centerLon": 50.17958,
     "radiusMeters": 4000
   },
   "alkhobaralaqrabiyah": {
     "name": "Al Aqrabiyah",
     "city": "Al Khobar",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 26.2950611,
+    "centerLon": 50.1924715,
     "radiusMeters": 4000
   },
   "alaqrabiyah": {
     "name": "Al Aqrabiyah",
     "city": "Al Khobar",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 26.2950611,
+    "centerLon": 50.1924715,
     "radiusMeters": 4000
   },
   "alkhobaralfanar": {
     "name": "Al Fanar",
     "city": "Al Khobar",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 26.29774,
+    "centerLon": 50.19134,
     "radiusMeters": 4000
   },
   "alfanar": {
     "name": "Al Fanar",
     "city": "Al Khobar",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 26.29774,
+    "centerLon": 50.19134,
     "radiusMeters": 4000
   },
   "alkhobaralhizamalthahabi": {
     "name": "Al Hizam Al Thahabi",
     "city": "Al Khobar",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 26.31855,
+    "centerLon": 50.20266,
     "radiusMeters": 4000
   },
   "alhizamalthahabi": {
     "name": "Al Hizam Al Thahabi",
     "city": "Al Khobar",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 26.31855,
+    "centerLon": 50.20266,
     "radiusMeters": 4000
   },
   "dhahransaudiaramcoresidentialcamp": {
     "name": "Saudi Aramco Residential Camp",
     "city": "Dhahran",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 26.3176151,
+    "centerLon": 50.1425588,
     "radiusMeters": 4000
   },
   "saudiaramcoresidentialcamp": {
     "name": "Saudi Aramco Residential Camp",
     "city": "Dhahran",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 26.3176151,
+    "centerLon": 50.1425588,
     "radiusMeters": 4000
   },
   "dhahranaldana": {
     "name": "Al Dana",
     "city": "Dhahran",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 26.3338214,
+    "centerLon": 50.1333103,
     "radiusMeters": 4000
   },
   "aldana": {
     "name": "Al Dana",
     "city": "Dhahran",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 26.3338214,
+    "centerLon": 50.1333103,
     "radiusMeters": 4000
   },
   "dhahrankfupmarea": {
     "name": "KFUPM Area",
     "city": "Dhahran",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 26.3056577,
+    "centerLon": 50.1513016,
     "radiusMeters": 4000
   },
   "kfupmarea": {
     "name": "KFUPM Area",
     "city": "Dhahran",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 26.3056577,
+    "centerLon": 50.1513016,
     "radiusMeters": 4000
   },
   "jubailjubailindustrialcity": {
     "name": "Jubail Industrial City",
     "city": "Jubail",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 27.0651523,
+    "centerLon": 49.4813331,
     "radiusMeters": 4000
   },
   "jubailindustrialcity": {
     "name": "Jubail Industrial City",
     "city": "Jubail",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 27.0651523,
+    "centerLon": 49.4813331,
     "radiusMeters": 4000
   },
   "jubailfanateer": {
     "name": "Fanateer",
     "city": "Jubail",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 27.14021,
+    "centerLon": 49.55642,
     "radiusMeters": 4000
   },
   "fanateer": {
     "name": "Fanateer",
     "city": "Jubail",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 27.14021,
+    "centerLon": 49.55642,
     "radiusMeters": 4000
   },
   "jubailaldeffi": {
     "name": "Al Deffi",
     "city": "Jubail",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 27.12857,
+    "centerLon": 49.53832,
     "radiusMeters": 4000
   },
   "aldeffi": {
     "name": "Al Deffi",
     "city": "Jubail",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 27.12857,
+    "centerLon": 49.53832,
     "radiusMeters": 4000
   },
   "jubailjubaildowntown": {
     "name": "Jubail Downtown",
     "city": "Jubail",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 27.01307,
+    "centerLon": 49.6543,
     "radiusMeters": 4000
   },
   "jubaildowntown": {
     "name": "Jubail Downtown",
     "city": "Jubail",
-    "centerLat": 24.0439932,
-    "centerLon": 45.6589225,
+    "centerLat": 27.01307,
+    "centerLon": 49.6543,
     "radiusMeters": 4000
   },
   "medinacentralareamarkaziya": {
@@ -14268,15 +14268,15 @@
   "medinaaliskan": {
     "name": "Al Iskan",
     "city": "Medina",
-    "centerLat": 21.4,
-    "centerLon": 39.7833,
+    "centerLat": 24.4592601,
+    "centerLon": 39.6474265,
     "radiusMeters": 2500
   },
   "aliskan": {
     "name": "Al Iskan",
     "city": "Medina",
-    "centerLat": 21.4,
-    "centerLon": 39.7833,
+    "centerLat": 24.4592601,
+    "centerLon": 39.6474265,
     "radiusMeters": 2500
   },
   "berlinmitte": {
@@ -14506,15 +14506,15 @@
   "munichneuhausen": {
     "name": "Neuhausen",
     "city": "Munich",
-    "centerLat": 48.7926,
-    "centerLon": 8.77649,
+    "centerLat": 48.1542217,
+    "centerLon": 11.5315172,
     "radiusMeters": 2500
   },
   "neuhausen": {
     "name": "Neuhausen",
     "city": "Munich",
-    "centerLat": 48.7926,
-    "centerLon": 8.77649,
+    "centerLat": 48.1542217,
+    "centerLon": 11.5315172,
     "radiusMeters": 2500
   },
   "munichsendling": {
@@ -14534,57 +14534,57 @@
   "nurembergaltstadt": {
     "name": "Altstadt",
     "city": "Nuremberg",
-    "centerLat": 53.62805,
-    "centerLon": 11.41582,
+    "centerLat": 49.4514045,
+    "centerLon": 11.0747163,
     "radiusMeters": 2500
   },
   "altstadt": {
     "name": "Altstadt",
     "city": "Nuremberg",
-    "centerLat": 53.62805,
-    "centerLon": 11.41582,
+    "centerLat": 49.4514045,
+    "centerLon": 11.0747163,
     "radiusMeters": 2500
   },
   "nuremberggostenhof": {
     "name": "Gostenhof",
     "city": "Nuremberg",
-    "centerLat": 48.7904472,
-    "centerLon": 11.4978895,
+    "centerLat": 49.4476663,
+    "centerLon": 11.0581931,
     "radiusMeters": 4000
   },
   "gostenhof": {
     "name": "Gostenhof",
     "city": "Nuremberg",
-    "centerLat": 48.7904472,
-    "centerLon": 11.4978895,
+    "centerLat": 49.4476663,
+    "centerLon": 11.0581931,
     "radiusMeters": 4000
   },
   "nurembergstjohannis": {
     "name": "St. Johannis",
     "city": "Nuremberg",
-    "centerLat": 48.7904472,
-    "centerLon": 11.4978895,
+    "centerLat": 49.4585661,
+    "centerLon": 11.0663398,
     "radiusMeters": 4000
   },
   "stjohannis": {
     "name": "St. Johannis",
     "city": "Nuremberg",
-    "centerLat": 48.7904472,
-    "centerLon": 11.4978895,
+    "centerLat": 49.4585661,
+    "centerLon": 11.0663398,
     "radiusMeters": 4000
   },
   "nurembergnordstadt": {
     "name": "Nordstadt",
     "city": "Nuremberg",
-    "centerLat": 48.7904472,
-    "centerLon": 11.4978895,
+    "centerLat": 49.46107,
+    "centerLon": 11.08745,
     "radiusMeters": 4000
   },
   "nordstadt": {
     "name": "Nordstadt",
     "city": "Nuremberg",
-    "centerLat": 48.7904472,
-    "centerLon": 11.4978895,
+    "centerLat": 49.46107,
+    "centerLon": 11.08745,
     "radiusMeters": 4000
   },
   "cologneinnenstadt": {
@@ -14604,8 +14604,8 @@
   "colognealtstadt": {
     "name": "Altstadt",
     "city": "Cologne",
-    "centerLat": 53.62805,
-    "centerLon": 11.41582,
+    "centerLat": 50.9384798,
+    "centerLon": 6.9605148,
     "radiusMeters": 2500
   },
   "cologneehrenfeld": {
@@ -14681,8 +14681,8 @@
   "dusseldorfaltstadt": {
     "name": "Altstadt",
     "city": "Dusseldorf",
-    "centerLat": 53.62805,
-    "centerLon": 11.41582,
+    "centerLat": 51.2259125,
+    "centerLon": 6.7735672,
     "radiusMeters": 2500
   },
   "dusseldorfmedienhafen": {
@@ -14744,15 +14744,15 @@
   "dusseldorffriedrichstadt": {
     "name": "Friedrichstadt",
     "city": "Dusseldorf",
-    "centerLat": 54.37566,
-    "centerLon": 9.08672,
+    "centerLat": 51.2135645,
+    "centerLon": 6.7816997,
     "radiusMeters": 2500
   },
   "friedrichstadt": {
     "name": "Friedrichstadt",
     "city": "Dusseldorf",
-    "centerLat": 54.37566,
-    "centerLon": 9.08672,
+    "centerLat": 51.2135645,
+    "centerLon": 6.7816997,
     "radiusMeters": 2500
   },
   "dortmundcityring": {
@@ -14856,50 +14856,50 @@
   "frankfurtammainsachsenhausen": {
     "name": "Sachsenhausen",
     "city": "Frankfurt am Main",
-    "centerLat": 51.24338,
-    "centerLon": 9.00973,
+    "centerLat": 50.1002618,
+    "centerLon": 8.6835988,
     "radiusMeters": 2500
   },
   "sachsenhausen": {
     "name": "Sachsenhausen",
     "city": "Frankfurt am Main",
-    "centerLat": 51.24338,
-    "centerLon": 9.00973,
+    "centerLat": 50.1002618,
+    "centerLon": 8.6835988,
     "radiusMeters": 2500
   },
   "frankfurtammainwestend": {
     "name": "Westend",
     "city": "Frankfurt am Main",
-    "centerLat": 52.51708,
-    "centerLon": 13.27636,
+    "centerLat": 50.118164,
+    "centerLon": 8.6625889,
     "radiusMeters": 2500
   },
   "frankfurtammainnordend": {
     "name": "Nordend",
     "city": "Frankfurt am Main",
-    "centerLat": 53.72219,
-    "centerLon": 9.65424,
+    "centerLat": 50.1249136,
+    "centerLon": 8.67795,
     "radiusMeters": 2500
   },
   "nordend": {
     "name": "Nordend",
     "city": "Frankfurt am Main",
-    "centerLat": 53.72219,
-    "centerLon": 9.65424,
+    "centerLat": 50.1249136,
+    "centerLon": 8.67795,
     "radiusMeters": 2500
   },
   "frankfurtammainbornheim": {
     "name": "Bornheim",
     "city": "Frankfurt am Main",
-    "centerLat": 50.76313,
-    "centerLon": 6.99089,
+    "centerLat": 50.1297313,
+    "centerLon": 8.7106117,
     "radiusMeters": 2500
   },
   "bornheim": {
     "name": "Bornheim",
     "city": "Frankfurt am Main",
-    "centerLat": 50.76313,
-    "centerLon": 6.99089,
+    "centerLat": 50.1297313,
+    "centerLon": 8.7106117,
     "radiusMeters": 2500
   },
   "hamburghamburgmitte": {
@@ -14989,15 +14989,15 @@
   "hamburgeppendorf": {
     "name": "Eppendorf",
     "city": "Hamburg",
-    "centerLat": 50.8,
-    "centerLon": 13.23333,
+    "centerLat": 53.5903912,
+    "centerLon": 9.9868771,
     "radiusMeters": 2500
   },
   "eppendorf": {
     "name": "Eppendorf",
     "city": "Hamburg",
-    "centerLat": 50.8,
-    "centerLon": 13.23333,
+    "centerLat": 53.5903912,
+    "centerLon": 9.9868771,
     "radiusMeters": 2500
   },
   "paris1stlouvrepalaisroyal": {
@@ -15006,7 +15006,8 @@
     "centerLat": 48.8622,
     "centerLon": 2.3365,
     "radiusMeters": 900,
-    "postcode": "75001"
+    "postcode": "75001",
+    "osmAreaId": 3600020727
   },
   "1stlouvrepalaisroyal": {
     "name": "1st - Louvre / Palais-Royal",
@@ -15014,171 +15015,204 @@
     "centerLat": 48.8622,
     "centerLon": 2.3365,
     "radiusMeters": 900,
-    "postcode": "75001"
+    "postcode": "75001",
+    "osmAreaId": 3600020727
   },
   "paris2ndboursesentier": {
     "name": "2nd - Bourse / Sentier",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500,
-    "postcode": "75002"
+    "centerLat": 48.86626,
+    "centerLon": 2.34052,
+    "radiusMeters": 800,
+    "postcode": "75002",
+    "osmAreaId": 3600009542
   },
   "2ndboursesentier": {
     "name": "2nd - Bourse / Sentier",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "centerLat": 48.86626,
+    "centerLon": 2.34052,
+    "radiusMeters": 800,
+    "postcode": "75002",
+    "osmAreaId": 3600009542
   },
   "paris3rdlemarais": {
     "name": "3rd - Le Marais",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500,
-    "postcode": "75003"
+    "centerLat": 48.86471,
+    "centerLon": 2.36447,
+    "radiusMeters": 900,
+    "postcode": "75003",
+    "osmAreaId": 3600020742
   },
   "3rdlemarais": {
     "name": "3rd - Le Marais",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "centerLat": 48.86471,
+    "centerLon": 2.36447,
+    "radiusMeters": 900,
+    "postcode": "75003",
+    "osmAreaId": 3600020742
   },
   "paris4thnotredamemarais": {
     "name": "4th - Notre-Dame / Marais",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500,
-    "postcode": "75004"
+    "centerLat": 48.85591,
+    "centerLon": 2.35318,
+    "radiusMeters": 1000,
+    "postcode": "75004",
+    "osmAreaId": 3600009597
   },
   "4thnotredamemarais": {
     "name": "4th - Notre-Dame / Marais",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "centerLat": 48.85591,
+    "centerLon": 2.35318,
+    "radiusMeters": 1000,
+    "postcode": "75004",
+    "osmAreaId": 3600009597
   },
   "paris5thlatinquarter": {
     "name": "5th - Latin Quarter",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500,
-    "postcode": "75005"
+    "centerLat": 48.84672,
+    "centerLon": 2.34363,
+    "radiusMeters": 1100,
+    "postcode": "75005",
+    "osmAreaId": 3600020873
   },
   "5thlatinquarter": {
     "name": "5th - Latin Quarter",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "centerLat": 48.84672,
+    "centerLon": 2.34363,
+    "radiusMeters": 1100,
+    "postcode": "75005",
+    "osmAreaId": 3600020873
   },
   "paris6thsaintgermaindespres": {
     "name": "6th - Saint-Germain-des-Pres",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500,
-    "postcode": "75006"
+    "centerLat": 48.85122,
+    "centerLon": 2.33289,
+    "radiusMeters": 1000,
+    "postcode": "75006",
+    "osmAreaId": 3600009527
   },
   "6thsaintgermaindespres": {
     "name": "6th - Saint-Germain-des-Pres",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "centerLat": 48.85122,
+    "centerLon": 2.33289,
+    "radiusMeters": 1000,
+    "postcode": "75006",
+    "osmAreaId": 3600009527
   },
   "paris7theiffeltowerinvalides": {
     "name": "7th - Eiffel Tower / Invalides",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500,
-    "postcode": "75007"
+    "centerLat": 48.85486,
+    "centerLon": 2.32026,
+    "radiusMeters": 1400,
+    "postcode": "75007",
+    "osmAreaId": 3600009521
   },
   "7theiffeltowerinvalides": {
     "name": "7th - Eiffel Tower / Invalides",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "centerLat": 48.85486,
+    "centerLon": 2.32026,
+    "radiusMeters": 1400,
+    "postcode": "75007",
+    "osmAreaId": 3600009521
   },
   "paris8thchampselysees": {
     "name": "8th - Champs-Elysees",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500,
-    "postcode": "75008"
+    "centerLat": 48.87757,
+    "centerLon": 2.31655,
+    "radiusMeters": 1300,
+    "postcode": "75008",
+    "osmAreaId": 3600020872
   },
   "8thchampselysees": {
     "name": "8th - Champs-Elysees",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "centerLat": 48.87757,
+    "centerLon": 2.31655,
+    "radiusMeters": 1300,
+    "postcode": "75008",
+    "osmAreaId": 3600020872
   },
   "paris9thopera": {
     "name": "9th - Opera",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500,
-    "postcode": "75009"
+    "centerLat": 48.87115,
+    "centerLon": 2.33207,
+    "radiusMeters": 1000,
+    "postcode": "75009",
+    "osmAreaId": 3600009537
   },
   "9thopera": {
     "name": "9th - Opera",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "centerLat": 48.87115,
+    "centerLon": 2.33207,
+    "radiusMeters": 1000,
+    "postcode": "75009",
+    "osmAreaId": 3600009537
   },
   "paris10thcanalsaintmartin": {
     "name": "10th - Canal Saint-Martin",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500,
-    "postcode": "75010"
+    "centerLat": 48.87361,
+    "centerLon": 2.35845,
+    "radiusMeters": 1200,
+    "postcode": "75010",
+    "osmAreaId": 3600009528
   },
   "10thcanalsaintmartin": {
     "name": "10th - Canal Saint-Martin",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "centerLat": 48.87361,
+    "centerLon": 2.35845,
+    "radiusMeters": 1200,
+    "postcode": "75010",
+    "osmAreaId": 3600009528
   },
   "paris11thbastillerepublique": {
     "name": "11th - Bastille / Republique",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500,
-    "postcode": "75011"
+    "centerLat": 48.85763,
+    "centerLon": 2.38005,
+    "radiusMeters": 1300,
+    "postcode": "75011",
+    "osmAreaId": 3600009533
   },
   "11thbastillerepublique": {
     "name": "11th - Bastille / Republique",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "centerLat": 48.85763,
+    "centerLon": 2.38005,
+    "radiusMeters": 1300,
+    "postcode": "75011",
+    "osmAreaId": 3600009533
   },
   "parisladefensebusinessdistrict": {
     "name": "La Defense (Business District)",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "centerLat": 48.89263,
+    "centerLon": 2.23741,
+    "radiusMeters": 1000,
+    "postcode": "92800"
   },
   "ladefensebusinessdistrict": {
     "name": "La Defense (Business District)",
     "city": "Paris",
-    "centerLat": 48.8566,
-    "centerLon": 2.3522,
-    "radiusMeters": 3500
+    "centerLat": 48.89263,
+    "centerLon": 2.23741,
+    "radiusMeters": 1000,
+    "postcode": "92800"
   },
   "boulognebillancourtbillancourt": {
     "name": "Billancourt",
@@ -15309,15 +15343,15 @@
   "marseillecastellane": {
     "name": "Castellane",
     "city": "Marseille",
-    "centerLat": 43.84707,
-    "centerLon": 6.51283,
+    "centerLat": 43.2858551,
+    "centerLon": 5.3840205,
     "radiusMeters": 2500
   },
   "castellane": {
     "name": "Castellane",
     "city": "Marseille",
-    "centerLat": 43.84707,
-    "centerLon": 6.51283,
+    "centerLat": 43.2858551,
+    "centerLon": 5.3840205,
     "radiusMeters": 2500
   },
   "marseilleprado": {
@@ -15911,127 +15945,127 @@
   "faisalabadclocktowerbazaars": {
     "name": "Clock Tower Bazaars",
     "city": "Faisalabad",
-    "centerLat": 31.1471305,
-    "centerLon": 75.3412179,
+    "centerLat": 31.4186976,
+    "centerLon": 73.0790952,
     "radiusMeters": 4000
   },
   "clocktowerbazaars": {
     "name": "Clock Tower Bazaars",
     "city": "Faisalabad",
-    "centerLat": 31.1471305,
-    "centerLon": 75.3412179,
+    "centerLat": 31.4186976,
+    "centerLon": 73.0790952,
     "radiusMeters": 4000
   },
   "faisalabaddground": {
     "name": "D Ground",
     "city": "Faisalabad",
-    "centerLat": 31.1471305,
-    "centerLon": 75.3412179,
+    "centerLat": 31.4065214,
+    "centerLon": 73.1144567,
     "radiusMeters": 4000
   },
   "dground": {
     "name": "D Ground",
     "city": "Faisalabad",
-    "centerLat": 31.1471305,
-    "centerLon": 75.3412179,
+    "centerLat": 31.4065214,
+    "centerLon": 73.1144567,
     "radiusMeters": 4000
   },
   "faisalabadmadinatown": {
     "name": "Madina Town",
     "city": "Faisalabad",
-    "centerLat": 31.1471305,
-    "centerLon": 75.3412179,
+    "centerLat": 31.4161545,
+    "centerLon": 73.1202728,
     "radiusMeters": 4000
   },
   "madinatown": {
     "name": "Madina Town",
     "city": "Faisalabad",
-    "centerLat": 31.1471305,
-    "centerLon": 75.3412179,
+    "centerLat": 31.4161545,
+    "centerLon": 73.1202728,
     "radiusMeters": 4000
   },
   "faisalabadkohinoorcity": {
     "name": "Kohinoor City",
     "city": "Faisalabad",
-    "centerLat": 31.1471305,
-    "centerLon": 75.3412179,
+    "centerLat": 31.4145932,
+    "centerLon": 73.111766,
     "radiusMeters": 4000
   },
   "kohinoorcity": {
     "name": "Kohinoor City",
     "city": "Faisalabad",
-    "centerLat": 31.1471305,
-    "centerLon": 75.3412179,
+    "centerLat": 31.4145932,
+    "centerLon": 73.111766,
     "radiusMeters": 4000
   },
   "rawalpindisaddar": {
     "name": "Saddar",
     "city": "Rawalpindi",
-    "centerLat": 31.1471305,
-    "centerLon": 75.3412179,
+    "centerLat": 33.5978846,
+    "centerLon": 73.050101,
     "radiusMeters": 4000
   },
   "saddar": {
     "name": "Saddar",
     "city": "Rawalpindi",
-    "centerLat": 31.1471305,
-    "centerLon": 75.3412179,
+    "centerLat": 33.5978846,
+    "centerLon": 73.050101,
     "radiusMeters": 4000
   },
   "rawalpindibahriatownrawalpindi": {
     "name": "Bahria Town Rawalpindi",
     "city": "Rawalpindi",
-    "centerLat": 31.1471305,
-    "centerLon": 75.3412179,
+    "centerLat": 33.4916714,
+    "centerLon": 73.0957614,
     "radiusMeters": 4000
   },
   "bahriatownrawalpindi": {
     "name": "Bahria Town Rawalpindi",
     "city": "Rawalpindi",
-    "centerLat": 31.1471305,
-    "centerLon": 75.3412179,
+    "centerLat": 33.4916714,
+    "centerLon": 73.0957614,
     "radiusMeters": 4000
   },
   "rawalpindisatellitetown": {
     "name": "Satellite Town",
     "city": "Rawalpindi",
-    "centerLat": 31.1471305,
-    "centerLon": 75.3412179,
+    "centerLat": 33.63757,
+    "centerLon": 73.0733589,
     "radiusMeters": 4000
   },
   "satellitetown": {
     "name": "Satellite Town",
     "city": "Rawalpindi",
-    "centerLat": 31.1471305,
-    "centerLon": 75.3412179,
+    "centerLat": 33.63757,
+    "centerLon": 73.0733589,
     "radiusMeters": 4000
   },
   "rawalpindichaklala": {
     "name": "Chaklala",
     "city": "Rawalpindi",
-    "centerLat": 31.1471305,
-    "centerLon": 75.3412179,
+    "centerLat": 33.6009169,
+    "centerLon": 73.0964464,
     "radiusMeters": 4000
   },
   "chaklala": {
     "name": "Chaklala",
     "city": "Rawalpindi",
-    "centerLat": 31.1471305,
-    "centerLon": 75.3412179,
+    "centerLat": 33.6009169,
+    "centerLon": 73.0964464,
     "radiusMeters": 4000
   },
   "rawalpindiwestridge": {
     "name": "Westridge",
     "city": "Rawalpindi",
-    "centerLat": 31.1471305,
-    "centerLon": 75.3412179,
+    "centerLat": 33.6101302,
+    "centerLon": 73.0219467,
     "radiusMeters": 4000
   },
   "westridge": {
     "name": "Westridge",
     "city": "Rawalpindi",
-    "centerLat": 31.1471305,
-    "centerLon": 75.3412179,
+    "centerLat": 33.6101302,
+    "centerLon": 73.0219467,
     "radiusMeters": 4000
   },
   "karachiclifton": {
@@ -16149,50 +16183,50 @@
   "hyderabadsaddar": {
     "name": "Saddar",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 25.3932282,
+    "centerLon": 68.3645831,
     "radiusMeters": 3500
   },
   "hyderabadlatifabad": {
     "name": "Latifabad",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 25.3617376,
+    "centerLon": 68.3629031,
     "radiusMeters": 3500
   },
   "latifabad": {
     "name": "Latifabad",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 25.3617376,
+    "centerLon": 68.3629031,
     "radiusMeters": 3500
   },
   "hyderabadqasimabad": {
     "name": "Qasimabad",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 25.3930639,
+    "centerLon": 68.3343093,
     "radiusMeters": 3500
   },
   "qasimabad": {
     "name": "Qasimabad",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 25.3930639,
+    "centerLon": 68.3343093,
     "radiusMeters": 3500
   },
   "hyderabadautobhanroad": {
     "name": "Auto Bhan Road",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 25.3760462,
+    "centerLon": 68.3425962,
     "radiusMeters": 3500
   },
   "autobhanroad": {
     "name": "Auto Bhan Road",
     "city": "Hyderabad",
-    "centerLat": 17.385,
-    "centerLon": 78.4867,
+    "centerLat": 25.3760462,
+    "centerLon": 68.3425962,
     "radiusMeters": 3500
   },
   "islamabadbluearea": {
@@ -16436,15 +16470,15 @@
   "tokyominato": {
     "name": "Minato",
     "city": "Tokyo",
-    "centerLat": 34.2152,
-    "centerLon": 135.1501,
+    "centerLat": 35.6580089,
+    "centerLon": 139.7515137,
     "radiusMeters": 2500
   },
   "minato": {
     "name": "Minato",
     "city": "Tokyo",
-    "centerLat": 34.2152,
-    "centerLon": 135.1501,
+    "centerLat": 35.6580089,
+    "centerLon": 139.7515137,
     "radiusMeters": 2500
   },
   "tokyoomotesando": {
@@ -16464,15 +16498,15 @@
   "tokyoebisu": {
     "name": "Ebisu",
     "city": "Tokyo",
-    "centerLat": 34.75856,
-    "centerLon": 136.13108,
+    "centerLat": 35.6469738,
+    "centerLon": 139.7086461,
     "radiusMeters": 2500
   },
   "ebisu": {
     "name": "Ebisu",
     "city": "Tokyo",
-    "centerLat": 34.75856,
-    "centerLon": 136.13108,
+    "centerLat": 35.6469738,
+    "centerLon": 139.7086461,
     "radiusMeters": 2500
   },
   "osakaumedakita": {
@@ -16548,15 +16582,15 @@
   "osakahonmachi": {
     "name": "Honmachi",
     "city": "Osaka",
-    "centerLat": 32.50439,
-    "centerLon": 130.59952,
+    "centerLat": 34.6833165,
+    "centerLon": 135.4982934,
     "radiusMeters": 2500
   },
   "honmachi": {
     "name": "Honmachi",
     "city": "Osaka",
-    "centerLat": 32.50439,
-    "centerLon": 130.59952,
+    "centerLat": 34.6833165,
+    "centerLon": 135.4982934,
     "radiusMeters": 2500
   },
   "kyotogion": {
@@ -16674,15 +16708,15 @@
   "romeprati": {
     "name": "Prati",
     "city": "Rome",
-    "centerLat": 45.46735,
-    "centerLon": 8.83095,
+    "centerLat": 41.9081381,
+    "centerLon": 12.4644964,
     "radiusMeters": 2500
   },
   "prati": {
     "name": "Prati",
     "city": "Rome",
-    "centerLat": 45.46735,
-    "centerLon": 8.83095,
+    "centerLat": 41.9081381,
+    "centerLon": 12.4644964,
     "radiusMeters": 2500
   },
   "romeparioli": {
@@ -16814,15 +16848,15 @@
   "milanisola": {
     "name": "Isola",
     "city": "Milan",
-    "centerLat": 44.33079,
-    "centerLon": 8.5096,
+    "centerLat": 45.487612,
+    "centerLon": 9.1912938,
     "radiusMeters": 2500
   },
   "isola": {
     "name": "Isola",
     "city": "Milan",
-    "centerLat": 44.33079,
-    "centerLon": 8.5096,
+    "centerLat": 45.487612,
+    "centerLon": 9.1912938,
     "radiusMeters": 2500
   },
   "milanportaromana": {
@@ -16842,15 +16876,15 @@
   "bresciasanpolo": {
     "name": "San Polo",
     "city": "Brescia",
-    "centerLat": 41.97418,
-    "centerLon": 12.82993,
+    "centerLat": 45.5182602,
+    "centerLon": 10.25808,
     "radiusMeters": 2500
   },
   "sanpolo": {
     "name": "San Polo",
     "city": "Brescia",
-    "centerLat": 41.97418,
-    "centerLon": 12.82993,
+    "centerLat": 45.5182602,
+    "centerLon": 10.25808,
     "radiusMeters": 2500
   },
   "florenceduomohistoriccenter": {
@@ -16926,78 +16960,78 @@
   "pisacentro": {
     "name": "Centro",
     "city": "Pisa",
-    "centerLat": 44.78237,
-    "centerLon": 10.8777,
+    "centerLat": 43.7143765,
+    "centerLon": 10.4006739,
     "radiusMeters": 2500
   },
   "centro": {
     "name": "Centro",
     "city": "Pisa",
-    "centerLat": 44.78237,
-    "centerLon": 10.8777,
+    "centerLat": 43.7143765,
+    "centerLon": 10.4006739,
     "radiusMeters": 2500
   },
   "pisasanfrancesco": {
     "name": "San Francesco",
     "city": "Pisa",
-    "centerLat": 43.77483,
-    "centerLon": 11.44842,
+    "centerLat": 43.71849,
+    "centerLon": 10.40683,
     "radiusMeters": 2500
   },
   "sanfrancesco": {
     "name": "San Francesco",
     "city": "Pisa",
-    "centerLat": 43.77483,
-    "centerLon": 11.44842,
+    "centerLat": 43.71849,
+    "centerLon": 10.40683,
     "radiusMeters": 2500
   },
   "pisacisanello": {
     "name": "Cisanello",
     "city": "Pisa",
-    "centerLat": 43.7710513,
-    "centerLon": 11.2486208,
+    "centerLat": 43.7076365,
+    "centerLon": 10.4354912,
     "radiusMeters": 4000
   },
   "cisanello": {
     "name": "Cisanello",
     "city": "Pisa",
-    "centerLat": 43.7710513,
-    "centerLon": 11.2486208,
+    "centerLat": 43.7076365,
+    "centerLon": 10.4354912,
     "radiusMeters": 4000
   },
   "turincentro": {
     "name": "Centro",
     "city": "Turin",
-    "centerLat": 44.78237,
-    "centerLon": 10.8777,
+    "centerLat": 45.0688914,
+    "centerLon": 7.6823806,
     "radiusMeters": 2500
   },
   "turincrocetta": {
     "name": "Crocetta",
     "city": "Turin",
-    "centerLat": 45.83667,
-    "centerLon": 12.03361,
+    "centerLat": 45.0579245,
+    "centerLon": 7.6649673,
     "radiusMeters": 2500
   },
   "crocetta": {
     "name": "Crocetta",
     "city": "Turin",
-    "centerLat": 45.83667,
-    "centerLon": 12.03361,
+    "centerLat": 45.0579245,
+    "centerLon": 7.6649673,
     "radiusMeters": 2500
   },
   "venicesanmarco": {
     "name": "San Marco",
     "city": "Venice",
-    "centerLat": 45.7816,
-    "centerLon": 11.99851,
+    "centerLat": 45.4348289,
+    "centerLon": 12.3340247,
     "radiusMeters": 2500
   },
   "sanmarco": {
     "name": "San Marco",
     "city": "Venice",
-    "centerLat": 45.7816,
-    "centerLon": 11.99851,
+    "centerLat": 45.4348289,
+    "centerLon": 12.3340247,
     "radiusMeters": 2500
   },
   "venicecannaregio": {
@@ -17122,15 +17156,15 @@
   "madridchueca": {
     "name": "Chueca",
     "city": "Madrid",
-    "centerLat": 39.73191,
-    "centerLon": -3.94365,
+    "centerLat": 40.4227415,
+    "centerLon": -3.6993271,
     "radiusMeters": 2500
   },
   "chueca": {
     "name": "Chueca",
     "city": "Madrid",
-    "centerLat": 39.73191,
-    "centerLon": -3.94365,
+    "centerLat": 40.4227415,
+    "centerLon": -3.6993271,
     "radiusMeters": 2500
   },
   "madridretiro": {
@@ -17276,15 +17310,15 @@
   "sevilletriana": {
     "name": "Triana",
     "city": "Seville",
-    "centerLat": 42.32729,
-    "centerLon": -6.09573,
+    "centerLat": 37.3834516,
+    "centerLon": -6.0040669,
     "radiusMeters": 2500
   },
   "triana": {
     "name": "Triana",
     "city": "Seville",
-    "centerLat": 42.32729,
-    "centerLon": -6.09573,
+    "centerLat": 37.3834516,
+    "centerLon": -6.0040669,
     "radiusMeters": 2500
   },
   "sevillecartujatechpark": {
@@ -17304,78 +17338,78 @@
   "malagacentrohistorico": {
     "name": "Centro Historico",
     "city": "Malaga",
-    "centerLat": 37.5442706,
-    "centerLon": -4.7277528,
+    "centerLat": 36.7210234,
+    "centerLon": -4.4219261,
     "radiusMeters": 4000
   },
   "centrohistorico": {
     "name": "Centro Historico",
     "city": "Malaga",
-    "centerLat": 37.5442706,
-    "centerLon": -4.7277528,
+    "centerLat": 36.7210234,
+    "centerLon": -4.4219261,
     "radiusMeters": 4000
   },
   "malagalamalagueta": {
     "name": "La Malagueta",
     "city": "Malaga",
-    "centerLat": 37.5442706,
-    "centerLon": -4.7277528,
+    "centerLat": 36.7183357,
+    "centerLon": -4.4101683,
     "radiusMeters": 4000
   },
   "lamalagueta": {
     "name": "La Malagueta",
     "city": "Malaga",
-    "centerLat": 37.5442706,
-    "centerLon": -4.7277528,
+    "centerLat": 36.7183357,
+    "centerLon": -4.4101683,
     "radiusMeters": 4000
   },
   "malagateatinos": {
     "name": "Teatinos",
     "city": "Malaga",
-    "centerLat": 37.5442706,
-    "centerLon": -4.7277528,
+    "centerLat": 36.7218843,
+    "centerLon": -4.4599795,
     "radiusMeters": 4000
   },
   "teatinos": {
     "name": "Teatinos",
     "city": "Malaga",
-    "centerLat": 37.5442706,
-    "centerLon": -4.7277528,
+    "centerLat": 36.7218843,
+    "centerLon": -4.4599795,
     "radiusMeters": 4000
   },
   "malagamalagatechpark": {
     "name": "Malaga TechPark",
     "city": "Malaga",
-    "centerLat": 37.5442706,
-    "centerLon": -4.7277528,
+    "centerLat": 36.7376905,
+    "centerLon": -4.5473174,
     "radiusMeters": 4000
   },
   "malagatechpark": {
     "name": "Malaga TechPark",
     "city": "Malaga",
-    "centerLat": 37.5442706,
-    "centerLon": -4.7277528,
+    "centerLat": 36.7376905,
+    "centerLon": -4.5473174,
     "radiusMeters": 4000
   },
   "valenciaciutatvella": {
     "name": "Ciutat Vella",
     "city": "Valencia",
-    "centerLat": 41.38022,
-    "centerLon": 2.17319,
+    "centerLat": 39.4746223,
+    "centerLon": -0.3765452,
     "radiusMeters": 2500
   },
   "ciutatvella": {
     "name": "Ciutat Vella",
     "city": "Valencia",
-    "centerLat": 41.38022,
-    "centerLon": 2.17319,
+    "centerLat": 39.4746223,
+    "centerLon": -0.3765452,
     "radiusMeters": 2500
   },
   "valenciaeixample": {
     "name": "Eixample",
     "city": "Valencia",
-    "centerLat": 41.39606,
-    "centerLon": 2.16688,
+    "centerLat": 39.4643613,
+    "centerLon": -0.3693972,
     "radiusMeters": 2500
   },
   "valenciaruzafa": {
@@ -17612,15 +17646,15 @@
   "rotterdamnoord": {
     "name": "Noord",
     "city": "Rotterdam",
-    "centerLat": 52.7075,
-    "centerLon": 4.85139,
+    "centerLat": 51.9422622,
+    "centerLon": 4.4815812,
     "radiusMeters": 2500
   },
   "noord": {
     "name": "Noord",
     "city": "Rotterdam",
-    "centerLat": 52.7075,
-    "centerLon": 4.85139,
+    "centerLat": 51.9422622,
+    "centerLon": 4.4815812,
     "radiusMeters": 2500
   },
   "thehaguecentrum": {
@@ -17689,15 +17723,15 @@
   "utrechtbinnenstad": {
     "name": "Binnenstad",
     "city": "Utrecht",
-    "centerLat": 52.21304,
-    "centerLon": 5.95957,
+    "centerLat": 52.0886017,
+    "centerLon": 5.116184,
     "radiusMeters": 2500
   },
   "binnenstad": {
     "name": "Binnenstad",
     "city": "Utrecht",
-    "centerLat": 52.21304,
-    "centerLon": 5.95957,
+    "centerLat": 52.0886017,
+    "centerLon": 5.116184,
     "radiusMeters": 2500
   },
   "utrechtutrechtsciencepark": {
@@ -17731,15 +17765,15 @@
   "utrechtoost": {
     "name": "Oost",
     "city": "Utrecht",
-    "centerLat": 53.1886,
-    "centerLon": 5.82825,
+    "centerLat": 52.0775687,
+    "centerLon": 5.143016,
     "radiusMeters": 2500
   },
   "oost": {
     "name": "Oost",
     "city": "Utrecht",
-    "centerLat": 53.1886,
-    "centerLon": 5.82825,
+    "centerLat": 52.0775687,
+    "centerLon": 5.143016,
     "radiusMeters": 2500
   },
   "eindhovengestel": {
@@ -17955,15 +17989,15 @@
   "izmirkonak": {
     "name": "Konak",
     "city": "Izmir",
-    "centerLat": 37.89461,
-    "centerLon": 41.16405,
+    "centerLat": 38.4187168,
+    "centerLon": 27.1282675,
     "radiusMeters": 2500
   },
   "konak": {
     "name": "Konak",
     "city": "Izmir",
-    "centerLat": 37.89461,
-    "centerLon": 41.16405,
+    "centerLat": 38.4187168,
+    "centerLon": 27.1282675,
     "radiusMeters": 2500
   },
   "izmiralsancak": {
@@ -18522,15 +18556,15 @@
   "saopaulopinheiros": {
     "name": "Pinheiros",
     "city": "Sao Paulo",
-    "centerLat": -18.34486,
-    "centerLon": -40.20984,
+    "centerLat": -23.567249,
+    "centerLon": -46.7019515,
     "radiusMeters": 2500
   },
   "pinheiros": {
     "name": "Pinheiros",
     "city": "Sao Paulo",
-    "centerLat": -18.34486,
-    "centerLon": -40.20984,
+    "centerLat": -23.567249,
+    "centerLon": -46.7019515,
     "radiusMeters": 2500
   },
   "saopauloberrini": {
@@ -18550,15 +18584,15 @@
   "campinascentro": {
     "name": "Centro",
     "city": "Campinas",
-    "centerLat": -3.31669,
-    "centerLon": -46.79364,
+    "centerLat": -22.9050869,
+    "centerLon": -47.0600751,
     "radiusMeters": 2500
   },
   "riodejaneirocentro": {
     "name": "Centro",
     "city": "Rio de Janeiro",
-    "centerLat": -3.31669,
-    "centerLon": -46.79364,
+    "centerLat": -22.90495,
+    "centerLon": -43.19132,
     "radiusMeters": 2500
   },
   "riodejaneirocopacabana": {
@@ -18578,15 +18612,15 @@
   "riodejaneiroipanema": {
     "name": "Ipanema",
     "city": "Rio de Janeiro",
-    "centerLat": -19.91781,
-    "centerLon": -41.70024,
+    "centerLat": -22.9839557,
+    "centerLon": -43.2022163,
     "radiusMeters": 2500
   },
   "ipanema": {
     "name": "Ipanema",
     "city": "Rio de Janeiro",
-    "centerLat": -19.91781,
-    "centerLon": -41.70024,
+    "centerLat": -22.9839557,
+    "centerLon": -43.2022163,
     "radiusMeters": 2500
   },
   "riodejaneirobarradatijuca": {
@@ -18816,15 +18850,15 @@
   "denpasarkuta": {
     "name": "Kuta",
     "city": "Denpasar",
-    "centerLat": -0.59417,
-    "centerLon": 115.51575,
+    "centerLat": -8.72219,
+    "centerLon": 115.17922,
     "radiusMeters": 2500
   },
   "kuta": {
     "name": "Kuta",
     "city": "Denpasar",
-    "centerLat": -0.59417,
-    "centerLon": 115.51575,
+    "centerLat": -8.72219,
+    "centerLon": 115.17922,
     "radiusMeters": 2500
   },
   "denpasarseminyak": {
@@ -18984,15 +19018,15 @@
   "johannesburgrosebank": {
     "name": "Rosebank",
     "city": "Johannesburg",
-    "centerLat": -33.95556,
-    "centerLon": 18.47417,
+    "centerLat": -26.1429479,
+    "centerLon": 28.0397487,
     "radiusMeters": 2500
   },
   "rosebank": {
     "name": "Rosebank",
     "city": "Johannesburg",
-    "centerLat": -33.95556,
-    "centerLon": 18.47417,
+    "centerLat": -26.1429479,
+    "centerLon": 28.0397487,
     "radiusMeters": 2500
   },
   "johannesburgmidrand": {
@@ -19299,15 +19333,15 @@
   "zurichenge": {
     "name": "Enge",
     "city": "Zurich",
-    "centerLat": 46.82107,
-    "centerLon": 8.40133,
+    "centerLat": 47.3617894,
+    "centerLon": 8.528708,
     "radiusMeters": 2500
   },
   "enge": {
     "name": "Enge",
     "city": "Zurich",
-    "centerLat": 46.82107,
-    "centerLon": 8.40133,
+    "centerLat": 47.3617894,
+    "centerLon": 8.528708,
     "radiusMeters": 2500
   },
   "genevaeauxvives": {
@@ -19470,7 +19504,8 @@
     "centerLat": 48.8622,
     "centerLon": 2.3365,
     "radiusMeters": 900,
-    "postcode": "75001"
+    "postcode": "75001",
+    "osmAreaId": 3600020727
   },
   "paris1starrondissement": {
     "name": "1st Arrondissement",
@@ -19478,7 +19513,8 @@
     "centerLat": 48.8622,
     "centerLon": 2.3365,
     "radiusMeters": 900,
-    "postcode": "75001"
+    "postcode": "75001",
+    "osmAreaId": 3600020727
   },
   "paris1erarrondissement": {
     "name": "1st Arrondissement",
@@ -19486,6 +19522,7 @@
     "centerLat": 48.8622,
     "centerLon": 2.3365,
     "radiusMeters": 900,
-    "postcode": "75001"
+    "postcode": "75001",
+    "osmAreaId": 3600020727
   }
 }
