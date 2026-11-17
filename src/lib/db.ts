@@ -137,7 +137,14 @@ async function initDriver(): Promise<DbDriver> {
       authToken: process.env.TURSO_AUTH_TOKEN as string,
     });
     const driver = new TursoDriver(client);
-    await initTables(driver);
+    try {
+      await initTables(driver);
+    } catch (err) {
+      // Tables already exist in production. If creation is blocked (e.g. Turso
+      // free-tier write quota exceeded), continue — reads still work and the
+      // Overture search only needs reads.
+      console.warn("[DB] initTables failed; continuing with reads only:", err);
+    }
     driverInstance = driver;
     console.log("[DB] Using Turso (libSQL) hosted database.");
     return driver;
@@ -157,7 +164,13 @@ async function initDriver(): Promise<DbDriver> {
     }
   }
   const driver = new LocalDriver(db);
-  await initTables(driver);
+  try {
+    await initTables(driver);
+  } catch (err) {
+    // Tables already exist in production. If creation is blocked, continue —
+    // reads still work and the Overture search only needs reads.
+    console.warn("[DB] initTables failed; continuing with reads only:", err);
+  }
   driverInstance = driver;
   return driver;
 }
