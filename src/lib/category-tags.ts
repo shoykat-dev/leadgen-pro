@@ -779,9 +779,9 @@ const OVERTURE_KEYWORD_OVERRIDES: Record<string, string[]> = {
   supermarket: ["grocery store"],
   clothing_store: ["clothing store"],
   mobile_phone_shop: ["cell phone store", "mobile phone store"],
-  car_dealership: ["car dealer", "auto dealer"],
-  hotel: ["guest house", "bed and breakfast"],
-  health_clinic: ["medical clinic", "health center"],
+  car_dealership: ["car dealer", "auto dealer", "vehicle dealer"],
+  hotel: ["guest house", "bed and breakfast", "lodging", "lodge", "holiday rental"],
+  health_clinic: ["medical clinic", "health center", "health care", "outpatient care"],
   tutoring: ["tutoring center", "learning center"],
   self_storage: ["storage facility"],
   courier_delivery: ["courier service", "delivery service"],
@@ -794,9 +794,21 @@ const OVERTURE_KEYWORD_OVERRIDES: Record<string, string[]> = {
   pest_control: ["pest control service"],
   moving_company: ["moving company", "moving service"],
   event_venue: ["event space", "banquet hall"],
-  travel_agency: ["travel agency"],
+  travel_agency: ["travel agency", "travel service"],
   business_consulting: ["consulting firm"],
   recruitment_agency: ["staffing agency", "employment agency"],
+  // UK audit 2026-11-17: Overture taxonomy values the site's categories missed
+  // (verified against 4.12M UK rows — each keyword below matches only the named trade).
+  veterinary: ["veterinarian"],
+  optometry: ["optometry", "eyewear"],
+  personal_trainer: ["fitness trainer"],
+  car_repair: ["automotive service"],
+  auto_body: ["auto customization"],
+  daycare: ["preschool", "child care", "day care"],
+  school: ["education"],
+  bar_pub: ["gastropub"],
+  fast_food: ["sandwich", "delicatessen", "ice cream", "dessert"],
+  cosmetic_clinic: ["laser hair removal"],
 };
 
 function buildOvertureKeywords(): Record<string, string[]> {

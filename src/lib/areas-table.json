@@ -10719,58 +10719,58 @@
   "manchesternorthernquarter": {
     "name": "Northern Quarter",
     "city": "Manchester",
-    "centerLat": 53.4808,
-    "centerLon": -2.2426,
-    "radiusMeters": 3500
+    "centerLat": 53.48305,
+    "centerLon": -2.23404,
+    "radiusMeters": 1500
   },
   "northernquarter": {
     "name": "Northern Quarter",
     "city": "Manchester",
-    "centerLat": 53.4808,
-    "centerLon": -2.2426,
-    "radiusMeters": 3500
+    "centerLat": 53.48305,
+    "centerLon": -2.23404,
+    "radiusMeters": 1500
   },
   "manchesterancoats": {
     "name": "Ancoats",
     "city": "Manchester",
-    "centerLat": 53.4808,
-    "centerLon": -2.2426,
-    "radiusMeters": 3500
+    "centerLat": 53.48536,
+    "centerLon": -2.22918,
+    "radiusMeters": 1500
   },
   "ancoats": {
     "name": "Ancoats",
     "city": "Manchester",
-    "centerLat": 53.4808,
-    "centerLon": -2.2426,
-    "radiusMeters": 3500
+    "centerLat": 53.48536,
+    "centerLon": -2.22918,
+    "radiusMeters": 1500
   },
   "manchesterspinningfields": {
     "name": "Spinningfields",
     "city": "Manchester",
-    "centerLat": 53.4808,
-    "centerLon": -2.2426,
-    "radiusMeters": 3500
+    "centerLat": 53.48108,
+    "centerLon": -2.25317,
+    "radiusMeters": 1500
   },
   "spinningfields": {
     "name": "Spinningfields",
     "city": "Manchester",
-    "centerLat": 53.4808,
-    "centerLon": -2.2426,
-    "radiusMeters": 3500
+    "centerLat": 53.48108,
+    "centerLon": -2.25317,
+    "radiusMeters": 1500
   },
   "manchesterdeansgate": {
     "name": "Deansgate",
     "city": "Manchester",
-    "centerLat": 53.4808,
-    "centerLon": -2.2426,
-    "radiusMeters": 3500
+    "centerLat": 53.47623,
+    "centerLon": -2.25082,
+    "radiusMeters": 1500
   },
   "deansgate": {
     "name": "Deansgate",
     "city": "Manchester",
-    "centerLat": 53.4808,
-    "centerLon": -2.2426,
-    "radiusMeters": 3500
+    "centerLat": 53.47623,
+    "centerLon": -2.25082,
+    "radiusMeters": 1500
   },
   "manchesterdidsbury": {
     "name": "Didsbury",
@@ -10789,30 +10789,30 @@
   "manchestersalfordquays": {
     "name": "Salford Quays",
     "city": "Manchester",
-    "centerLat": 53.4808,
-    "centerLon": -2.2426,
-    "radiusMeters": 3500
+    "centerLat": 53.46978,
+    "centerLon": -2.28847,
+    "radiusMeters": 2000
   },
   "salfordquays": {
     "name": "Salford Quays",
     "city": "Manchester",
-    "centerLat": 53.4808,
-    "centerLon": -2.2426,
-    "radiusMeters": 3500
+    "centerLat": 53.46978,
+    "centerLon": -2.28847,
+    "radiusMeters": 2000
   },
   "manchestercastlefield": {
     "name": "Castlefield",
     "city": "Manchester",
-    "centerLat": 53.4808,
-    "centerLon": -2.2426,
-    "radiusMeters": 3500
+    "centerLat": 53.47611,
+    "centerLon": -2.25478,
+    "radiusMeters": 1500
   },
   "castlefield": {
     "name": "Castlefield",
     "city": "Manchester",
-    "centerLat": 53.4808,
-    "centerLon": -2.2426,
-    "radiusMeters": 3500
+    "centerLat": 53.47611,
+    "centerLon": -2.25478,
+    "radiusMeters": 1500
   },
   "manchesterchorlton": {
     "name": "Chorlton",
@@ -10852,86 +10852,86 @@
   "birminghamdigbeth": {
     "name": "Digbeth",
     "city": "Birmingham",
-    "centerLat": 52.4862,
-    "centerLon": -1.8904,
-    "radiusMeters": 3500
+    "centerLat": 52.47657,
+    "centerLon": -1.88761,
+    "radiusMeters": 1500
   },
   "digbeth": {
     "name": "Digbeth",
     "city": "Birmingham",
-    "centerLat": 52.4862,
-    "centerLon": -1.8904,
-    "radiusMeters": 3500
+    "centerLat": 52.47657,
+    "centerLon": -1.88761,
+    "radiusMeters": 1500
   },
   "birminghamjewelleryquarter": {
     "name": "Jewellery Quarter",
     "city": "Birmingham",
-    "centerLat": 52.4862,
-    "centerLon": -1.8904,
-    "radiusMeters": 3500
+    "centerLat": 52.48677,
+    "centerLon": -1.91205,
+    "radiusMeters": 1500
   },
   "jewelleryquarter": {
     "name": "Jewellery Quarter",
     "city": "Birmingham",
-    "centerLat": 52.4862,
-    "centerLon": -1.8904,
-    "radiusMeters": 3500
+    "centerLat": 52.48677,
+    "centerLon": -1.91205,
+    "radiusMeters": 1500
   },
   "birminghamedgbaston": {
     "name": "Edgbaston",
     "city": "Birmingham",
-    "centerLat": 52.4862,
-    "centerLon": -1.8904,
-    "radiusMeters": 3500
+    "centerLat": 52.46552,
+    "centerLon": -1.9352,
+    "radiusMeters": 2000
   },
   "edgbaston": {
     "name": "Edgbaston",
     "city": "Birmingham",
-    "centerLat": 52.4862,
-    "centerLon": -1.8904,
-    "radiusMeters": 3500
+    "centerLat": 52.46552,
+    "centerLon": -1.9352,
+    "radiusMeters": 2000
   },
   "birminghammoseley": {
     "name": "Moseley",
     "city": "Birmingham",
-    "centerLat": 52.4862,
-    "centerLon": -1.8904,
-    "radiusMeters": 3500
+    "centerLat": 52.44622,
+    "centerLon": -1.88833,
+    "radiusMeters": 2000
   },
   "moseley": {
     "name": "Moseley",
     "city": "Birmingham",
-    "centerLat": 52.4862,
-    "centerLon": -1.8904,
-    "radiusMeters": 3500
+    "centerLat": 52.44622,
+    "centerLon": -1.88833,
+    "radiusMeters": 2000
   },
   "birminghamharborne": {
     "name": "Harborne",
     "city": "Birmingham",
-    "centerLat": 52.4862,
-    "centerLon": -1.8904,
-    "radiusMeters": 3500
+    "centerLat": 52.45818,
+    "centerLon": -1.95527,
+    "radiusMeters": 2000
   },
   "harborne": {
     "name": "Harborne",
     "city": "Birmingham",
-    "centerLat": 52.4862,
-    "centerLon": -1.8904,
-    "radiusMeters": 3500
+    "centerLat": 52.45818,
+    "centerLon": -1.95527,
+    "radiusMeters": 2000
   },
   "birminghamsellyoak": {
     "name": "Selly Oak",
     "city": "Birmingham",
-    "centerLat": 52.4862,
-    "centerLon": -1.8904,
-    "radiusMeters": 3500
+    "centerLat": 52.4423,
+    "centerLon": -1.94409,
+    "radiusMeters": 2000
   },
   "sellyoak": {
     "name": "Selly Oak",
     "city": "Birmingham",
-    "centerLat": 52.4862,
-    "centerLon": -1.8904,
-    "radiusMeters": 3500
+    "centerLat": 52.4423,
+    "centerLon": -1.94409,
+    "radiusMeters": 2000
   },
   "birminghamsolihull": {
     "name": "Solihull",
@@ -10971,16 +10971,16 @@
   "leedsheadingley": {
     "name": "Headingley",
     "city": "Leeds",
-    "centerLat": 53.8008,
-    "centerLon": -1.5491,
-    "radiusMeters": 3500
+    "centerLat": 53.81805,
+    "centerLon": -1.5946,
+    "radiusMeters": 2000
   },
   "headingley": {
     "name": "Headingley",
     "city": "Leeds",
-    "centerLat": 53.8008,
-    "centerLon": -1.5491,
-    "radiusMeters": 3500
+    "centerLat": 53.81805,
+    "centerLon": -1.5946,
+    "radiusMeters": 2000
   },
   "leedschapelallerton": {
     "name": "Chapel Allerton",
@@ -10999,30 +10999,30 @@
   "leedsroundhay": {
     "name": "Roundhay",
     "city": "Leeds",
-    "centerLat": 53.8008,
-    "centerLon": -1.5491,
-    "radiusMeters": 3500
+    "centerLat": 53.83963,
+    "centerLon": -1.50431,
+    "radiusMeters": 2000
   },
   "roundhay": {
     "name": "Roundhay",
     "city": "Leeds",
-    "centerLat": 53.8008,
-    "centerLon": -1.5491,
-    "radiusMeters": 3500
+    "centerLat": 53.83963,
+    "centerLon": -1.50431,
+    "radiusMeters": 2000
   },
   "leedsholbeckurbanvillage": {
     "name": "Holbeck Urban Village",
     "city": "Leeds",
-    "centerLat": 53.8008,
-    "centerLon": -1.5491,
-    "radiusMeters": 3500
+    "centerLat": 53.79179,
+    "centerLon": -1.55165,
+    "radiusMeters": 1500
   },
   "holbeckurbanvillage": {
     "name": "Holbeck Urban Village",
     "city": "Leeds",
-    "centerLat": 53.8008,
-    "centerLon": -1.5491,
-    "radiusMeters": 3500
+    "centerLat": 53.79179,
+    "centerLon": -1.55165,
+    "radiusMeters": 1500
   },
   "liverpoolcitycentre": {
     "name": "City Centre",
@@ -11034,58 +11034,58 @@
   "liverpoolbaltictriangle": {
     "name": "Baltic Triangle",
     "city": "Liverpool",
-    "centerLat": 53.4084,
-    "centerLon": -2.9916,
-    "radiusMeters": 3500
+    "centerLat": 53.3932,
+    "centerLon": -2.97798,
+    "radiusMeters": 1500
   },
   "baltictriangle": {
     "name": "Baltic Triangle",
     "city": "Liverpool",
-    "centerLat": 53.4084,
-    "centerLon": -2.9916,
-    "radiusMeters": 3500
+    "centerLat": 53.3932,
+    "centerLon": -2.97798,
+    "radiusMeters": 1500
   },
   "liverpoolropewalks": {
     "name": "Ropewalks",
     "city": "Liverpool",
-    "centerLat": 53.4084,
-    "centerLon": -2.9916,
-    "radiusMeters": 3500
+    "centerLat": 53.40285,
+    "centerLon": -2.98565,
+    "radiusMeters": 1500
   },
   "ropewalks": {
     "name": "Ropewalks",
     "city": "Liverpool",
-    "centerLat": 53.4084,
-    "centerLon": -2.9916,
-    "radiusMeters": 3500
+    "centerLat": 53.40285,
+    "centerLon": -2.98565,
+    "radiusMeters": 1500
   },
   "liverpoolalbertdock": {
     "name": "Albert Dock",
     "city": "Liverpool",
-    "centerLat": 53.4084,
-    "centerLon": -2.9916,
-    "radiusMeters": 3500
+    "centerLat": 53.40051,
+    "centerLon": -2.99094,
+    "radiusMeters": 1500
   },
   "albertdock": {
     "name": "Albert Dock",
     "city": "Liverpool",
-    "centerLat": 53.4084,
-    "centerLon": -2.9916,
-    "radiusMeters": 3500
+    "centerLat": 53.40051,
+    "centerLon": -2.99094,
+    "radiusMeters": 1500
   },
   "liverpoolgeorgianquarter": {
     "name": "Georgian Quarter",
     "city": "Liverpool",
-    "centerLat": 53.4084,
-    "centerLon": -2.9916,
-    "radiusMeters": 3500
+    "centerLat": 53.40115,
+    "centerLon": -2.97063,
+    "radiusMeters": 1500
   },
   "georgianquarter": {
     "name": "Georgian Quarter",
     "city": "Liverpool",
-    "centerLat": 53.4084,
-    "centerLon": -2.9916,
-    "radiusMeters": 3500
+    "centerLat": 53.40115,
+    "centerLon": -2.97063,
+    "radiusMeters": 1500
   },
   "liverpoolallerton": {
     "name": "Allerton",
@@ -11104,16 +11104,16 @@
   "edinburgholdtown": {
     "name": "Old Town",
     "city": "Edinburgh",
-    "centerLat": 55.9533,
-    "centerLon": -3.1883,
-    "radiusMeters": 3500
+    "centerLat": 55.9508,
+    "centerLon": -3.18404,
+    "radiusMeters": 1500
   },
   "oldtown": {
     "name": "Old Town",
     "city": "Edinburgh",
-    "centerLat": 55.9533,
-    "centerLon": -3.1883,
-    "radiusMeters": 3500
+    "centerLat": 55.9508,
+    "centerLon": -3.18404,
+    "radiusMeters": 1500
   },
   "edinburghnewtown": {
     "name": "New Town",
@@ -11132,58 +11132,58 @@
   "edinburghleith": {
     "name": "Leith",
     "city": "Edinburgh",
-    "centerLat": 55.61927,
-    "centerLon": -3.06301,
+    "centerLat": 55.97619,
+    "centerLon": -3.16605,
     "radiusMeters": 2500
   },
   "leith": {
     "name": "Leith",
     "city": "Edinburgh",
-    "centerLat": 55.61927,
-    "centerLon": -3.06301,
+    "centerLat": 55.97619,
+    "centerLon": -3.16605,
     "radiusMeters": 2500
   },
   "edinburghstockbridge": {
     "name": "Stockbridge",
     "city": "Edinburgh",
-    "centerLat": 55.9533,
-    "centerLon": -3.1883,
-    "radiusMeters": 3500
+    "centerLat": 55.958,
+    "centerLon": -3.20886,
+    "radiusMeters": 1500
   },
   "stockbridge": {
     "name": "Stockbridge",
     "city": "Edinburgh",
-    "centerLat": 55.9533,
-    "centerLon": -3.1883,
-    "radiusMeters": 3500
+    "centerLat": 55.958,
+    "centerLon": -3.20886,
+    "radiusMeters": 1500
   },
   "edinburghmorningside": {
     "name": "Morningside",
     "city": "Edinburgh",
-    "centerLat": 55.9533,
-    "centerLon": -3.1883,
-    "radiusMeters": 3500
+    "centerLat": 55.92876,
+    "centerLon": -3.20949,
+    "radiusMeters": 2000
   },
   "morningside": {
     "name": "Morningside",
     "city": "Edinburgh",
-    "centerLat": 55.9533,
-    "centerLon": -3.1883,
-    "radiusMeters": 3500
+    "centerLat": 55.92876,
+    "centerLon": -3.20949,
+    "radiusMeters": 2000
   },
   "edinburghhaymarket": {
     "name": "Haymarket",
     "city": "Edinburgh",
-    "centerLat": 55.9533,
-    "centerLon": -3.1883,
-    "radiusMeters": 3500
+    "centerLat": 55.94646,
+    "centerLon": -3.21638,
+    "radiusMeters": 1500
   },
   "haymarket": {
     "name": "Haymarket",
     "city": "Edinburgh",
-    "centerLat": 55.9533,
-    "centerLon": -3.1883,
-    "radiusMeters": 3500
+    "centerLat": 55.94646,
+    "centerLon": -3.21638,
+    "radiusMeters": 1500
   },
   "glasgowcitycentre": {
     "name": "City Centre",
@@ -11195,16 +11195,16 @@
   "glasgowmerchantcity": {
     "name": "Merchant City",
     "city": "Glasgow",
-    "centerLat": 55.8642,
-    "centerLon": -4.2518,
-    "radiusMeters": 3500
+    "centerLat": 55.85766,
+    "centerLon": -4.24232,
+    "radiusMeters": 1500
   },
   "merchantcity": {
     "name": "Merchant City",
     "city": "Glasgow",
-    "centerLat": 55.8642,
-    "centerLon": -4.2518,
-    "radiusMeters": 3500
+    "centerLat": 55.85766,
+    "centerLon": -4.24232,
+    "radiusMeters": 1500
   },
   "glasgowwestend": {
     "name": "West End",
@@ -11216,30 +11216,30 @@
   "glasgowfinnieston": {
     "name": "Finnieston",
     "city": "Glasgow",
-    "centerLat": 55.8642,
-    "centerLon": -4.2518,
-    "radiusMeters": 3500
+    "centerLat": 55.86461,
+    "centerLon": -4.28435,
+    "radiusMeters": 1500
   },
   "finnieston": {
     "name": "Finnieston",
     "city": "Glasgow",
-    "centerLat": 55.8642,
-    "centerLon": -4.2518,
-    "radiusMeters": 3500
+    "centerLat": 55.86461,
+    "centerLon": -4.28435,
+    "radiusMeters": 1500
   },
   "glasgowsouthside": {
     "name": "Southside",
     "city": "Glasgow",
-    "centerLat": 55.8642,
-    "centerLon": -4.2518,
-    "radiusMeters": 3500
+    "centerLat": 55.83137,
+    "centerLon": -4.2801,
+    "radiusMeters": 2500
   },
   "southside": {
     "name": "Southside",
     "city": "Glasgow",
-    "centerLat": 55.8642,
-    "centerLon": -4.2518,
-    "radiusMeters": 3500
+    "centerLat": 55.83137,
+    "centerLon": -4.2801,
+    "radiusMeters": 2500
   },
   "cardiffcitycentre": {
     "name": "City Centre",
